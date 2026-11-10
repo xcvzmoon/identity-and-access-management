@@ -7,9 +7,11 @@
   "scripts": {
     "fmt": "vp fmt",
     "lint": "vp lint",
-    "check": "vp check"
+    "check": "vp check",
+    "release": "genbumppush"
   },
   "devDependencies": {
+    "genbumppush": "catalog:",
     "vite-plus": "catalog:"
   },
   "devEngines": {
