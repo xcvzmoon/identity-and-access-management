@@ -1,11 +1,13 @@
 {
   "name": "identity-and-access-management",
+  "description": "Identity and Access Management",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
+  "private": true,
   "scripts": {
-    "ready": "vp check && vp run -r test && vp run -r build",
-    "dev": "vp run website#dev"
+    "fmt": "vp fmt",
+    "lint": "vp lint",
+    "check": "vp check"
   },
   "devDependencies": {
     "vite-plus": "catalog:"
@@ -15,9 +17,15 @@
       "name": "pnpm",
       "version": "12.18.0",
       "onFail": "download"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "26.13.0",
+      "onFail": "download"
     }
   },
   "engines": {
-    "node": ">=22.18.0"
-  }
+    "node": "26.13.0"
+  },
+  "packageManager": "pnpm@12.18.0"
 }
