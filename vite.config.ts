@@ -17,6 +17,12 @@ const sharedIgnorePatterns = [
 ];
 
 export default defineConfig({
+  staged: {
+    '*': [
+      'vp fmt --check --no-error-on-unmatched-pattern --',
+      'vp lint --no-error-on-unmatched-pattern --',
+    ],
+  },
   fmt: {
     sortPackageJson: false,
     sortImports: {
@@ -198,5 +204,8 @@ export default defineConfig({
       typeCheck: true,
     },
     ignorePatterns: [...sharedIgnorePatterns],
+  },
+  test: {
+    passWithNoTests: true,
   },
 });
