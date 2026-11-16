@@ -11,7 +11,11 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@nuxt/image": "catalog:web",
+    "@nuxt/ui": "catalog:web",
+    "@vueuse/nuxt": "catalog:web",
     "nuxt": "catalog:web",
+    "tailwindcss": "catalog:web",
     "typescript": "catalog:",
     "vue": "catalog:web",
     "vue-router": "catalog:web"
