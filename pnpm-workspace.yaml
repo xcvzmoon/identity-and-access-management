@@ -7,6 +7,7 @@ catalogMode: strict
 
 catalog:
   '@types/node': 26.6.6
+  better-auth: 1.7.25
   genbumppush: 0.0.10
   typescript: 6.0.3
   vite: npm:@voidzero-dev/vite-plus-core@1.6.0
@@ -19,6 +20,7 @@ catalogs:
   web:
     '@nuxt/image': 2.2.1
     '@nuxt/ui': 4.12.0
+    '@nuxtjs/better-auth': 0.3.17
     '@vueuse/nuxt': 15.0.0
     nuxt: npm:nuxt-nightly@5.0.0-2611150147-d897f4c
     tailwindcss: 4.3.5
@@ -34,6 +36,9 @@ peerDependencyRules:
     - vite
   allowedVersions:
     vite: '*'
+
+minimumReleaseAgeExclude:
+  - '@nuxtjs/better-auth@0.3.17'
 
 allowBuilds:
   esbuild: true

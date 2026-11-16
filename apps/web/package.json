@@ -13,6 +13,7 @@
   "dependencies": {
     "@nuxt/image": "catalog:web",
     "@nuxt/ui": "catalog:web",
+    "@nuxtjs/better-auth": "catalog:web",
     "@vueuse/nuxt": "catalog:web",
     "nuxt": "catalog:web",
     "tailwindcss": "catalog:web",

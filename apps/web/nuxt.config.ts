@@ -9,7 +9,7 @@ export default defineNuxtConfig({
     strict: true,
   },
   css: ['~/assets/css/main.css'],
-  modules: ['@nuxt/image', '@nuxt/ui', '@vueuse/nuxt/module'],
+  modules: ['@nuxt/image', '@nuxt/ui', '@nuxtjs/better-auth', '@vueuse/nuxt/module'],
   colorMode: {
     preference: 'dark',
   },
