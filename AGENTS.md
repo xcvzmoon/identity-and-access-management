@@ -87,3 +87,9 @@ Docs are local at `node_modules/vite-plus/docs` or online at https://viteplus.de
 
 - Project skills live in `.agents/skills/` and are tracked in `skills-lock.json`. Use applicable skills.
 - Treat vendored skills as tooling. Do not modify them as part of product work.
+
+## Persistent knowledge
+
+- Keep repository rules in AGENTS.md, workflow procedures in skills, and durable explanations, decisions, and gotchas in brain/. Follow AGENTS.md when a brain note conflicts with repository rules.
+- Use brain/index.md to find notes relevant to the current task. Read only the relevant notes; do not load the entire vault.
+- When remembering a new rule, update its authoritative instructions. Keep a brain note only when it adds useful rationale or examples, and link to those instructions instead of repeating them. Remove notes subsumed by existing instructions.
