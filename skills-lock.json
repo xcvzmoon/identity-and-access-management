@@ -83,7 +83,13 @@
       "source": "xcvzmoon/skills",
       "sourceType": "github",
       "skillPath": "drizzle-orm-rc/SKILL.md",
-      "computedHash": "7217d3191131548740cd9ce21e4d281ca315832e1e2ac2b30e893af4b56d44ae"
+      "computedHash": "c76827523dc5d6937532dedfa1752cae5a0b55b34acf0c0a388a1c3609af618b"
+    },
+    "drizzle-postgres-safety-review": {
+      "source": "xcvzmoon/skills",
+      "sourceType": "github",
+      "skillPath": "drizzle-postgres-safety-review/SKILL.md",
+      "computedHash": "945cf040e6658b8ad01e59f7128b128a5ca9c85b679b5fe3f62d35e6d8185f17"
     },
     "email-and-password-best-practices": {
       "source": "better-auth/skills",
