@@ -80,7 +80,7 @@ Docs are local at `node_modules/vite-plus/docs` or online at https://viteplus.de
 - Give each commit one independently reviewable purpose. Keep required imports, types, call sites, and tests together so intermediate commits remain valid.
   Separate independent changes, even within one file.
 - Stage explicit paths or hunks and review the staged diff before committing.
-- For PRs, use the repository template, create-pr-with-evidence, and unslop. Assign the PR to me, apply appropriate labels, and omit model attribution.
+- For PRs, use the repository template, antfu-create-pr, and unslop. Assign the PR to me, apply appropriate labels, and omit model attribution.
 - Begin PR descriptions with two or three complete sentences explaining the problem, resulting behavior, and why the change is needed.
 
 ## Skills
