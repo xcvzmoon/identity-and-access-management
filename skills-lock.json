@@ -139,6 +139,12 @@
       "skillPath": "skills/nitro/SKILL.md",
       "computedHash": "ace89f8710836f13c59b7c6b1a272fa8039a0bf0b48c13322c382c68e6b77b7b"
     },
+    "nuxt": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nuxt/SKILL.md",
+      "computedHash": "4c10d4e793c1d7f4308a3b66930d55d6531224ea887ae29d9bcc946cea2c8081"
+    },
     "nuxt-better-auth": {
       "source": "onmax/nuxt-skills",
       "sourceType": "github",
