@@ -1,1 +1,76 @@
-vp run check && vp run test:verbose
+#!/usr/bin/env sh
+set -eu
+
+run_check=false
+run_typecheck=false
+run_tests=false
+
+while read -r local_ref local_oid remote_ref remote_oid; do
+  case "$local_oid" in
+    *[!0]*) ;;
+    *) continue ;;
+  esac
+
+  case "$remote_oid" in
+    *[!0]*) base_oid=$remote_oid ;;
+    *) base_oid=$(git hash-object -t tree /dev/null) ;;
+  esac
+
+  changed_files=$(git diff --name-only "$base_oid" "$local_oid" -- . \
+    ':(top,exclude)CHANGELOG.md' \
+    ':(top,exclude).agents/**' \
+    ':(top,exclude).claude/**' \
+    ':(top,exclude).codex/**' \
+    ':(top,exclude).cursor/**' \
+    ':(top,exclude).gemini/**' \
+    ':(top,exclude).opencode/**' \
+    ':(top,exclude).pi/**' \
+    ':(top,exclude)tools/oxlint/anti-slop/**' \
+    ':(top,exclude)tools/oxlint/custom/**')
+
+  if printf '%s\n' "$changed_files" | grep -Eq '\.(ts|vue|css|json|jsonc|yaml|yml|md)$'; then
+    run_check=true
+  fi
+
+  if printf '%s\n' "$changed_files" | grep -Eq '\.(ts|vue)$'; then
+    run_typecheck=true
+  fi
+
+  if printf '%s\n' "$changed_files" | grep -Eq '\.(ts|vue|css|json|jsonc|yaml|yml)$'; then
+    run_tests=true
+  fi
+done
+
+check_pid=
+typecheck_pid=
+test_pid=
+status=0
+
+if "$run_check"; then
+  vp run check &
+  check_pid=$!
+fi
+
+if "$run_typecheck"; then
+  vp run typecheck &
+  check_pid=$!
+fi
+
+if "$run_tests"; then
+  vp run test:verbose &
+  test_pid=$!
+fi
+
+if [ -n "$check_pid" ]; then
+  wait "$check_pid" || status=$?
+fi
+
+if [ -n "$typecheck_pid" ]; then
+  wait "$typecheck_pid" || status=$?
+fi
+
+if [ -n "$test_pid" ]; then
+  wait "$test_pid" || status=$?
+fi
+
+exit "$status"
