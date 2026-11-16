@@ -62,7 +62,7 @@ export const noInlineBlocksRule = defineRule({
       ClassBody: checkBlock,
       StaticBlock: checkBlock,
       TSModuleBlock: checkBlock,
-      IfStatement(node) {
+      IfStatement: (node) => {
         requireBlock(node.consequent);
 
         // Else-if chains are checked by their own IfStatement visitor.
@@ -70,24 +70,23 @@ export const noInlineBlocksRule = defineRule({
           requireBlock(node.alternate);
         }
       },
-      ForStatement(node) {
+      ForStatement: (node) => {
         requireBlock(node.body);
       },
-      ForInStatement(node) {
+      ForInStatement: (node) => {
         requireBlock(node.body);
       },
-      ForOfStatement(node) {
+      ForOfStatement: (node) => {
         requireBlock(node.body);
       },
-      WhileStatement(node) {
+      WhileStatement: (node) => {
         requireBlock(node.body);
       },
-      DoWhileStatement(node) {
+      DoWhileStatement: (node) => {
         requireBlock(node.body);
       },
-      SwitchStatement(node) {
-        // Start after the discriminant so an object or function in it cannot
-        // be mistaken for the switch's opening brace.
+      SwitchStatement: (node) => {
+        // Start after the discriminant so an object or function in it cannot be mistaken for the switch's opening brace.
         let opening = context.sourceCode.getTokenAfter(node.discriminant);
 
         while (opening !== null && opening.value !== "{") {

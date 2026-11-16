@@ -11,9 +11,9 @@ export const typeImportsFirstRule = defineRule({
       typesFirst: "Put type imports before value imports in the named import list.",
     },
   },
-  createOnce(context) {
+  createOnce: (context) => {
     return {
-      ImportDeclaration(node) {
+      ImportDeclaration: (node) => {
         if (node.importKind === "type") {
           return;
         }
@@ -48,7 +48,7 @@ export const typeImportsFirstRule = defineRule({
         context.report({
           node,
           messageId: "typesFirst",
-          fix(fixer) {
+          fix: (fixer) => {
             if (context.sourceCode.getCommentsInside(node).length > 0) {
               return null;
             }
