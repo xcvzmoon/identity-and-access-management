@@ -193,6 +193,10 @@ catalogs:
     vite-plus:
       specifier: 1.6.0
       version: 1.6.0
+  shared:
+    '@xcvzlabs/env':
+      specifier: 0.1.2
+      version: 0.1.2
   web:
     '@golar/vue':
       specifier: 0.1.11
@@ -420,6 +424,22 @@ importers:
       drizzle-orm:
         specifier: catalog:database
         version: 1.0.0-rc.5-5935859(zod@4.6.7)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.6.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(@volar/typescript@2.4.30(typescript@6.0.3))(@vue/language-core@3.3.14)(esbuild@0.27.7)(jiti@2.7.0)(typescript@6.0.3)(vue-tsc@3.3.14(typescript@6.0.3))
+
+  packages/shared:
+    dependencies:
+      '@xcvzlabs/env':
+        specifier: catalog:shared
+        version: 0.1.2(typescript@6.0.3)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -2620,6 +2640,11 @@ packages:
     engines: {node: '>=22'}
     peerDependencies:
       vue: ^3.5.0
+
+  '@xcvzlabs/env@0.1.2':
+    resolution: {integrity: sha512-QLp9VtyfDoz2wUgvo0vMn3GWVC5ogPkN5WWfH7Qi7u0SkZgiyOou2gLQY3iQPi5jjHK085KhDaScf/Lqf1vifg==}
+    peerDependencies:
+      typescript: ^7
 
   '@yuku-core/binding-android-arm64@0.19.0':
     resolution: {integrity: sha512-wdL2XmTiZixAOaHk9Z0JJZ8u9Qm8d333Zjpc6gaxXFX+UR5BlsfxZ7a2+2Rm71pamppsPYGUGFq2oVLbh6DISw==}
@@ -6630,6 +6655,10 @@ snapshots:
   '@vueuse/shared@15.0.0(vue@3.5.45(typescript@6.0.3))':
     dependencies:
       vue: 3.5.45(typescript@6.0.3)
+
+  '@xcvzlabs/env@0.1.2(typescript@6.0.3)':
+    dependencies:
+      typescript: 6.0.3
 
   '@yuku-core/binding-android-arm64@0.19.0':
     optional: true

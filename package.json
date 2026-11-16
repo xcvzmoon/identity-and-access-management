@@ -18,7 +18,8 @@
     "test:verbose": "vp test --reporter=verbose",
     "apps:api": "vp -C apps/api run",
     "apps:web": "vp -C apps/web run",
-    "packages:database": "vp -C packages/database run"
+    "packages:database": "vp -C packages/database run",
+    "packages:shared": "vp -C packages/shared run"
   },
   "devDependencies": {
     "@types/node": "catalog:",

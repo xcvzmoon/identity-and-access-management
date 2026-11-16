@@ -22,6 +22,8 @@ catalogs:
   database:
     drizzle-kit: 1.0.0-rc.5-5935859
     drizzle-orm: 1.0.0-rc.5-5935859
+  shared:
+    '@xcvzlabs/env': 0.1.2
   web:
     '@golar/vue': 0.1.11
     '@nuxt/image': 2.2.1
