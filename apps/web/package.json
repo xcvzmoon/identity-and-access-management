@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
+    "cleanup": "nuxt cleanup",
     "dev": "nuxt dev --no-tui",
     "generate": "nuxt generate",
     "preview": "nuxt preview",

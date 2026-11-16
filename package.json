@@ -10,6 +10,7 @@
     "lint": "vp lint",
     "check": "vp check",
     "typecheck": "tsc && vp run --recursive typecheck",
+    "refresh": "vpx scripts/refresh.ts",
     "release": "genbumppush",
     "prepare": "vp config --no-agent",
     "test": "vp test",
@@ -19,8 +20,10 @@
     "apps:web": "vp -C apps/web run"
   },
   "devDependencies": {
-    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "consola": "catalog:",
     "genbumppush": "catalog:",
+    "typescript": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {

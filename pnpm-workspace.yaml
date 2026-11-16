@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - scripts/*
   - tools/*
 
 catalogMode: strict
@@ -8,6 +9,7 @@ catalogMode: strict
 catalog:
   '@types/node': 26.6.6
   better-auth: 1.7.25
+  consola: ^3.4.2
   genbumppush: 0.0.10
   typescript: 6.0.3
   vite: npm:@voidzero-dev/vite-plus-core@1.6.0
