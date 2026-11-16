@@ -3,7 +3,7 @@ packages:
   - packages/*
   - tools/*
 
-catalogMode: prefer
+catalogMode: strict
 
 catalog:
   '@types/node': 26.6.6
@@ -11,6 +11,11 @@ catalog:
   typescript: 6.0.3
   vite: npm:@voidzero-dev/vite-plus-core@1.6.0
   vite-plus: 1.6.0
+
+catalogs:
+  api:
+    nitro: 3.0.261103-rc
+    rolldown: 1.2.19
 
 overrides:
   vite@*: 'catalog:'
@@ -20,3 +25,6 @@ peerDependencyRules:
     - vite
   allowedVersions:
     vite: '*'
+
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,22 @@
+{
+  "name": "api",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nitro build",
+    "dev": "nitro dev --port 3000",
+    "preview": "nitro preview --port 3000",
+    "serve": "nitro serve --port 3000",
+    "fetch": "nitro fetch",
+    "curl": "nitro curl",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "nitro": "catalog:api"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rolldown": "catalog:api",
+    "typescript": "catalog:"
+  }
+}
