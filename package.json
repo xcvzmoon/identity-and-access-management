@@ -17,7 +17,8 @@
     "test:watch": "vp test --watch",
     "test:verbose": "vp test --reporter=verbose",
     "apps:api": "vp -C apps/api run",
-    "apps:web": "vp -C apps/web run"
+    "apps:web": "vp -C apps/web run",
+    "packages:database": "vp -C packages/database run"
   },
   "devDependencies": {
     "@types/node": "catalog:",
