@@ -5,11 +5,15 @@ import path from 'node:path';
 
 const rootDirectory = path.resolve(import.meta.dirname, '..');
 
-function runStep(message: string, arguments_: readonly string[]): void {
+function runStep(
+  message: string,
+  arguments_: readonly string[],
+  stdio: 'pipe' | 'inherit' = 'pipe',
+): void {
   consola.info(message);
   execFileSync('vp', arguments_, {
     cwd: rootDirectory,
-    stdio: 'pipe',
+    stdio,
   });
 }
 
@@ -36,10 +40,9 @@ function refresh(): void {
   rmSync(path.resolve(rootDirectory, 'pnpm-lock.yaml'), { force: true });
   runStep('Installing dependencies', ['install', '--no-frozen-lockfile']);
   runStep('Cleaning Nuxt', ['run', '--no-cache', '--filter', 'web', 'cleanup']);
-  runStep('Building apps/api', ['run', '--no-cache', '--filter', 'api', 'build']);
-  runStep('Building apps/web', ['run', '--no-cache', '--filter', 'web', 'build']);
+  runStep('Building workspaces', ['run', '--no-cache', 'build'], 'inherit');
   runStep('Checking code', ['run', '--no-cache', 'check']);
-  runStep('Typechecking workspaces', ['run', '--no-cache', 'typecheck']);
+  runStep('Typechecking root and workspaces', ['run', '--no-cache', 'typecheck'], 'inherit');
   runStep('Running tests', ['run', '--no-cache', 'test']);
   consola.success('Refresh complete');
 }

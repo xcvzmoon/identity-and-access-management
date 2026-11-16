@@ -5,11 +5,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "vp run --recursive build",
+    "build": "vpx scripts/build.ts",
     "fmt": "vp fmt",
     "lint": "vp lint",
     "check": "vp check",
-    "typecheck": "tsc && vp run --recursive typecheck",
+    "typecheck": "vpx scripts/typecheck.ts",
     "refresh": "vpx scripts/refresh.ts",
     "release": "genbumppush",
     "prepare": "vp config --no-agent",
