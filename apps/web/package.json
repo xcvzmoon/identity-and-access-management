@@ -1,0 +1,22 @@
+{
+  "name": "web",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "nuxt": "catalog:web",
+    "typescript": "catalog:",
+    "vue": "catalog:web",
+    "vue-router": "catalog:web"
+  },
+  "devDependencies": {
+    "vue-tsc": "catalog:web"
+  }
+}
