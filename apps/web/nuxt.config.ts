@@ -10,4 +10,7 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
   modules: ['@nuxt/image', '@nuxt/ui', '@vueuse/nuxt/module'],
+  colorMode: {
+    preference: 'dark',
+  },
 });

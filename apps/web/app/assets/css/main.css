@@ -1,2 +1,12 @@
 @import 'tailwindcss';
 @import '@nuxt/ui';
+
+@theme {
+  --font-sans: 'Public Sans', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply h-svh antialiased;
+  }
+}
