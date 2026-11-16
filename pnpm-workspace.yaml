@@ -18,6 +18,7 @@ catalogs:
     nitro: 3.0.261103-rc
     rolldown: 1.2.19
   web:
+    '@golar/vue': 0.1.11
     '@nuxt/image': 2.2.1
     '@nuxt/ui': 4.12.0
     '@nuxtjs/better-auth': 0.3.17
@@ -39,6 +40,7 @@ catalogs:
     '@tiptap/suggestion': 3.34.0
     '@tiptap/vue-3': 3.34.0
     '@vueuse/nuxt': 15.0.0
+    golar: 0.1.11
     nuxt: npm:nuxt-nightly@5.0.0-2611150147-d897f4c
     tailwindcss: 4.3.5
     vue: 3.5.45

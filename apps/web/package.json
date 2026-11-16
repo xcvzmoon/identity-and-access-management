@@ -39,6 +39,8 @@
     "vue-router": "catalog:web"
   },
   "devDependencies": {
+    "@golar/vue": "catalog:web",
+    "golar": "catalog:web",
     "vue-tsc": "catalog:web"
   }
 }

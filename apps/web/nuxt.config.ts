@@ -7,6 +7,11 @@ export default defineNuxtConfig({
   typescript: {
     typeCheck: true,
     strict: true,
+    appTsConfig: {
+      compilerOptions: {
+        rootDir: import.meta.dirname,
+      },
+    },
   },
   css: ['~/assets/css/main.css'],
   modules: ['@nuxt/image', '@nuxt/ui', '@nuxtjs/better-auth', '@vueuse/nuxt/module'],
