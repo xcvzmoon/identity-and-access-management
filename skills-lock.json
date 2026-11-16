@@ -295,6 +295,12 @@
       "skillPath": "skills/vue-testing-best-practices/SKILL.md",
       "computedHash": "f4dc766acbf3883e5840669dbc347d519b084f559db6704ea6257b8e2443cdec"
     },
+    "vueuse-functions": {
+      "source": "vueuse/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vueuse-functions/SKILL.md",
+      "computedHash": "898b0286e6c5eefab0d5cf010925d3911b2e127ea776adbf17027e2eca059888"
+    },
     "xcvzmoon-code-conventions": {
       "source": "xcvzmoon/skills",
       "sourceType": "github",
