@@ -1,189 +1,200 @@
 # Identity and Access Management
 
-`@iam/auth` owns Better Auth configuration and exposes the shared `useAuth()`
-server. The Nitro API mounts its endpoints and enforces sessions in middleware.
-Nuxt forwards sign-in, sign-up, and sign-out requests to Better Auth and updates
-the web session in the same response.
-Nuxt Auth Utils provides the web session. Nuxt verifies the Better Auth session
-before rendering or refreshing the web session, forwards renewed API cookies,
-and seals only the user's ID, name, and email. Better Auth remains responsible
-for credentials and session revocation.
+This workspace provides email and password sign-up, sign-in, account pages, and
+sign-out. PostgreSQL stores identities and sessions. Nuxt handles the browser
+experience, and the Nitro API provides the authentication and authorization
+boundary for application requests.
+
+## Workspace map
+
+| Workspace                                       | Responsibility                                                                      |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [Web app](apps/web/README.md)                   | Account pages, same-origin form endpoints, and the sealed Nuxt session              |
+| [API](apps/api/README.md)                       | Better Auth HTTP routes, trusted origins, CORS, and session checks for API requests |
+| [Auth package](packages/auth/README.md)         | Better Auth server configuration, credential policy, and session lifecycle          |
+| [Database package](packages/database/README.md) | PostgreSQL connection, schema, relations, and migrations                            |
+| [Shared package](packages/shared/README.md)     | Schema-derived contracts and environment validation                                 |
+
+```mermaid
+flowchart LR
+    Browser["Browser"]
+    Web["Nuxt web app"]
+    API["Nitro API"]
+    Auth["Better Auth server"]
+    DB["PostgreSQL"]
+
+    Browser -->|"Pages and same-origin auth requests"| Web
+    Browser -->|"Credentialed application API requests"| API
+    Web -->|"Credential exchange and session verification"| API
+    API -->|"Auth handler and session checks"| Auth
+    Auth -->|"Identities, sessions, and rate limits"| DB
+```
+
+Start with the workspace that owns the behavior you want to change. The [API
+README](apps/api/README.md) explains request authorization, the [web
+README](apps/web/README.md) explains browser and SSR flows, and the [auth
+README](packages/auth/README.md) explains the Better Auth policies that both
+applications rely on.
 
 ## Local setup
 
-Run `vp install`, then `vp run build` to build the workspace packages and apps.
-Run `vp run create-env` to create local `.env` files from these examples:
+Install Vite+ and OpenSSL, then make an existing PostgreSQL server reachable
+from the host. Run the commands below from the repository root. The repository
+pins Node.js, pnpm, and dependency versions in its manifests.
 
-- `packages/auth/.env.example`
-- `apps/web/.env.example`
-- `packages/database/.env.example`
+```sh
+vp install
+vp run build
+vp run create-env
+vp run packages:database migrate
+```
 
-The script uses `openssl rand -base64 32` to generate separate values for
-`AUTH_SECRET` and `NUXT_APP_SECRET` when it creates their files. It keeps any
-existing configured `.env` files. Keep each secret stable across restarts and replicas.
+The workspace build prepares the shared utilities before building the database,
+then builds the shared contracts, auth package, and apps. Use the full build on
+a fresh checkout. After a change to an internal package, rebuild consumers
+before relying on a standalone app bundle.
 
-In a terminal, `vp run create-env` asks for your local PostgreSQL connection
-details when `packages/database/.env` is missing or still matches the example.
-It hides the password as you type. Noninteractive runs copy the database
-example, and a later interactive run can fill it in. Quote any manually edited
+| Local file                                         | Values                                                   |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| [auth example](packages/auth/.env.example)         | API and trusted web origins, plus the Better Auth secret |
+| [web example](apps/web/.env.example)               | Browser API origin and the Nuxt session secret           |
+| [database example](packages/database/.env.example) | Host, port, database, role, password, and optional TLS   |
+
+`vp run create-env` creates missing `.env` files and generates the two secrets
+independently with `openssl rand -base64 32`. In a terminal it prompts for
+PostgreSQL details, including a hidden password, when the database file is
+missing or still matches its example. A noninteractive run can leave database
+placeholders for a later interactive run. Existing configured files are
+preserved by default. Keep the `.env` files local and quote manually edited
 dotenv values with double quotes.
 
-Run `vp run create-env --force` to recreate the files from the examples. This
-generates new auth and web secrets and prompts again for PostgreSQL settings in
-a terminal. A noninteractive forced run replaces the database settings with
-the example values. Restarting the apps with new secrets invalidates existing
-sessions.
+Use `vp run create-env --force` to recreate the files and rotate both secrets.
+It prompts again for database credentials in a terminal. A noninteractive
+forced run restores the database example values. Restarting with replacement
+secrets invalidates prior sessions.
 
-Run the migration against your local PostgreSQL server. If `DB_DATABASE` is
-missing, the command creates it when your PostgreSQL role has `CREATEDB`, then
-applies the migrations.
+The migration command applies pending SQL and can create the configured
+database when it is missing. See [database migrations](packages/database/README.md#schema-and-migrations)
+for privileges and the database bootstrap behavior.
 
-```sh
-vp -C packages/database run migrate
-```
-
-Start each app in its own terminal:
+Start the API and web app in separate terminals.
 
 ```sh
-vp -C apps/api run dev
-vp -C apps/web run dev
+vp run apps:api dev
+vp run apps:web dev
 ```
 
-Open `http://localhost:5173/signup`. The API listens on port 3000. The web app
-lets users sign up, sign in, view their account, and sign out. Passwords must
-contain 12 to 128 characters. API middleware requires a valid session outside the
-authentication endpoints.
+Open `http://localhost:5173/signup`. The web app uses port 5173 and the API
+uses port 3000. Use `localhost` consistently in the browser URLs and auth
+configuration so both apps receive the appropriate cookies.
 
-## Docker
+## Containers
 
-The script defaults to Docker and targets Docker Desktop when its
-`desktop-linux` context exists. Otherwise it uses the configured Docker context,
-or the `default` context if the configured context is `kiri`.
-When both CLIs are installed, an interactive terminal offers to use Kiri. Press
-Enter to keep Docker. When only Kiri is available, the script uses it directly.
-In CI and other noninteractive sessions, Docker is the default when available.
-Use `--container docker` or `--container kiri` to select a CLI directly.
-On macOS, the script also looks for Kiri in `~/.kiri/bin` and `/Applications`.
-
-Use the same workspace `.env` files listed above and apply migrations to your
-local PostgreSQL instance before starting the API.
+Use the same local environment files and run migrations on the host first.
+Compose builds the two apps and connects the API to your existing PostgreSQL
+server through the host gateway.
 
 ```sh
 vp run docker --help
 vp run docker up
-vp run docker --container kiri --app api build
+vp run docker ps
 vp run docker --app api logs --follow
 vp run docker --app web stop
 vp run docker down
 ```
 
-Omit `--app` to target both services. `up` builds the selected images and runs
-them in the background. The API and web app are available at
-`http://localhost:3000` and `http://localhost:5173`.
+`up` builds and starts the selected services in the background. Omit `--app`
+or pass `--app all` to target both apps. With an app selected, `down` stops and
+removes that service's container. The API and web ports are published on
+loopback.
 
-The API reads the PostgreSQL credentials and port from `packages/database/.env`.
-It uses `host.docker.internal` as the PostgreSQL host. Set `DOCKER_DB_HOST` in
-your shell or the root `.env` to use a different address. PostgreSQL must accept
-TCP connections from Docker's host gateway.
+| Option               | Use                                                                                                                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--container docker` | Use Docker. The wrapper targets Docker Desktop when its `desktop-linux` context exists. Otherwise it uses the configured Docker context, falling back to `default` when the selected context is `kiri`. |
+| `--container kiri`   | Use Kiri. On macOS the wrapper also checks `~/.kiri/bin` and the installed app bundle.                                                                                                                  |
+| Omit `--container`   | With both CLIs installed, a terminal asks whether to use Kiri. Enter selects Docker. A noninteractive run defaults to Docker where available. If only Kiri is available, the wrapper uses it.           |
 
-The web container uses `http://api:3000` for server-side requests. If you run the
-API directly on your host, use
-`DOCKER_WEB_API_URL="http://host.docker.internal:3000" vp run docker --app web up`.
-The browser uses `NUXT_PUBLIC_API_URL` from `apps/web/.env`.
+```sh
+vp run docker --container kiri --app api build
+vp run docker --container docker up
+```
 
-The API image defaults to `APP_ENV="production"`. For a standalone container,
-pass the auth and database settings as runtime environment variables. Keep
-`APP_ENV="production"` and use a database host address the container can reach.
+The API container reads the auth and database workspace files. It uses
+`host.docker.internal` for PostgreSQL. Set `DOCKER_DB_HOST` in your shell or
+the root `.env` when the container needs a different address. The host
+PostgreSQL instance must accept connections from that gateway.
+
+The web container uses `http://api:3000` for server requests and
+`NUXT_PUBLIC_API_URL` for browser requests. Set `DOCKER_WEB_API_URL` when the
+API is hosted elsewhere. Use the host gateway when running only the web app
+in a container and the API on the host.
+
+```sh
+DOCKER_WEB_API_URL="http://host.docker.internal:3000" \
+  vp run docker --app web up
+```
 
 ## Deployment
 
-Set `APP_ENV="production"` and the server's `AUTH_SECRET`, `AUTH_URL`,
-`AUTH_WEB_ORIGIN`, and `DB_*` environment variables. `AUTH_URL` is the public API
-origin; `AUTH_WEB_ORIGIN` is the public web origin. Use HTTPS in production.
-Auth logs omit query parameters and error objects. Protected API routes return
-503 when session storage is unavailable.
+Build the workspaces with `vp run build`. The Node entry point for each app is
+`.output/server/index.mjs` in its workspace build output. For Docker, the
+images already run this entry point. Supply credentials as environment
+variables at runtime, including `APP_ENV="production"` for the API. Apply
+migrations before deploying the API.
 
-Set `NUXT_PUBLIC_API_URL` to the browser-accessible API origin
-(`http://localhost:3000` locally). Set `NUXT_API_URL` if Nuxt needs a separate
-server-side API origin. Sign-in, sign-up, and sign-out go through Nuxt.
-During SSR, Nuxt Auth Utils reads its sealed session and checks it with the API.
-Set `NUXT_APP_SECRET` to seal web sessions in production. Use
-`NUXT_SESSION_COOKIE_SECURE="false"` only when testing a production build over
-local HTTP.
-
-For SSR, the browser must send the session cookie to both the web and API hosts.
-Localhost ports 3000 and 5173 share a cookie host. Deployments on different
-subdomains require a deliberately shared cookie domain in the API auth settings;
-otherwise the API's host-only cookie cannot reach the web server for SSR. Both
-hosts must use HTTPS in production. The API ingress must supply trustworthy
-client IP headers for rate limiting.
-Apply migrations before starting the new API. Start each built app from its own
-workspace directory with `node .output/server/index.mjs`.
-
-Session cookies are HttpOnly and SameSite=Lax, with Secure enabled for HTTPS.
-Rate limits are stored in PostgreSQL and survive API restarts. Email verification,
-password recovery, and OAuth providers are not configured; they require a mail
-service or provider credentials.
-
-## Authentication schema
-
-Auth tables live in PostgreSQL's `iam` schema. `generateUuid()` supplies UUIDv7
-IDs through Drizzle; raw SQL inserts must supply their own IDs. Better Auth leaves
-ID generation to Drizzle. `generateTimestamps()` supplies the standard audit
-timestamps, and expiry fields use `TIMESTAMP_CONFIG`. The migration
-role must be able to create schemas and tables. Apply migrations before deploying
-the API; the runtime role needs access to `iam` and its tables. The migration
-runner tracks migrations in its separate `drizzle` schema.
-
-The tables and Relations v2 definitions originated from `auth@1.7.25` and were
-adapted to the database package's helpers. Tables live in
-`packages/database/src/schema/auth.ts`; relations live in
-`packages/database/src/relations.ts`. Rebuild the database package after changes.
-
-Generate and review the migration with:
-
-```sh
-vp -C packages/database run generate --output json
-```
-
-This initial migration replaces the uncommitted migration from the authentication
-setup. It is for a database where that earlier migration has not been applied.
-Recreate disposable development databases that used it. An existing shared
-database needs a separate migration that preserves its data and migration history.
+- Set `AUTH_URL` and `AUTH_WEB_ORIGIN` to the public HTTPS origins. Configure
+  the ingress to provide trustworthy client IP information for rate limits.
+  [API deployment configuration](apps/api/README.md#configuration)
+- Set `NUXT_PUBLIC_API_URL` to the browser API origin and `NUXT_API_URL` when
+  Nuxt servers need a separate upstream address.
+  [Web runtime configuration](apps/web/README.md#runtime-configuration)
+- Keep the auth and web secrets stable across restarts and consistent across
+  replicas of the component that uses each secret.
+- Ensure the browser can send the API session cookie on requests to the web
+  host for SSR. Localhost ports share a cookie host. Separate subdomains need
+  an intentional cookie and origin configuration. Keep secure cookies enabled
+  on HTTPS deployments. [Web cookie requirements](apps/web/README.md#cookies-and-origins)
 
 ## Validation
 
 ```sh
-vp check
-vp test
+vp run check
+vp run test
 vp run typecheck
 vp run build
 ```
 
-The PostgreSQL integration suite runs only when `AUTH_TEST_DB_PORT` is set. Use a
-migrated, disposable PostgreSQL database named `iam`, owned by `iam`, listening on
-`127.0.0.1` at that port. The test connection uses password `disposable` (or local
-trust authentication). It creates and deletes test identities and rate-limit
-records, so never point it at a shared database.
+Use `vp run apps:api …`, `vp run apps:web …`, `vp run packages:database …`, or
+`vp run packages:shared …` for individual workspace scripts. The auth package
+uses `vp run '@iam/auth#build'` and similar Vite+ workspace selectors.
+
+### Integration tests
+
+Use a migrated, disposable PostgreSQL database named `iam`, owned by the
+`iam` role, on `127.0.0.1`. The tests use password `disposable` or a local
+fixture with trust authentication. They create and delete test identities and
+rate-limit records. Set `AUTH_TEST_DB_PORT` to the fixture port.
+
+These commands use a fixture listening on port 55439.
 
 ```sh
-AUTH_TEST_DB_PORT=55439 vp test apps/api/tests/auth.integration.test.ts
+APP_ENV="testing" DB_HOST="127.0.0.1" DB_PORT="55439" DB_USER="iam" \
+  DB_PASSWORD="disposable" DB_DATABASE="iam" DB_SSL="false" \
+  vp run packages:database migrate
+
+AUTH_TEST_DB_PORT="55439" vp run test apps/api/tests
 ```
 
-It covers registration, hashed credentials, session reads and revocation,
-sign-in, invalid credentials, untrusted origins, database rate limits, generated
-relations.
+The API tests run in-process. The [web SSR tests](apps/web/README.md#validation)
+also require running builds of both apps against the fixture. Tests that depend
+on the fixture are skipped in the default run.
 
-API middleware protects `/api/**` by default. Only `/api/auth` and its child paths
-are public within that prefix. Authenticated writes must include a trusted Origin
-header. Middleware validates the session once per request and forwards renewed session
-cookies. Missing or revoked sessions return 401; auth
-storage failures return 503. Routes outside `/api` are unaffected.
+## Common setup failures
 
-The SSR integration tests also require built web and API servers running on ports
-5173 and 3000 against that disposable database. They verify personalized HTML,
-server redirects, cookie renewal, token omission from the payload, and revocation:
-
-```sh
-AUTH_TEST_DB_PORT=55439 AUTH_SSR_TEST_URL=http://localhost:5173 vp test apps/web/tests/ssr.integration.test.ts
-```
+| Symptom                                          | Where to check                                                                                                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PostgreSQL reports `3D000` or a missing database | Check `DB_DATABASE` and run the [migration command](packages/database/README.md#schema-and-migrations) with a role that can create the database if necessary. |
+| API container exits on startup                   | Read `vp run docker --app api logs` and check the auth and database files. A standalone API image expects runtime variables and defaults to production mode.  |
+| Kiri build cannot start                          | Check that the Kiri engine is running. If its VM was manually stopped, start it in Kiri and rerun the command.                                                |
+| Sign-in succeeds but the account page redirects  | Check the [cookie requirements and SSR flow](apps/web/README.md#cookies-and-origins).                                                                         |
+| API returns `401`, `403`, or `503`               | Use the [API response table](apps/api/README.md#authentication-responses) to distinguish a missing session, an origin mismatch, and an auth service failure.  |

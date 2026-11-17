@@ -1,194 +1,121 @@
-# Shared utilities
+# @iam/shared
 
-## Environment configuration
+This package provides schema-derived contracts and environment validation.
+Its two application entry points keep server configuration separate from
+schemas that can be reused by the web app.
 
-Use `useEnv()` on the server to validate configuration once at startup. It reads
-`APP_ENV` automatically and accepts `local`, `testing`, `staging`, or `production`.
-Process variables take precedence. If `process.env` has no `APP_ENV`, the helper
-reads it from the explicit workspace's `.env`. Missing, empty, or invalid values
-fail validation; `NODE_ENV` is never used as a fallback.
+| Import              | Public API                                                                                   |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| `@iam/shared/types` | Valibot select, insert, and update schemas and inferred TypeScript types for the auth tables |
+| `@iam/shared/utils` | `useEnv()` and `booleanSchema` for validating configuration                                  |
 
-Local mode requires `workspacePath` and reads only that directory's `.env`.
-Process variables override file values. Relative paths resolve from the working
-directory; absolute paths work independently of it. A missing file uses process
-variables alone, without searching parent or sibling directories.
+## Auth data contracts
 
-Testing, staging, and production use only process variables for application
-configuration. When `APP_ENV` is supplied by the process, these modes never read
-files. If it is absent and `workspacePath` is supplied, the helper reads that
-workspace's `.env` to discover the mode, but ignores its configuration values
-unless the selected mode is local. In every environment, an explicit `source` replaces
-both file values and process variables. It must include its own valid `APP_ENV`;
-the helper does not fall back to the process environment, even for an empty source.
+The [type modules](src/types/index.ts) derive their Valibot schemas from the
+[database schema](../database/README.md#authentication-tables). Each group
+exports `select…Schema`, `input…Schema`, and `update…Schema`, along with the
+inferred select, insert, and update types.
 
-The helper returns schema-inferred values without mutating `process.env`.
-Validation failures and file read errors other than a missing file are thrown.
-Keep validation errors and secrets out of API responses and browser code.
-Workspace selection is not a filesystem or process security boundary.
+| Table contract | Read type      | Schema examples                                                                   |
+| -------------- | -------------- | --------------------------------------------------------------------------------- |
+| User           | `User`         | `selectUserSchema`, `inputUserSchema`, `updateUserSchema`                         |
+| Account        | `Account`      | `selectAccountSchema`, `inputAccountSchema`, `updateAccountSchema`                |
+| Session        | `Session`      | `selectSessionSchema`, `inputSessionSchema`, `updateSessionSchema`                |
+| Verification   | `Verification` | `selectVerificationSchema`, `inputVerificationSchema`, `updateVerificationSchema` |
+| Rate limit     | `RateLimit`    | `selectRateLimitSchema`, `inputRateLimitSchema`, `updateRateLimitSchema`          |
 
-### Shared schema
-
-Define one schema per app and use it in every deployment. These examples use
-Valibot; install it in the consuming workspace if it is not already available.
-Create `env-schema.ts` in your server code:
+The row schemas include database fields. Define a public shape at a network
+boundary and select the fields the consumer needs. For example, the web
+session uses the following projection.
 
 ```ts
+import { selectUserSchema } from '@iam/shared/types';
 import * as v from 'valibot';
 
-export const envSchema = {
-  nodeEnv: v.picklist(['development', 'test', 'production']),
-  api: {
+const sessionUserSchema = v.pick(selectUserSchema, ['id', 'name', 'email']);
+type SessionUser = v.InferOutput<typeof sessionUserSchema>;
+```
+
+Use the projected shape before serializing user data. Account, verification,
+and session rows can contain credential or token fields.
+
+## Environment validation
+
+[`useEnv()`](src/utils/env.ts) validates configuration against a schema and
+returns inferred types. The helper reads files and process variables without
+mutating `process.env`. Call it from server initialization so callers receive
+validated values.
+
+| Source or mode                        | Values used                                                                                                                                                                                  |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Explicit `source`                     | Uses only the supplied object. The object must include a valid `APP_ENV`. This is useful when testing independently of local files and process variables.                                    |
+| `local`                               | Loads `.env` from the supplied workspace and lets process variables win. Local mode requires `workspacePath`. A missing file leaves process variables as the only source.                    |
+| `testing`, `staging`, or `production` | Validates process variables. When the process omits `APP_ENV`, the helper may inspect the explicit workspace file to discover the mode. Only local mode uses that file for the other values. |
+
+`APP_ENV` selects the mode. A present process value takes precedence over
+the file, including an empty or invalid value. Missing or invalid modes and
+invalid settings throw validation errors. Relative workspace paths resolve
+from the working directory, and absolute paths work regardless of it. File
+lookup stays within the explicit workspace path.
+
+[`booleanSchema`](src/utils/schema.ts) accepts the strings `"true"` and
+`"false"` and returns a boolean. A missing value defaults to `false`.
+
+### Example configuration
+
+A consuming service can declare its own Valibot schema. A nested `worker`
+group maps fields such as `url` and `enabled` to `WORKER_URL` and
+`WORKER_ENABLED`.
+
+```ts
+import { booleanSchema, useEnv } from '@iam/shared/utils';
+import * as v from 'valibot';
+
+const schema = {
+  worker: {
     url: v.pipe(v.string(), v.url()),
-    key: v.string(),
+    enabled: booleanSchema,
   },
 };
-```
-
-The keys above read `NODE_ENV`, `API_URL`, and `API_KEY`. Their validated values
-are available as `env.nodeEnv`, `env.api.url`, and `env.api.key`.
-
-### Local
-
-Create `apps/api/.env` with local configuration:
-
-```dotenv
-APP_ENV=local
-NODE_ENV=development
-API_URL=http://localhost:3000
-API_KEY=local-example-key
-```
-
-When launching from the repository root, initialize server configuration:
-
-```ts
-import { useEnv } from '@iam/shared/utils';
-import { envSchema } from './env-schema.ts';
-
-export const env = useEnv({
-  workspacePath: 'apps/api',
-  schema: envSchema,
-});
-```
-
-Commit `apps/api/.env.example` with the required keys and safe placeholders.
-Keep the actual `.env` ignored by Git. Do not commit credentials.
-
-### Testing
-
-Supply explicit values so developer shell variables and local files cannot affect
-unit tests:
-
-```ts
-import { useEnv } from '@iam/shared/utils';
-import { envSchema } from './env-schema.ts';
 
 const env = useEnv({
-  schema: envSchema,
-  source: {
-    APP_ENV: 'testing',
-    NODE_ENV: 'test',
-    API_URL: 'http://localhost:4000',
-    API_KEY: 'test-example-key',
-  },
+  workspacePath: import.meta.dirname,
+  schema,
 });
 ```
 
-For integration tests, omit `source` and set `APP_ENV=testing` alongside the other
-variables injected by the test runner or CI. Use a separate, disposable database and test credentials.
-
-### Staging
-
-Configure these values in the staging deployment platform:
+For local development, place these values in `.env` next to the configuration
+module.
 
 ```dotenv
-APP_ENV=staging
-NODE_ENV=production
-API_URL=https://api.staging.example.com
-API_KEY=<injected-staging-secret>
+APP_ENV="local"
+WORKER_URL="http://localhost:4000"
+WORKER_ENABLED="true"
 ```
 
-Read the injected values without loading files:
-
-```ts
-import { useEnv } from '@iam/shared/utils';
-import { envSchema } from './env-schema.ts';
-
-export const env = useEnv({
-  schema: envSchema,
-});
-```
-
-Use separate staging credentials and services. Run the production build so staging
-exercises the same runtime behavior as production.
-
-### Production
-
-Configure production values through the deployment platform or secret manager:
-
-```dotenv
-APP_ENV=production
-NODE_ENV=production
-API_URL=https://api.example.com
-API_KEY=<injected-production-secret>
-```
-
-```ts
-import { useEnv } from '@iam/shared/utils';
-import { envSchema } from './env-schema.ts';
-
-export const env = useEnv({
-  schema: envSchema,
-});
-```
-
-Promote the same server build from staging to production and supply production
-values at runtime. Do not include secret `.env` files in the build artifact.
-
-### Selecting the deployment at startup
-
-`APP_ENV` identifies the deployment. `NODE_ENV` controls runtime and framework
-behavior. Staging and production normally both use `NODE_ENV=production`.
-The helper does not infer one from the other or change either variable.
-
-Use one startup module across deployments. Local mode can discover `APP_ENV`
-from the workspace file; staging and production should inject it through the
-deployment platform so file loading is skipped:
-
-```ts
-import { useEnv } from '@iam/shared/utils';
-import { envSchema } from './env-schema.ts';
-
-export const env = useEnv({
-  workspacePath: 'apps/api',
-  schema: envSchema,
-});
-```
-
-A present `process.env.APP_ENV` always wins over the file, including an empty or
-invalid value, which causes validation to fail. An explicit `source` must contain
-its own `APP_ENV` and never falls back to the workspace file. Reading values from
-a file does not add them to `process.env`; the helper does not change `APP_ENV`
-or `NODE_ENV` for other libraries or frameworks.
-
-Import this configuration module from server code so validation happens once
-before serving requests. Pass only validated values to application services.
+For unit tests, pass an explicit source with `APP_ENV: 'testing'`. For
+deployed services, supply the variables through the process environment.
+Keep validation errors and secret values out of browser responses.
 
 ## Development
 
-Install dependencies:
+The database package consumes `@iam/shared/utils`, and the shared type
+schemas consume `@iam/database/schema`. The root build handles the order
+by building shared utilities first, then database, then the full shared
+package and its consumers.
 
 ```sh
-vp install
+vp run build
 ```
 
-Run the unit tests:
+After prerequisites are built, target this package with the root script
+alias.
 
 ```sh
-vp test
+vp run packages:shared build
+vp run packages:shared typecheck
+vp run packages:shared test
 ```
 
-Build the library:
-
-```sh
-vp pack
-```
+The [environment tests](tests/env.test.ts) cover file lookup, process
+precedence, explicit sources, environment inference, and validation errors.
