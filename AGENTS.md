@@ -96,15 +96,10 @@ This is a [Nitro](https://nitro.build) v3 server project (built on H3 v2). Nitro
 - Do not add ordinary comments except the required reasons above lint directives. Preserve lint directives, `SAFETY:` comments, and accurate JSDoc.
 - Apply the unslop skill when writing documentation or JSDoc.
 
-## Git and pull requests
-
-- For PRs, use the repository template, antfu-create-pr, and unslop. Assign the PR to me, apply appropriate labels, and omit model attribution.
-- Begin PR descriptions with two or three complete sentences explaining the problem, resulting behavior, and why the change is needed.
-
 ## Skills
 
 - Project skills live in `.agents/skills/` and are tracked in `skills-lock.json`. Use applicable skills.
-- Use [commit](.agents/skills/commit/SKILL.md) for commits.
+- Use [commit](.agents/skills/commit/SKILL.md) for commits and [pull-request](.agents/skills/pull-request/SKILL.md) for pull requests and merge requests.
 - Treat vendored skills as tooling. Do not modify them as part of product work.
 
 ## Persistent knowledge
