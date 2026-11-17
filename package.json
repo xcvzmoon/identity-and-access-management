@@ -11,6 +11,7 @@
     "check": "vp check",
     "typecheck": "vpx scripts/typecheck.ts",
     "refresh": "vpx scripts/refresh.ts",
+    "create-env": "vpx scripts/create-env.ts",
     "release": "genbumppush",
     "prepare": "vp config --no-agent",
     "test": "vp test",

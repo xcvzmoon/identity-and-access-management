@@ -12,20 +12,27 @@ for credentials and session revocation.
 ## Local setup
 
 Run `vp install`, then `vp run build` to build the workspace packages and apps.
-Copy these example files to `.env` in the same directories:
+Run `vp run create-env` to create local `.env` files from these examples:
 
 - `packages/auth/.env.example`
 - `apps/web/.env.example`
 - `packages/database/.env.example`
 
-Set the database connection fields only in `packages/database/.env`. The API
-gets the shared client through `useDatabase()`; it does not load database
-credentials from its own workspace.
+The script uses `openssl rand -base64 32` to generate separate values for
+`AUTH_SECRET` and `NUXT_APP_SECRET` when it creates their files. It keeps any
+existing configured `.env` files. Keep each secret stable across restarts and replicas.
 
-Set auth configuration in `packages/auth/.env`. Generate `AUTH_SECRET` with
-`openssl rand -base64 32`. Keep it stable across API restarts and replicas. The
-web app has its own `NUXT_APP_SECRET` for Nuxt Auth Utils. Generate it separately
-with `openssl rand -base64 32` and keep it stable across web replicas. All dotenv values must be quoted.
+In a terminal, `vp run create-env` asks for your local PostgreSQL connection
+details when `packages/database/.env` is missing or still matches the example.
+It hides the password as you type. Noninteractive runs copy the database
+example, and a later interactive run can fill it in. Quote any manually edited
+dotenv values with double quotes.
+
+Run `vp run create-env --force` to recreate the files from the examples. This
+generates new auth and web secrets and prompts again for PostgreSQL settings in
+a terminal. A noninteractive forced run replaces the database settings with
+the example values. Restarting the apps with new secrets invalidates existing
+sessions.
 
 Run the migration against your development database:
 
