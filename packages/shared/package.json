@@ -4,6 +4,10 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch",
@@ -18,10 +22,7 @@
     "vite-plus": "catalog:"
   },
   "dependencies": {
-    "@xcvzlabs/env": "catalog:shared"
-  },
-  "exports": {
-    ".": "./dist/index.mjs",
-    "./package.json": "./package.json"
+    "@xcvzlabs/env": "catalog:shared",
+    "valibot": "catalog:"
   }
 }

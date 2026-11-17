@@ -4,25 +4,32 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch",
-    "test": "vp test",
-    "check": "vp check",
     "typecheck": "tsc",
-    "prepublishOnly": "vp run build"
+    "check": "drizzle-kit check",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "push": "drizzle-kit push",
+    "pull": "drizzle-kit pull",
+    "studio": "drizzle-kit studio"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "drizzle-kit": "catalog:database",
     "typescript": "catalog:",
     "vite-plus": "catalog:"
   },
   "dependencies": {
-    "drizzle-kit": "catalog:database",
-    "drizzle-orm": "catalog:database"
-  },
-  "exports": {
-    ".": "./dist/index.mjs",
-    "./package.json": "./package.json"
+    "@iam/shared": "workspace:*",
+    "drizzle-orm": "catalog:database",
+    "drizzle-query-logger": "catalog:database",
+    "postgres": "catalog:database",
+    "valibot": "catalog:"
   }
 }
