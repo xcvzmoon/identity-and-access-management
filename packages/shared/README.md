@@ -61,7 +61,7 @@ API_KEY=local-example-key
 When launching from the repository root, initialize server configuration:
 
 ```ts
-import { useEnv } from '@iam/shared';
+import { useEnv } from '@iam/shared/utils';
 import { envSchema } from './env-schema.ts';
 
 export const env = useEnv({
@@ -79,7 +79,7 @@ Supply explicit values so developer shell variables and local files cannot affec
 unit tests:
 
 ```ts
-import { useEnv } from '@iam/shared';
+import { useEnv } from '@iam/shared/utils';
 import { envSchema } from './env-schema.ts';
 
 const env = useEnv({
@@ -110,7 +110,7 @@ API_KEY=<injected-staging-secret>
 Read the injected values without loading files:
 
 ```ts
-import { useEnv } from '@iam/shared';
+import { useEnv } from '@iam/shared/utils';
 import { envSchema } from './env-schema.ts';
 
 export const env = useEnv({
@@ -133,7 +133,7 @@ API_KEY=<injected-production-secret>
 ```
 
 ```ts
-import { useEnv } from '@iam/shared';
+import { useEnv } from '@iam/shared/utils';
 import { envSchema } from './env-schema.ts';
 
 export const env = useEnv({
@@ -155,7 +155,7 @@ from the workspace file; staging and production should inject it through the
 deployment platform so file loading is skipped:
 
 ```ts
-import { useEnv } from '@iam/shared';
+import { useEnv } from '@iam/shared/utils';
 import { envSchema } from './env-schema.ts';
 
 export const env = useEnv({

@@ -55,7 +55,7 @@ function isWorkspacePlan(value: unknown): value is WorkspacePlan {
 export function getWorkspaces(rootDirectory: string, task: 'build' | 'typecheck'): string[] {
   const output = execFileSync(
     'vp',
-    ['run', '--dry-run', '--json', '--filter', '**', '--filter', '!./', task],
+    ['run', '--dry-run', '--parallel', '--json', '--filter', '**', '--filter', '!./', task],
     {
       cwd: rootDirectory,
       encoding: 'utf8',

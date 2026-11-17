@@ -1,4 +1,4 @@
-import { booleanSchema, useEnv } from '@iam/shared';
+import { booleanSchema, useEnv } from '@iam/shared/utils';
 import * as valibot from 'valibot';
 
 const maxPort = 65_535;

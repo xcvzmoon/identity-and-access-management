@@ -7,7 +7,7 @@ import { parseEnv } from 'node:util';
 type EnvSchema = Parameters<typeof defineEnv>[number]['schema'];
 
 type UseEnvOptions<TSchema extends EnvSchema> = DefineEnvOptions<TSchema> & {
-  readonly workspacePath?: string;
+  workspacePath?: string;
 };
 
 function readAppEnvironment(source: EnvSource): 'local' | 'testing' | 'staging' | 'production' {
@@ -63,7 +63,7 @@ function readWorkspaceEnv(workspacePath: string): EnvSource {
  * @example
  * With `APP_ENV=local` in `apps/api/.env`:
  * ```ts
- * import { useEnv } from '@iam/shared';
+ * import { useEnv } from '@iam/shared/utils';
  * import * as v from 'valibot';
  *
  * const env = useEnv({

@@ -61,7 +61,7 @@ SQL to the configured database. Review the SQL and confirm the target before
 applying it. The `push`, `pull`, and `studio` scripts are also available; `push`
 changes the database directly.
 
-Kit configuration uses `@iam/shared`'s `useEnv`. Local mode loads this package's
+Kit configuration uses `@iam/shared/utils`'s `useEnv`. Local mode loads this package's
 `.env`, with process variables taking precedence. For testing, staging, or
 production, supply `APP_ENV` and the `DB_*` fields through process variables.
 

@@ -3,13 +3,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, expect, expectTypeOf, test, vi } from 'vite-plus/test';
-import { useEnv } from '../src/index.ts';
+import { useEnv } from '../src/utils/env.ts';
 
 const filePort = 4321;
 const processPort = 8765;
 const sourcePort = 1234;
 const schema = { iamTestPort: integerEnv };
-const deploymentEnvironments: readonly ('testing' | 'staging' | 'production')[] = [
+const deploymentEnvironments: ('testing' | 'staging' | 'production')[] = [
   'testing',
   'staging',
   'production',
