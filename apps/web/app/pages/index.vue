@@ -1,5 +1,7 @@
+<script setup lang="ts">
+  await navigateTo('/account', { replace: true });
+</script>
+
 <template>
-  <div class="grid h-svh place-items-center p-4">
-    <h1>Welcome to Identity and Access Management</h1>
-  </div>
+  <p role="status">Opening your account...</p>
 </template>

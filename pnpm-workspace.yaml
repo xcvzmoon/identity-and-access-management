@@ -8,6 +8,7 @@ catalogMode: strict
 
 catalog:
   '@better-auth/drizzle-adapter': 1.7.25
+  '@formisch/vue': 1.2.0
   '@types/node': 26.6.6
   better-auth: 1.7.25
   consola: ^3.4.2
@@ -33,7 +34,6 @@ catalogs:
     '@golar/vue': 0.1.11
     '@nuxt/image': 2.2.1
     '@nuxt/ui': 4.12.0
-    '@nuxtjs/better-auth': 0.3.17
     '@tiptap/core': 3.34.0
     '@tiptap/extension-bubble-menu': 3.34.0
     '@tiptap/extension-code': 3.34.0
@@ -67,9 +67,6 @@ peerDependencyRules:
     - vite
   allowedVersions:
     vite: '*'
-
-minimumReleaseAgeExclude:
-  - '@nuxtjs/better-auth@0.3.17'
 
 allowBuilds:
   esbuild: true

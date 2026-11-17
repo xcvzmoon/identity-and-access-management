@@ -13,8 +13,14 @@ export default defineNuxtConfig({
       },
     },
   },
+  devServer: { port: 5173 },
+  runtimeConfig: {
+    public: {
+      apiUrl: 'http://localhost:3000',
+    },
+  },
   css: ['~/assets/css/main.css'],
-  modules: ['@nuxt/image', '@nuxt/ui', '@nuxtjs/better-auth', '@vueuse/nuxt/module'],
+  modules: ['@nuxt/image', '@nuxt/ui', '@vueuse/nuxt/module'],
   colorMode: {
     preference: 'dark',
   },
