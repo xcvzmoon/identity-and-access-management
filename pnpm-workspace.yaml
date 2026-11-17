@@ -7,6 +7,7 @@ packages:
 catalogMode: strict
 
 catalog:
+  '@better-auth/drizzle-adapter': 1.7.25
   '@types/node': 26.6.6
   better-auth: 1.7.25
   consola: ^3.4.2

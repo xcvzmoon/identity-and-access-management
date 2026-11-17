@@ -184,9 +184,15 @@ catalogs:
       specifier: 4.1.1
       version: 4.1.1
   default:
+    '@better-auth/drizzle-adapter':
+      specifier: 1.7.25
+      version: 1.7.25
     '@types/node':
       specifier: 26.6.6
       version: 26.6.6
+    better-auth:
+      specifier: 1.7.25
+      version: 1.7.25
     consola:
       specifier: ^3.4.2
       version: 3.4.2
@@ -323,6 +329,12 @@ importers:
 
   apps/api:
     dependencies:
+      '@iam/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@iam/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       nitro:
         specifier: catalog:api
         version: 3.0.261103-rc
@@ -427,6 +439,34 @@ importers:
       vue-tsc:
         specifier: catalog:web
         version: 3.3.14(typescript@6.0.3)
+
+  packages/auth:
+    dependencies:
+      '@better-auth/drizzle-adapter':
+        specifier: 'catalog:'
+        version: 1.7.25(@better-auth/core@1.7.25(@better-auth/utils@0.5.1)(@better-fetch/fetch@1.3.3)(better-call@1.4.5(zod@4.6.7))(jose@6.2.17)(kysely@0.29.9)(nanostores@1.5.5))(@better-auth/utils@0.5.1)(drizzle-orm@1.0.0-rc.5-5935859(postgres@4.1.1)(valibot@1.5.0(typescript@6.0.3))(zod@4.6.7))
+      '@iam/database':
+        specifier: workspace:*
+        version: link:../database
+      '@iam/shared':
+        specifier: workspace:*
+        version: link:../shared
+      better-auth:
+        specifier: 'catalog:'
+        version: 1.7.25(drizzle-kit@1.0.0-rc.5-5935859)(drizzle-orm@1.0.0-rc.5-5935859(postgres@4.1.1)(valibot@1.5.0(typescript@6.0.3))(zod@4.6.7))(vitest@5.1.0)(vue@3.5.45(typescript@6.0.3))
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.6.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(@volar/typescript@2.4.30(typescript@6.0.3))(@vue/language-core@3.3.14)(esbuild@0.27.7)(jiti@2.7.0)(typescript@6.0.3)(vue-tsc@3.3.14(typescript@6.0.3))
 
   packages/database:
     dependencies:

@@ -12,6 +12,8 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@iam/auth": "workspace:*",
+    "@iam/database": "workspace:*",
     "nitro": "catalog:api"
   },
   "devDependencies": {
