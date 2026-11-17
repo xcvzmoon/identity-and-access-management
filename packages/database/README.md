@@ -19,47 +19,30 @@ requires TLS; it defaults to `false`.
 
 ## Application use
 
-Build the package with `vp run packages:database build`. Add `@iam/database`
-as a workspace dependency to the consuming server package, then create one
-client using the database environment utility:
+The package exports only `schema` and `useDatabase`. Add `@iam/database` as a
+workspace dependency to the consuming server package:
 
 ```ts
-import { createDatabase, useDatabaseEnv } from '@iam/database';
+import { schema, useDatabase } from '@iam/database';
 
-const config = useDatabaseEnv({ workspacePath: 'apps/api' });
-const database = createDatabase(config);
+const database = useDatabase();
+const user = await database.select().from(schema.users).limit(1);
 ```
 
-Reuse this client across requests. Connections open on the first query.
-Close them with `await database.$client.end()` in the server shutdown lifecycle.
-Keep this package in server code because it requires database credentials.
-The [Postgres.js documentation](https://github.com/porsager/postgres#connection)
-describes connection pooling and shutdown.
+`useDatabase()` initializes one pool on its first call and returns the same client
+on later calls. In local mode, configuration comes from `packages/database/.env`,
+with process variables taking precedence, regardless of the caller's working
+directory. Testing, staging, and production use process variables only.
 
-`useDatabaseEnv` calls the shared `useEnv` loader and validates the connection
-fields. Pass the consuming server's workspace path in local mode so it loads
-that workspace's `.env`. Kit passes the database package's directory and loads
-`packages/database/.env` in local mode. The utility returns `host`, `port`, `user`,
-`password`, `database`, `ssl`, and `logger` for `createDatabase`.
-
-Set `DB_LOGGER="true"` to use `drizzle-query-logger`.
-It defaults to `false`, which disables query logging. Callers can also override
-the setting explicitly:
-
-```ts
-const database = createDatabase({ ...config, logger: true });
-```
-
-The logger includes query parameters in its output. Enable it only where those
-values may be logged. Version `1.1.3` declares an ORM peer range that excludes
-the pinned RC; its `Logger` interface and enabled/disabled wiring are checked
-by this package's typecheck and tests.
+Connections open on the first query. Close the shared pool with
+`await database.$client.end()` during application shutdown. Keep this package in
+server code because it requires database credentials. SQL parameter logging is
+disabled on the shared client because it handles credentials and session tokens.
 
 ## Schema and migrations
 
 Export application tables from `src/schema/index.ts` and declare relationships
-in `src/relations.ts` using the RC `defineRelations` API. The schema starts
-empty; add application tables before generating the first migration.
+in `src/relations.ts` using the RC `defineRelations` API. Auth tables use the `iam` PostgreSQL namespace.
 
 Derive table validators with `drizzle-orm/valibot` and application types with
 Valibot `InferOutput` when adding tables. Use `database.transaction(...)` for

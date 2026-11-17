@@ -7,6 +7,7 @@ const env = useDatabaseEnv({
 
 export default defineConfig({
   dialect: 'postgresql',
+  schemaFilter: ['iam'],
   schema: './src/schema/index.ts',
   out: './drizzle',
   dbCredentials: {

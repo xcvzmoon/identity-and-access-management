@@ -4,7 +4,11 @@ import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'driz
 import { validate, version } from 'uuid';
 import * as valibot from 'valibot';
 import { expect, test } from 'vite-plus/test';
-import { generateTimestamps, generateTimestampsWithAudit, generateUuid } from '../src/index.ts';
+import {
+  generateTimestamps,
+  generateTimestampsWithAudit,
+  generateUuid,
+} from '../src/helpers/index.ts';
 
 const users = pgTable('users', {
   id: generateUuid(),
@@ -49,7 +53,7 @@ test('requires the creator and attaches audit actor foreign keys with safe defau
   expect(valibot.parse(insertSchema, { createdBy })).toEqual({ createdBy });
   expect(
     getTableConfig(records).foreignKeys.map(
-      ({ onDelete }: Readonly<Pick<ForeignKey, 'onDelete'>>) => onDelete,
+      ({ onDelete }: Pick<ForeignKey, 'onDelete'>) => onDelete,
     ),
   ).toEqual(['restrict', 'set null', 'set null']);
   for (const foreignKey of getTableConfig(records).foreignKeys) {
@@ -70,7 +74,7 @@ test('supports audit columns without foreign keys and explicit delete actions', 
   expect(getTableConfig(records).foreignKeys).toEqual([]);
   expect(
     getTableConfig(events).foreignKeys.map(
-      ({ onDelete }: Readonly<Pick<ForeignKey, 'onDelete'>>) => onDelete,
+      ({ onDelete }: Pick<ForeignKey, 'onDelete'>) => onDelete,
     ),
   ).toEqual(['cascade', 'restrict', 'no action']);
   expect(records.updatedBy.notNull).toBe(false);
