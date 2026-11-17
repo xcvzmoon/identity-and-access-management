@@ -12,6 +12,7 @@ catalog:
   consola: ^3.4.2
   genbumppush: 0.0.10
   typescript: 6.0.3
+  uuid: 14.0.3
   valibot: 1.5.0
   vite: npm:@voidzero-dev/vite-plus-core@1.6.0
   vite-plus: 1.6.0

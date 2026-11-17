@@ -30,6 +30,7 @@
     "drizzle-orm": "catalog:database",
     "drizzle-query-logger": "catalog:database",
     "postgres": "catalog:database",
+    "uuid": "catalog:",
     "valibot": "catalog:"
   }
 }
