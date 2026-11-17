@@ -5,11 +5,7 @@ import path from 'node:path';
 
 const rootDirectory = path.resolve(import.meta.dirname, '..');
 
-function runStep(
-  message: string,
-  arguments_: readonly string[],
-  stdio: 'pipe' | 'inherit' = 'pipe',
-): void {
+function runStep(message: string, arguments_: string[], stdio: 'pipe' | 'inherit' = 'pipe'): void {
   consola.info(message);
   execFileSync('vp', arguments_, {
     cwd: rootDirectory,

@@ -3,13 +3,13 @@ import { execFileSync } from 'node:child_process';
 const workspacePlanVersion = 1;
 
 type WorkspaceTask = {
-  readonly package: string;
-  readonly name: string;
+  package: string;
+  name: string;
 };
 
 type WorkspacePlan = {
-  readonly version: typeof workspacePlanVersion;
-  readonly plan: Readonly<Record<string, WorkspaceTask>>;
+  version: typeof workspacePlanVersion;
+  plan: Record<string, WorkspaceTask>;
 };
 
 // The Vite+ JSON response needs structural validation before its task paths can be used.
@@ -50,12 +50,9 @@ function isWorkspacePlan(value: unknown): value is WorkspacePlan {
  *
  * @param {string} rootDirectory - Absolute repository root directory.
  * @param {'build' | 'typecheck'} task - Task to discover.
- * @returns {readonly string[]} Unique workspace paths relative to the repository root.
+ * @returns {string[]} Unique workspace paths relative to the repository root.
  */
-export function getWorkspaces(
-  rootDirectory: string,
-  task: 'build' | 'typecheck',
-): readonly string[] {
+export function getWorkspaces(rootDirectory: string, task: 'build' | 'typecheck'): string[] {
   const output = execFileSync(
     'vp',
     ['run', '--dry-run', '--json', '--filter', '**', '--filter', '!./', task],

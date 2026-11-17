@@ -6,11 +6,7 @@ import { getWorkspaces } from '../utils/workspaces.ts';
 
 let rootDirectory = '';
 
-function writePackage(
-  directory: string,
-  name: string,
-  scripts: Readonly<Record<string, string>>,
-): void {
+function writePackage(directory: string, name: string, scripts: Record<string, string>): void {
   mkdirSync(directory, { recursive: true });
   writeFileSync(path.join(directory, 'package.json'), JSON.stringify({ name, scripts }));
 }
