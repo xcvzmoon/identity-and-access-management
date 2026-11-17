@@ -24,9 +24,10 @@ export async function resolveApiSession(event: RequestEvent): Promise<User | nul
   }
 
   const config = useRuntimeConfig();
+  const apiUrl = config.apiUrl === '' ? config.public.apiUrl : config.apiUrl;
   try {
     const response = await $fetch.raw<unknown, 'stream'>(
-      new URL('/api/auth/get-session', config.public.apiUrl).href,
+      new URL('/api/auth/get-session', apiUrl).href,
       {
         headers: { cookie },
         redirect: 'error',

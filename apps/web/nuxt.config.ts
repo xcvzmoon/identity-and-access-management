@@ -15,6 +15,10 @@ export default defineNuxtConfig({
   },
   devServer: { port: 5173 },
   runtimeConfig: {
+    apiUrl: '',
+    session: {
+      cookie: { secure: true },
+    },
     public: {
       apiUrl: 'http://localhost:3000',
     },

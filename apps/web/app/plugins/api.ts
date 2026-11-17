@@ -2,7 +2,11 @@ const unauthorized = 401;
 
 export default defineNuxtPlugin((app) => {
   const runtimeConfig = useRuntimeConfig();
-  const apiUrl = new URL(runtimeConfig.public.apiUrl);
+  const apiUrl = new URL(
+    import.meta.server && runtimeConfig.apiUrl !== ''
+      ? runtimeConfig.apiUrl
+      : runtimeConfig.public.apiUrl,
+  );
   const event = useRequestEvent();
   const cookie = selectApiCookies(event?.req.headers.get('cookie') ?? null);
   const api = $fetch.create({

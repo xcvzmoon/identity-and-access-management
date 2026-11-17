@@ -44,7 +44,8 @@ async function postAuth(
   headers: Headers,
   body?: valibot.InferOutput<typeof signInSchema | typeof signUpSchema>,
 ): Promise<Response> {
-  const apiUrl = useRuntimeConfig().public.apiUrl;
+  const config = useRuntimeConfig();
+  const apiUrl = config.apiUrl === '' ? config.public.apiUrl : config.apiUrl;
   const response = await $fetch
     .raw<unknown, 'stream'>(new URL(path, apiUrl).href, {
       method: 'POST',

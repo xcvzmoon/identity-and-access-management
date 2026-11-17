@@ -54,6 +54,47 @@ lets users sign up, sign in, view their account, and sign out. Passwords must
 contain 12 to 128 characters. API middleware requires a valid session outside the
 authentication endpoints.
 
+## Docker
+
+The script defaults to Docker and targets Docker Desktop when its
+`desktop-linux` context exists. Otherwise it uses the configured Docker context,
+or the `default` context if the configured context is `kiri`.
+When both CLIs are installed, an interactive terminal offers to use Kiri. Press
+Enter to keep Docker. When only Kiri is available, the script uses it directly.
+In CI and other noninteractive sessions, Docker is the default when available.
+Use `--container docker` or `--container kiri` to select a CLI directly.
+On macOS, the script also looks for Kiri in `~/.kiri/bin` and `/Applications`.
+
+Use the same workspace `.env` files listed above and apply migrations to your
+local PostgreSQL instance before starting the API.
+
+```sh
+vp run docker --help
+vp run docker up
+vp run docker --container kiri --app api build
+vp run docker --app api logs --follow
+vp run docker --app web stop
+vp run docker down
+```
+
+Omit `--app` to target both services. `up` builds the selected images and runs
+them in the background. The API and web app are available at
+`http://localhost:3000` and `http://localhost:5173`.
+
+The API reads the PostgreSQL credentials and port from `packages/database/.env`.
+It uses `host.docker.internal` as the PostgreSQL host. Set `DOCKER_DB_HOST` in
+your shell or the root `.env` to use a different address. PostgreSQL must accept
+TCP connections from Docker's host gateway.
+
+The web container uses `http://api:3000` for server-side requests. If you run the
+API directly on your host, use
+`DOCKER_WEB_API_URL="http://host.docker.internal:3000" vp run docker --app web up`.
+The browser uses `NUXT_PUBLIC_API_URL` from `apps/web/.env`.
+
+The API image defaults to `APP_ENV="production"`. For a standalone container,
+pass the auth and database settings as runtime environment variables. Keep
+`APP_ENV="production"` and use a database host address the container can reach.
+
 ## Deployment
 
 Set `APP_ENV="production"` and the server's `AUTH_SECRET`, `AUTH_URL`,
@@ -63,7 +104,8 @@ Auth logs omit query parameters and error objects. Protected API routes return
 503 when session storage is unavailable.
 
 Set `NUXT_PUBLIC_API_URL` to the browser-accessible API origin
-(`http://localhost:3000` locally). Sign-in, sign-up, and sign-out go through Nuxt.
+(`http://localhost:3000` locally). Set `NUXT_API_URL` if Nuxt needs a separate
+server-side API origin. Sign-in, sign-up, and sign-out go through Nuxt.
 During SSR, Nuxt Auth Utils reads its sealed session and checks it with the API.
 Set `NUXT_APP_SECRET` to seal web sessions in production. Use
 `NUXT_SESSION_COOKIE_SECURE="false"` only when testing a production build over
