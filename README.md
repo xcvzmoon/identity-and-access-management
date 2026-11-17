@@ -2,12 +2,12 @@
 
 `@iam/auth` owns Better Auth configuration and exposes the shared `useAuth()`
 server. The Nitro API mounts its endpoints and enforces sessions in middleware.
-The Nuxt web app uses `better-auth/vue` for browser auth requests to the API.
-Its auth plugin uses Better Auth's documented `useSession(useFetch)` integration
-for SSR and hydration. Session reads use the same `useApi` composable as other
-web API reads. Its API client forwards renewed cookies to the page response,
-and Nuxt hydrates only the shared user's ID, name, and email. Nuxt does not host Better Auth or
-access PostgreSQL.
+Nuxt forwards sign-in, sign-up, and sign-out requests to Better Auth and updates
+the web session in the same response.
+Nuxt Auth Utils provides the web session. Nuxt verifies the Better Auth session
+before rendering or refreshing the web session, forwards renewed API cookies,
+and seals only the user's ID, name, and email. Better Auth remains responsible
+for credentials and session revocation.
 
 ## Local setup
 
@@ -24,7 +24,8 @@ credentials from its own workspace.
 
 Set auth configuration in `packages/auth/.env`. Generate `AUTH_SECRET` with
 `openssl rand -base64 32`. Keep it stable across API restarts and replicas. The
-web app does not need this secret. All dotenv values must be quoted.
+web app has its own `NUXT_APP_SECRET` for Nuxt Auth Utils. Generate it separately
+with `openssl rand -base64 32` and keep it stable across web replicas. All dotenv values must be quoted.
 
 Run the migration against your development database:
 
@@ -53,9 +54,11 @@ Auth logs omit query parameters and error objects. Protected API routes return
 503 when session storage is unavailable.
 
 Set `NUXT_PUBLIC_API_URL` to the browser-accessible API origin
-(`http://localhost:3000` locally). Browser authentication calls that API directly;
-the web app on port 5173 performs session reads directly from the API during SSR.
-Nuxt has no local authentication endpoints.
+(`http://localhost:3000` locally). Sign-in, sign-up, and sign-out go through Nuxt.
+During SSR, Nuxt Auth Utils reads its sealed session and checks it with the API.
+Set `NUXT_APP_SECRET` to seal web sessions in production. Use
+`NUXT_SESSION_COOKIE_SECURE="false"` only when testing a production build over
+local HTTP.
 
 For SSR, the browser must send the session cookie to both the web and API hosts.
 Localhost ports 3000 and 5173 share a cookie host. Deployments on different
