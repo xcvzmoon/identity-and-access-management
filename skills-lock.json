@@ -56,10 +56,10 @@
       "computedHash": "4ec974c3735cd32a4ed786c7074b6798807709c9f425e0b1248526cdb376c3e3"
     },
     "commit": {
-      "source": "poteto/noodle",
+      "source": "xcvzmoon/skills",
       "sourceType": "github",
-      "skillPath": ".agents/skills/commit/SKILL.md",
-      "computedHash": "52de92905b9cb253b3fce4de874d05bac52037556b7017cd1e3e2770e416479c"
+      "skillPath": "commit/SKILL.md",
+      "computedHash": "9ae5ed0ddc0ac8f3899b935fd1cdde3c47de9d44ef344fec4c21c6d9a93e3444"
     },
     "create-adaptable-composable": {
       "source": "vuejs-ai/skills",

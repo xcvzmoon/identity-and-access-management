@@ -98,17 +98,13 @@ This is a [Nitro](https://nitro.build) v3 server project (built on H3 v2). Nitro
 
 ## Git and pull requests
 
-- Use the current worktree unless explicitly asked to create another.
-- Commit or push only when asked. Never add co-author trailers.
-- Give each commit one independently reviewable purpose. Keep required imports, types, call sites, and tests together so intermediate commits remain valid.
-  Separate independent changes, even within one file.
-- Stage explicit paths or hunks and review the staged diff before committing.
 - For PRs, use the repository template, antfu-create-pr, and unslop. Assign the PR to me, apply appropriate labels, and omit model attribution.
 - Begin PR descriptions with two or three complete sentences explaining the problem, resulting behavior, and why the change is needed.
 
 ## Skills
 
 - Project skills live in `.agents/skills/` and are tracked in `skills-lock.json`. Use applicable skills.
+- Use [commit](.agents/skills/commit/SKILL.md) for commits.
 - Treat vendored skills as tooling. Do not modify them as part of product work.
 
 ## Persistent knowledge
