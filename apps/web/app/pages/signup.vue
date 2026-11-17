@@ -21,7 +21,7 @@
 
   definePageMeta({ auth: 'guest' });
 
-  const app = useNuxtApp();
+  const session = useUserSession();
   const error = shallowRef<string | null>(null);
   const form = useForm({
     schema: formSchema,
@@ -35,13 +35,18 @@
   async function submit(input: FormInput): Promise<void> {
     try {
       error.value = null;
-      const result = await app.$auth.signUp.email(input);
-      if (result.error) {
-        error.value = result.error.message ?? 'Authentication failed.';
+      await $fetch('/api/signup', {
+        method: 'POST',
+        body: input,
+      });
+      await session.fetch();
+      if (!session.loggedIn.value) {
+        error.value = 'Could not load your session.';
         return;
       }
-      await app.$refreshAuthSession();
       await navigateTo('/account');
+    } catch {
+      error.value = 'Authentication failed.';
     } finally {
       setInput(form, {
         path: ['password'],

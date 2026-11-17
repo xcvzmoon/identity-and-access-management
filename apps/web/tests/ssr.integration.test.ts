@@ -4,12 +4,97 @@ import { expect, test } from 'vite-plus/test';
 import { createDatabase } from '../../../packages/database/src/utils/client.ts';
 
 const webUrl = process.env.AUTH_SSR_TEST_URL ?? 'http://localhost:5173';
-const apiUrl = 'http://localhost:3000';
 const databasePort = Number(process.env.AUTH_TEST_DB_PORT);
 const success = 200;
 const redirect = 302;
 const notFound = 404;
+const unauthorized = 401;
+const forbidden = 403;
+const password = 'ssr-test-password';
 const payloadSchema = valibot.object({ token: valibot.string() });
+
+async function submitCredentials(
+  path: '/api/signin' | '/api/signup',
+  body: { email: string; password: string; name?: string },
+  origin: string = webUrl,
+): Promise<Response> {
+  return fetch(`${webUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      origin,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+async function readAuthCookies(response: Response): Promise<string> {
+  expect(response.status).toBe(success);
+  expect(await response.json()).toEqual({});
+  const cookies = response.headers
+    .getSetCookie()
+    .map((value) => value.split(';').shift())
+    .join('; ');
+  expect(cookies).toContain('better-auth.session_token=');
+  expect(cookies).toContain('nuxt-auth-session=');
+  return cookies;
+}
+
+async function verifyWebSession(cookie: string, email: string, token: string): Promise<void> {
+  const session = await fetch(`${webUrl}/api/_auth/session`, {
+    headers: { cookie },
+  });
+  expect(session.status).toBe(success);
+  const sessionBody = await session.text();
+  expect(sessionBody).toContain(email);
+  expect(sessionBody).not.toContain(token);
+}
+
+async function expectRevokedWebSession(cookie: string): Promise<void> {
+  const session = await fetch(`${webUrl}/api/_auth/session`, {
+    headers: { cookie },
+  });
+  expect(session.status).toBe(unauthorized);
+}
+
+async function verifySignOut(cookie: string): Promise<void> {
+  const signedOut = await fetch(`${webUrl}/api/signout`, {
+    method: 'POST',
+    headers: {
+      cookie,
+      origin: webUrl,
+    },
+  });
+  expect(signedOut.status).toBe(success);
+  const cookies = signedOut.headers.getSetCookie();
+  expect(cookies).toEqual(
+    expect.arrayContaining([
+      expect.stringContaining('nuxt-auth-session=;'),
+      expect.stringContaining('better-auth.session_token=;'),
+    ]),
+  );
+}
+
+async function verifySignIn(email: string): Promise<void> {
+  const credentials = { email, password };
+  const foreignOrigin = await submitCredentials(
+    '/api/signin',
+    credentials,
+    'https://other.example',
+  );
+  expect(foreignOrigin.status).toBe(forbidden);
+  const invalidCredentials = await submitCredentials('/api/signin', {
+    email,
+    password: 'incorrect-password',
+  });
+  expect(invalidCredentials.status).toBe(unauthorized);
+  expect(invalidCredentials.headers.getSetCookie()).toEqual([]);
+  const signedIn = await submitCredentials('/api/signin', credentials);
+  const cookie = await readAuthCookies(signedIn);
+  const account = await fetch(`${webUrl}/account`, { headers: { cookie } });
+  expect(account.status).toBe(success);
+  expect(await account.text()).toContain(email);
+}
 
 test.skipIf(!process.env.AUTH_SSR_TEST_URL || !databasePort)(
   'SSR resolves API sessions, forwards renewal cookies, and protects rendered pages',
@@ -26,29 +111,15 @@ test.skipIf(!process.env.AUTH_SSR_TEST_URL || !databasePort)(
       logger: false,
     });
     try {
-      const registered = await fetch(`${apiUrl}/api/auth/sign-up/email`, {
-        method: 'POST',
-        headers: {
-          origin: webUrl,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          name,
-          password: 'ssr-test-password',
-        }),
+      const registered = await submitCredentials('/api/signup', {
+        email,
+        name,
+        password,
       });
-      expect(registered.status).toBe(success);
-      const payload = valibot.parse(payloadSchema, await registered.json());
-      const cookie = registered.headers
-        .getSetCookie()
-        .map((value) => {
-          const [pair] = value.split(';');
-          return pair;
-        })
-        .join('; ');
-      expect(cookie).toContain('better-auth.session_token=');
-      await database.$client`update iam.sessions set expires_at = now() + interval '1 day' where user_id in (select id from iam.users where email = ${email})`;
+      const cookie = await readAuthCookies(registered);
+      const [sessionRow] =
+        await database.$client`update iam.sessions set expires_at = now() + interval '1 day' where user_id in (select id from iam.users where email = ${email}) returning token`;
+      const payload = valibot.parse(payloadSchema, sessionRow);
       const account = await fetch(`${webUrl}/account`, {
         headers: { cookie },
         redirect: 'manual',
@@ -60,28 +131,22 @@ test.skipIf(!process.env.AUTH_SSR_TEST_URL || !databasePort)(
       expect(html).not.toContain(payload.token);
       expect(account.headers.get('set-cookie')).toContain('better-auth.session_token=');
       expect(account.headers.get('cache-control')).toContain('no-store');
+      await verifyWebSession(cookie, email, payload.token);
       const signIn = await fetch(`${webUrl}/signin`, {
         headers: { cookie },
         redirect: 'manual',
       });
       expect(signIn.status).toBe(redirect);
       expect(signIn.headers.get('location')).toBe('/account');
-      const signedOut = await fetch(`${apiUrl}/api/auth/sign-out`, {
-        method: 'POST',
-        headers: {
-          cookie,
-          origin: webUrl,
-          'content-type': 'application/json',
-        },
-        body: '{}',
-      });
-      expect(signedOut.status).toBe(success);
+      await verifySignOut(cookie);
+      await expectRevokedWebSession(cookie);
       const revoked = await fetch(`${webUrl}/account`, {
         headers: { cookie },
         redirect: 'manual',
       });
       expect(revoked.status).toBe(redirect);
       expect(revoked.headers.get('location')).toContain('/signin');
+      await verifySignIn(email);
     } finally {
       try {
         await database.$client`delete from iam.users where email = ${email}`;
@@ -93,7 +158,7 @@ test.skipIf(!process.env.AUTH_SSR_TEST_URL || !databasePort)(
 );
 
 test.skipIf(!process.env.AUTH_SSR_TEST_URL || !databasePort)(
-  'SSR redirects guests and does not host auth mutations',
+  'SSR redirects guests and exposes no custom session endpoint',
   async () => {
     const anonymous = await fetch(`${webUrl}/account`, { redirect: 'manual' });
     expect(anonymous.status).toBe(redirect);
@@ -104,7 +169,7 @@ test.skipIf(!process.env.AUTH_SSR_TEST_URL || !databasePort)(
     const signUp = await fetch(`${webUrl}/signup`);
     expect(signUp.status).toBe(success);
     expect(await signUp.text()).toContain('Sign up');
-    const localSession = await fetch(`${webUrl}/api/auth/get-session`);
+    const localSession = await fetch(`${webUrl}/api/session`);
     expect(localSession.status).toBe(notFound);
     const localSignUp = await fetch(`${webUrl}/api/auth/sign-up/email`, { method: 'POST' });
     expect(localSignUp.status).toBe(notFound);

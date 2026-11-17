@@ -1,7 +1,7 @@
 <script setup lang="ts">
   definePageMeta({ auth: 'user' });
 
-  const app = useNuxtApp();
+  const userSession = useUserSession();
   const pending = shallowRef<boolean>(false);
   const error = shallowRef<string | null>(null);
 
@@ -9,13 +9,11 @@
     pending.value = true;
     error.value = null;
     try {
-      const result = await app.$auth.signOut();
-      if (result.error) {
-        error.value = result.error.message ?? 'Sign out failed.';
-        return;
-      }
-      await app.$refreshAuthSession();
+      await $fetch('/api/signout', { method: 'POST' });
+      userSession.session.value = null;
       await navigateTo('/signin');
+    } catch {
+      error.value = 'Sign out failed.';
     } finally {
       pending.value = false;
     }
@@ -27,11 +25,11 @@
     <header>
       <p class="mb-3 text-xs tracking-widest text-muted uppercase">Your account</p>
       <h1 class="text-3xl font-semibold tracking-tight">
-        Welcome, {{ app.$authUser.value?.name }}
+        Welcome, {{ userSession.user.value?.name }}
       </h1>
     </header>
 
-    <p class="text-muted">{{ app.$authUser.value?.email }}</p>
+    <p class="text-muted">{{ userSession.user.value?.email }}</p>
 
     <UAlert
       v-if="error"

@@ -1,5 +1,3 @@
-import { authSessionKey } from '../constants/auth';
-
 const unauthorized = 401;
 
 export default defineNuxtPlugin({
@@ -8,7 +6,7 @@ export default defineNuxtPlugin({
     const runtimeConfig = useRuntimeConfig();
     const apiUrl = new URL(runtimeConfig.public.apiUrl);
     const event = useRequestEvent();
-    const cookie = event?.req.headers.get('cookie');
+    const cookie = selectApiCookies(event?.req.headers.get('cookie') ?? null);
     const api = $fetch.create({
       baseURL: apiUrl.origin,
       credentials: 'include',
@@ -45,15 +43,17 @@ export default defineNuxtPlugin({
         }
 
         const pathname = new URL(context.response.url).pathname;
+
         if (pathname !== '/api' && !pathname.startsWith('/api/')) {
           return;
         }
+
         if (pathname === '/api/auth' || pathname.startsWith('/api/auth/')) {
           return;
         }
 
         await app.runWithContext(async () => {
-          clearNuxtData(authSessionKey);
+          useUserSession().session.value = null;
 
           const route = useRoute();
 

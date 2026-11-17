@@ -20,7 +20,10 @@ export default defineNuxtConfig({
     },
   },
   css: ['~/assets/css/main.css'],
-  modules: ['@nuxt/image', '@nuxt/ui', '@vueuse/nuxt/module'],
+  modules: ['@nuxt/image', '@nuxt/ui', '@vueuse/nuxt/module', 'nuxt-auth-utils'],
+  auth: {
+    loadStrategy: 'none',
+  },
   colorMode: {
     preference: 'dark',
   },
