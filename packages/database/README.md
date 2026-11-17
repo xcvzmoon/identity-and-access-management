@@ -57,9 +57,12 @@ vp run packages:database migrate
 ```
 
 Generation writes SQL and snapshots under `drizzle/`. Migration applies pending
-SQL to the configured database. Review the SQL and confirm the target before
-applying it. The `push`, `pull`, and `studio` scripts are also available; `push`
-changes the database directly.
+SQL to the configured database. With the workspace's default configuration, it
+creates `DB_DATABASE` on the existing PostgreSQL server if it is missing. For
+that step, the configured role needs access to the `postgres` maintenance
+database and the `CREATEDB` privilege. Review the SQL and confirm the target
+before applying it. The `push`, `pull`, and `studio` scripts are also available;
+`push` changes the database directly.
 
 Kit configuration uses `@iam/shared/utils`'s `useEnv`. Local mode loads this package's
 `.env`, with process variables taking precedence. For testing, staging, or

@@ -34,7 +34,9 @@ a terminal. A noninteractive forced run replaces the database settings with
 the example values. Restarting the apps with new secrets invalidates existing
 sessions.
 
-Run the migration against your development database:
+Run the migration against your local PostgreSQL server. If `DB_DATABASE` is
+missing, the command creates it when your PostgreSQL role has `CREATEDB`, then
+applies the migrations.
 
 ```sh
 vp -C packages/database run migrate
