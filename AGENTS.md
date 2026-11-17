@@ -54,6 +54,7 @@ This is a [Nitro](https://nitro.build) v3 server project (built on H3 v2). Nitro
 
 ## Changes and dependencies
 
+- Always quote values in dotenv files, including `.env.example`, using double quotes.
 - Keep changes limited to the requested behavior. Leave unrelated code, names, formatting, and existing classes alone.
 - Use the simplest implementation that meets the requirements. Avoid speculative abstractions and temporary compatibility layers.
 - Remove obsolete code paths. Add database migrations when required to preserve or transform existing data.
