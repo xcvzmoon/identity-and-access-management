@@ -102,6 +102,7 @@ test('supports explicit local sources and preserves the shared workspace require
 test.each([false, true])('creates a lazy pool with logger enabled=%s', async (logger) => {
   const config = useDatabaseEnv({ source });
   const database = createDatabase({ ...config, logger });
+
   try {
     expect(database.$client.options.host).toEqual([config.host]);
     expect(database.$client.options.port).toEqual([config.port]);
@@ -121,14 +122,29 @@ test.each([false, true])('creates a lazy pool with logger enabled=%s', async (lo
   }
 });
 
-test('exports only schema and useDatabase and reuses its initialized pool', async () => {
+test('exports the database access API and reuses its initialized pool', async () => {
   for (const [name, value] of Object.entries(source)) {
     vi.stubEnv(name, value);
   }
+
   vi.stubEnv('DB_LOGGER', 'true');
   const database = useDatabase();
+
   try {
-    expect(Object.keys(databaseExports).toSorted()).toEqual(['schema', 'useDatabase']);
+    expect(Object.keys(databaseExports).toSorted()).toEqual([
+      'ApplicationAccessError',
+      'applicationAssignmentInputSchema',
+      'applicationPermissionKeysSchema',
+      'applicationRoleInputSchema',
+      'changeApplicationAssignment',
+      'readApplicationTokenAccess',
+      'registerApplicationPermissions',
+      'resolveApplicationAccess',
+      'resolveApplicationGrant',
+      'saveApplicationRole',
+      'schema',
+      'useDatabase',
+    ]);
     expect(useDatabase()).toBe(database);
     expect(database.$client.options.host).toEqual([source.DB_HOST]);
     expect(database.$client.options.user).toBe(source.DB_USER);
