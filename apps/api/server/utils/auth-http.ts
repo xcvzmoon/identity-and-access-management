@@ -11,8 +11,16 @@ export const emailSignUpPath = '/api/auth/sign-up/email';
 export const passwordRecoveryPath = '/api/auth/account/password-recovery';
 
 export const maxAuthBodyBytes = 32_768;
-type AuthPostPath = typeof emailSignInPath | typeof emailSignUpPath | '/api/auth/sign-out';
-type AuthPostBody = { email: string; password: string; name?: string };
+type AuthPostPath =
+  | typeof emailSignInPath
+  | typeof emailSignUpPath
+  | '/api/auth/sign-out'
+  | '/api/auth/oauth2/consent'
+  | '/api/auth/oauth2/public-client-prelogin';
+type AuthPostBody =
+  | { email: string; password: string; name?: string; oauth_query?: string }
+  | { client_id: string; oauth_query: string }
+  | { accept: boolean; oauth_query: string };
 const userView = valibot.object({
   id: valibot.string(),
   email: valibot.string(),
@@ -46,6 +54,18 @@ export async function requireBrowserOrigin(event: H3Event): Promise<string> {
   }
 
   return origin;
+}
+
+export function requireForm(event: H3Event): void {
+  const [mediaType = ''] = (event.req.headers.get('content-type') ?? '').split(';');
+  if (mediaType.trim().toLowerCase() !== 'application/x-www-form-urlencoded') {
+    throw new HTTPError('Unsupported form encoding', { status: 415 });
+  }
+}
+
+export function setOidcHeaders(event: H3Event): void {
+  event.res.headers.set('Cache-Control', 'no-store');
+  event.res.headers.set('Referrer-Policy', 'no-referrer');
 }
 
 async function projectAuthResponse(

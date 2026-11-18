@@ -34,5 +34,19 @@ export default defineConfig({
     '/signup': privatePage,
     '/account': privatePage,
     '/recover-password': privatePage,
+    '/oidc/**': {
+      headers: {
+        'cache-control': 'no-store',
+        'referrer-policy': 'same-origin',
+        'x-frame-options': 'DENY',
+      },
+    },
   },
+  handlers: [
+    {
+      route: '/.well-known/openid-configuration',
+      method: 'GET',
+      handler: './server/handlers/oidc-discovery.ts',
+    },
+  ],
 });

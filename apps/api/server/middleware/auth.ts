@@ -3,7 +3,14 @@ import { HTTPError, defineMiddleware } from 'nitro';
 import { handleCors } from 'nitro/h3';
 
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
-const browserAuthEndpoints = new Set(['POST /api/signin', 'POST /api/signup', 'POST /api/signout']);
+const browserAuthEndpoints = new Set([
+  'POST /api/signin',
+  'POST /api/signup',
+  'POST /api/signout',
+  'GET /api/oidc/client',
+  'POST /api/oidc/login',
+  'POST /api/oidc/consent',
+]);
 
 export default defineMiddleware(async (event, next) => {
   const pathname = event.url.pathname;
