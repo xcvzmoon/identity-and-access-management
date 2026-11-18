@@ -8,9 +8,13 @@
   async function signOut(): Promise<void> {
     pending.value = true;
     error.value = null;
+
     try {
-      await $fetch('/api/signout', { method: 'POST' });
-      userSession.session.value = null;
+      await $fetch('/api/signout', {
+        method: 'POST',
+        body: {},
+      });
+      userSession.clear();
       await navigateTo('/signin');
     } catch {
       error.value = 'Sign out failed.';
@@ -24,6 +28,7 @@
   <main class="mx-auto flex min-h-svh max-w-lg flex-col justify-center gap-6 px-6 py-12">
     <header>
       <p class="mb-3 text-xs tracking-widest text-muted uppercase">Your account</p>
+
       <h1 class="text-3xl font-semibold tracking-tight">
         Welcome, {{ userSession.user.value?.name }}
       </h1>
@@ -31,12 +36,26 @@
 
     <p class="text-muted">{{ userSession.user.value?.email }}</p>
 
+    <p
+      v-if="userSession.user.value?.emailVerified"
+      class="text-sm text-muted"
+      role="status"
+    >
+      Email verified
+    </p>
+    <NuxtLink
+      v-else
+      to="/recover-password"
+      class="text-primary underline underline-offset-4"
+    >
+      Verify your email and set your password
+    </NuxtLink>
+
     <UAlert
       v-if="error"
       :description="error"
       color="error"
       role="alert"
-      title="Sign out failed"
     />
 
     <UButton

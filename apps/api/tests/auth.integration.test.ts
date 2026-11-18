@@ -52,7 +52,12 @@ async function request(
       body: JSON.stringify(body),
     }),
   );
+
   return response;
+}
+
+async function readSession(cookie: string): Promise<Response> {
+  return auth.handler(new Request(`${apiUrl}/api/auth/get-session`, { headers: { cookie } }));
 }
 
 describe.skipIf(!port)('Better Auth with disposable PostgreSQL', () => {
@@ -72,6 +77,8 @@ describe.skipIf(!port)('Better Auth with disposable PostgreSQL', () => {
       password,
     });
     expect(registered.status).toBe(success);
+    expect(registered.headers.getSetCookie()).toEqual([]);
+    expect(await registered.json()).toMatchObject({ token: null });
     const identity = await database.query.users.findFirst({
       where: { email },
       with: {
@@ -83,8 +90,11 @@ describe.skipIf(!port)('Better Auth with disposable PostgreSQL', () => {
       /^[\da-f]{8}-[\da-f]{4}-7[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/u,
     );
     expect(identity?.accounts).toEqual([expect.objectContaining({ providerId: 'credential' })]);
-    expect(identity?.sessions).toEqual([expect.objectContaining({ userId: identity?.id })]);
-    const cookie = registered.headers
+    expect(identity?.sessions).toEqual([]);
+    await database.$client`update iam.users set email_verified = true where email = ${email}`;
+    const initialSignIn = await request('sign-in/email', { email, password });
+    expect(initialSignIn.status).toBe(success);
+    const cookie = initialSignIn.headers
       .getSetCookie()
       .map((value) => {
         const [cookiePair] = value.split(';');
@@ -92,21 +102,17 @@ describe.skipIf(!port)('Better Auth with disposable PostgreSQL', () => {
       })
       .join('; ');
     expect(cookie).toContain('better-auth.session_token=');
-    expect(registered.headers.get('set-cookie')).toContain('HttpOnly');
+    expect(initialSignIn.headers.get('set-cookie')).toContain('HttpOnly');
     const stored =
       await database.$client`select password from iam.accounts join iam.users on users.id = accounts.user_id where email = ${email}`;
     const [account] = stored;
     expect(account.password).toBeTypeOf('string');
     expect(account.password).not.toBe(password);
-    const session = await auth.handler(
-      new Request(`${apiUrl}/api/auth/get-session`, { headers: { cookie } }),
-    );
+    const session = await readSession(cookie);
     expect(await session.text()).toContain(email);
     const signedOut = await request('sign-out', {}, '192.0.2.11', cookie);
     expect(signedOut.status).toBe(success);
-    const revoked = await auth.handler(
-      new Request(`${apiUrl}/api/auth/get-session`, { headers: { cookie } }),
-    );
+    const revoked = await readSession(cookie);
     expect(await revoked.json()).toBeNull();
     const signedIn = await request('sign-in/email', { email, password }, '192.0.2.12');
     expect(signedIn.status).toBe(success);

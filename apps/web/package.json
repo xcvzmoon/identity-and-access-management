@@ -3,20 +3,14 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "nuxt build",
+    "build": "nuxt generate",
     "cleanup": "nuxt cleanup",
-    "dev": "nuxt dev --no-tui --port 5173",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview --port 5173",
     "postinstall": "nuxt prepare",
-    "typecheck": "nuxt typecheck",
-    "serve": "nuxt preview --port 5173"
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@formisch/vue": "catalog:",
-    "@iam/shared": "workspace:*",
     "@iconify-json/lucide": "catalog:web",
-    "@nuxt/image": "catalog:web",
     "@nuxt/ui": "catalog:web",
     "@simplewebauthn/browser": "catalog:web",
     "@tiptap/core": "catalog:web",
@@ -38,7 +32,6 @@
     "@tiptap/vue-3": "catalog:web",
     "@vueuse/nuxt": "catalog:web",
     "nuxt": "catalog:web",
-    "nuxt-auth-utils": "catalog:",
     "tailwindcss": "catalog:web",
     "typescript": "catalog:",
     "valibot": "catalog:",

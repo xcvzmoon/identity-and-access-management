@@ -1,9 +1,7 @@
 <script setup lang="ts">
-  import { Field, Form, setInput, useForm } from '@formisch/vue';
+  import { Field, Form, useForm } from '@formisch/vue';
   import * as valibot from 'valibot';
 
-  const maximumPasswordLength = 128;
-  const minimumPasswordLength = 12;
   const formSchema = valibot.object({
     name: valibot.pipe(valibot.string(), valibot.trim(), valibot.nonEmpty('Enter your name.')),
     email: valibot.pipe(
@@ -11,24 +9,17 @@
       valibot.trim(),
       valibot.email('Enter a valid email address.'),
     ),
-    password: valibot.pipe(
-      valibot.string(),
-      valibot.minLength(minimumPasswordLength, 'Enter at least 12 characters.'),
-      valibot.maxLength(maximumPasswordLength),
-    ),
   });
   type FormInput = valibot.InferOutput<typeof formSchema>;
 
   definePageMeta({ auth: 'guest' });
 
-  const session = useUserSession();
   const error = shallowRef<string | null>(null);
   const form = useForm({
     schema: formSchema,
     initialInput: {
       name: '',
       email: '',
-      password: '',
     },
   });
 
@@ -39,19 +30,9 @@
         method: 'POST',
         body: input,
       });
-      await session.fetch();
-      if (!session.loggedIn.value) {
-        error.value = 'Could not load your session.';
-        return;
-      }
-      await navigateTo('/account');
+      await navigateTo('/recover-password');
     } catch {
       error.value = 'Authentication failed.';
-    } finally {
-      setInput(form, {
-        path: ['password'],
-        input: '',
-      });
     }
   }
 </script>
@@ -98,22 +79,6 @@
         />
       </Field>
 
-      <Field
-        v-slot="field"
-        :of="form"
-        :path="['password']"
-      >
-        <FormInput
-          v-model="field.input"
-          :field-props="field.props"
-          :errors="field.errors"
-          label="Password"
-          type="password"
-          autocomplete="new-password"
-          description="Use 12 to 128 characters."
-        />
-      </Field>
-
       <UAlert
         v-if="error"
         :description="error"
@@ -124,7 +89,7 @@
 
       <UButton
         :loading="form.isSubmitting"
-        label="Sign up"
+        label="Continue to email verification"
         type="submit"
         block
       />

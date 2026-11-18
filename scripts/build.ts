@@ -16,19 +16,24 @@ try {
       (workspace) =>
         workspace.startsWith('packages/') && workspace !== database && workspace !== shared,
     ),
-    ...workspaces.filter((workspace) => !workspace.startsWith('packages/')),
+    'apps/web',
+    ...workspaces.filter(
+      (workspace) => workspace !== 'apps/web' && !workspace.startsWith('packages/'),
+    ),
   ];
 
   execFileSync('vp', ['-C', shared, 'run', 'build:utils'], {
     cwd: rootDirectory,
     stdio: 'inherit',
   });
+
   for (const workspace of orderedWorkspaces) {
     execFileSync('vp', ['-C', workspace, 'run', 'build'], {
       cwd: rootDirectory,
       stdio: 'inherit',
     });
   }
+
   consola.success('Build complete');
 } catch (error) {
   consola.error('Build failed', error);

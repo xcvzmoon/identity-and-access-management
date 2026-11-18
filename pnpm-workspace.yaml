@@ -18,7 +18,6 @@ catalog:
   better-auth: 1.7.25
   consola: ^3.4.2
   genbumppush: 0.0.10
-  nuxt-auth-utils: 0.6.2
   nodemailer: 10.6.0
   typescript: 6.0.3
   uuid: 14.0.3
@@ -40,7 +39,6 @@ catalogs:
   web:
     '@golar/vue': 0.1.11
     '@iconify-json/lucide': 1.2.156
-    '@nuxt/image': 2.2.1
     '@nuxt/ui': 4.12.0
     '@simplewebauthn/browser': 13.3.0
     '@tiptap/core': 3.34.0

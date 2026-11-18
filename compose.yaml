@@ -14,21 +14,5 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     ports:
-      - '127.0.0.1:3000:3000'
-    init: true
-
-  web:
-    build:
-      context: .
-      target: web
-    env_file:
-      - path: ./apps/web/.env
-        required: false
-    environment:
-      NUXT_API_URL: ${DOCKER_WEB_API_URL:-http://api:3000}
-      NUXT_SESSION_COOKIE_SECURE: 'false'
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
-    ports:
-      - '127.0.0.1:5173:5173'
+      - '127.0.0.1:5173:3000'
     init: true

@@ -3,23 +3,26 @@ import { HTTPError, defineMiddleware } from 'nitro';
 import { handleCors } from 'nitro/h3';
 
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
+const browserAuthEndpoints = new Set(['POST /api/signin', 'POST /api/signup', 'POST /api/signout']);
 
 export default defineMiddleware(async (event, next) => {
   const pathname = event.url.pathname;
-
   if (pathname !== '/api' && !pathname.startsWith('/api/')) {
     return next();
   }
 
   event.res.headers.set('Cache-Control', 'no-store');
+
   const authContext = await useAuth().$context;
   const origin = event.req.headers.get('origin');
+
   if (origin && !authContext.isTrustedOrigin(origin, { allowRelativePaths: false })) {
     throw new HTTPError('Untrusted request origin', {
       status: 403,
       data: { code: 'FORBIDDEN_ORIGIN' },
     });
   }
+
   const preflight = handleCors(event, {
     origin: (requestOrigin) =>
       authContext.isTrustedOrigin(requestOrigin, { allowRelativePaths: false }),
@@ -27,11 +30,16 @@ export default defineMiddleware(async (event, next) => {
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
   });
+
   if (preflight) {
     return preflight;
   }
 
-  if (pathname === '/api/auth' || pathname.startsWith('/api/auth/')) {
+  if (
+    pathname === '/api/auth' ||
+    pathname.startsWith('/api/auth/') ||
+    browserAuthEndpoints.has(`${event.req.method} ${pathname}`)
+  ) {
     return next();
   }
 
@@ -68,5 +76,6 @@ export default defineMiddleware(async (event, next) => {
       data: { code: 'FORBIDDEN_ORIGIN' },
     });
   }
+
   return next();
 });

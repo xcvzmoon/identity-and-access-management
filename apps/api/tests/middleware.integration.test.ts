@@ -6,8 +6,7 @@ import authHandler from '../server/api/auth/[...all].ts';
 import authMiddleware from '../server/middleware/auth.ts';
 
 const port = process.env.AUTH_TEST_DB_PORT;
-const origin = 'http://localhost:5173';
-const apiUrl = 'http://localhost:3000';
+const origin = 'http://localhost:3000';
 const success = 200;
 const unauthorized = 401;
 const forbidden = 403;
@@ -27,19 +26,82 @@ async function request(
   body: Record<string, string> | null = null,
   requestOrigin = origin,
 ): Promise<Response> {
-  const response = await app.fetch(
-    new Request(`${apiUrl}${path}`, {
-      method: body ? 'POST' : 'GET',
-      headers: {
-        origin: requestOrigin,
-        cookie,
-        'content-type': 'application/json',
-        'x-forwarded-for': '192.0.2.21',
-      },
-      body: body ? JSON.stringify(body) : null,
+  const incoming = new Request(`${origin}${path}`, {
+    method: body ? 'POST' : 'GET',
+    headers: {
+      origin: requestOrigin,
+      cookie,
+      'content-type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : null,
+  });
+
+  return app.fetch(Object.assign(incoming, { context: { clientAddress: '192.0.2.21' } }));
+}
+
+async function expectPrivateSignup(response: Response): Promise<void> {
+  expect(response.status).toBe(success);
+  expect(response.headers.get('access-control-allow-origin')).toBe(origin);
+  expect(response.headers.get('access-control-allow-credentials')).toBe('true');
+  expect(response.headers.getSetCookie()).toEqual([]);
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(await response.json()).toEqual({});
+}
+
+async function registerFixture(): Promise<void> {
+  await expectPrivateSignup(
+    await request('/api/auth/sign-up/email', '', {
+      email,
+      password,
+      name: 'Middleware Test',
     }),
   );
-  return response;
+  await expectPrivateSignup(
+    await request('/api/auth/sign-up/email', '', {
+      email,
+      password: 'different-fixture-password',
+      name: 'Different fixture name',
+    }),
+  );
+}
+
+async function verifyPrivateSignIn(): Promise<void> {
+  const missingEmail = `${randomUUID()}@example.test`;
+  const unverified = await request('/api/auth/sign-in/email', '', { email, password });
+  const unknown = await request('/api/auth/sign-in/email', '', {
+    email: missingEmail,
+    password,
+  });
+  expect(unverified.status).toBe(unauthorized);
+  expect(unknown.status).toBe(unauthorized);
+  expect(unverified.headers.getSetCookie()).toEqual([]);
+  expect(unknown.headers.getSetCookie()).toEqual([]);
+  expect(await unverified.json()).toEqual(await unknown.json());
+  await useDatabase().$client`update iam.users set email_verified = true where email = ${email}`;
+}
+
+async function signInFixture(): Promise<string> {
+  const signedIn = await request('/api/auth/sign-in/email', '', { email, password });
+  const id: unknown = expect.any(String);
+  expect(signedIn.status).toBe(success);
+  expect(await signedIn.json()).toEqual({
+    redirect: false,
+    user: {
+      id,
+      email,
+      name: 'Middleware Test',
+      emailVerified: true,
+    },
+  });
+  const cookie = signedIn.headers
+    .getSetCookie()
+    .map((value) => {
+      const [pair] = value.split(';');
+      return pair;
+    })
+    .join('; ');
+  expect(cookie).toContain('better-auth.session_token=');
+  return cookie;
 }
 
 describe.skipIf(!port)('API authentication middleware', () => {
@@ -47,7 +109,7 @@ describe.skipIf(!port)('API authentication middleware', () => {
     const environment = {
       APP_ENV: 'testing',
       AUTH_SECRET: 'middleware-test-secret-with-at-least-32-characters',
-      AUTH_URL: apiUrl,
+      AUTH_URL: origin,
       AUTH_WEB_ORIGIN: origin,
       DB_HOST: '127.0.0.1',
       DB_PORT: port,
@@ -55,6 +117,7 @@ describe.skipIf(!port)('API authentication middleware', () => {
       DB_PASSWORD: 'disposable',
       DB_DATABASE: 'iam',
     };
+
     for (const [name, value] of Object.entries(environment)) {
       vi.stubEnv(name, value);
     }
@@ -62,6 +125,7 @@ describe.skipIf(!port)('API authentication middleware', () => {
 
   afterAll(async () => {
     const database = useDatabase();
+
     try {
       await database.$client`delete from iam.users where email = ${email}`;
       await database.$client`delete from iam.rate_limits where key like ${'%192.0.2.21%'}`;
@@ -108,22 +172,9 @@ describe.skipIf(!port)('API authentication middleware', () => {
   });
 
   test('allows authenticated requests and rejects a revoked session', async () => {
-    const registered = await request('/api/auth/sign-up/email', '', {
-      email,
-      password,
-      name: 'Middleware Test',
-    });
-    expect(registered.status).toBe(success);
-    expect(registered.headers.get('access-control-allow-origin')).toBe(origin);
-    expect(registered.headers.get('access-control-allow-credentials')).toBe('true');
-    const cookie = registered.headers
-      .getSetCookie()
-      .map((value) => {
-        const [pair] = value.split(';');
-        return pair;
-      })
-      .join('; ');
-    expect(cookie).toContain('better-auth.session_token=');
+    await registerFixture();
+    await verifyPrivateSignIn();
+    const cookie = await signInFixture();
     const database = useDatabase();
     await database.$client`update iam.sessions set expires_at = now() + interval '1 day' where user_id in (select id from iam.users where email = ${email})`;
     const protectedResponse = await request('/api/authentication', cookie);

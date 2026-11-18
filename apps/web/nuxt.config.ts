@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2026-11-16',
+  ssr: false,
   devtools: {
     enabled: true,
   },
@@ -13,20 +14,12 @@ export default defineNuxtConfig({
       },
     },
   },
-  devServer: { port: 5173 },
-  runtimeConfig: {
-    apiUrl: '',
-    session: {
-      cookie: { secure: true },
-    },
-    public: {
-      apiUrl: 'http://localhost:3000',
-    },
-  },
   css: ['~/assets/css/main.css'],
-  modules: ['@nuxt/image', '@nuxt/ui', '@vueuse/nuxt/module', 'nuxt-auth-utils'],
-  auth: {
-    loadStrategy: 'none',
+  modules: ['@nuxt/ui', '@vueuse/nuxt/module'],
+  icon: {
+    provider: 'none',
+    serverBundle: false,
+    clientBundle: { scan: true },
   },
   colorMode: {
     preference: 'dark',

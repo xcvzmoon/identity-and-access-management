@@ -23,7 +23,7 @@ const commands = new Map([
   ['ps', ['ps', '--all']],
 ]);
 
-const help = `Usage: vp run docker [--container <docker|kiri>] [--app <api|web|all>] <command>
+const help = `Usage: vp run docker [--container <docker|kiri>] <command>
 
 Commands:
   build       Build images
@@ -35,7 +35,6 @@ Commands:
   logs        Show container logs (use --follow or -f to stream)
   ps          Show container status
 
-Omit --app to target both apps.
 Docker is the default. If both are installed, an interactive terminal offers Kiri.
 Docker targets Docker Desktop when its context is configured.
 Use --container to select Docker or Kiri directly.
@@ -73,6 +72,7 @@ function hasCompose(cli: ContainerCli): boolean {
     cwd: rootDirectory,
     stdio: 'ignore',
   });
+
   return result.status === successExitCode;
 }
 
@@ -81,6 +81,7 @@ function getDockerContextArgs(): string[] {
     cwd: rootDirectory,
     stdio: 'ignore',
   });
+
   if (desktop.status === successExitCode) {
     return ['--context', dockerDesktopContext];
   }
@@ -90,6 +91,7 @@ function getDockerContextArgs(): string[] {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'ignore'],
   });
+
   if (current.status === successExitCode && current.stdout.trim() === 'kiri') {
     return ['--context', 'default'];
   }
@@ -102,14 +104,17 @@ async function selectContainerCli(requested: string | null): Promise<ContainerCl
     if (requested === 'docker' || requested === 'kiri') {
       return requested;
     }
+
     throw new Error('Expected --container to be docker or kiri.');
   }
 
   const hasKiri = hasCompose('kiri');
+
   if (!hasCompose('docker')) {
     if (hasKiri) {
       return 'kiri';
     }
+
     throw new Error('Install Docker Compose or Kiri to run this command.');
   }
 
@@ -119,6 +124,7 @@ async function selectContainerCli(requested: string | null): Promise<ContainerCl
       initial: false,
       cancel: 'reject',
     });
+
     if (useKiri) {
       return 'kiri';
     }
@@ -148,18 +154,16 @@ function executeCompose(cli: ContainerCli, args: readonly string[]): number {
         cause: result.error,
       });
     }
+
     throw result.error;
   }
+
   return result.status ?? failureExitCode;
 }
 
 async function runCompose(): Promise<number> {
   const { values, positionals } = parseArgs({
     options: {
-      app: {
-        type: 'string',
-        default: 'all',
-      },
       container: { type: 'string' },
       follow: {
         type: 'boolean',
@@ -184,20 +188,14 @@ async function runCompose(): Promise<number> {
     throw new Error('Choose one Docker command.');
   }
 
-  const { app, container, follow } = values;
-  if (app !== 'all' && app !== 'api' && app !== 'web') {
-    throw new Error('Expected --app to be api, web, or all.');
-  }
+  const { container, follow } = values;
+
   if (follow && command !== 'logs') {
     throw new Error('--follow is only available for logs.');
   }
 
   const cli = await selectContainerCli(container ?? null);
-  const serviceArgs = app === 'all' ? [] : [app];
-  const operationArgs =
-    command === 'down' && app !== 'all' ? ['rm', '--stop', '--force'] : composeArgs;
-
-  return executeCompose(cli, [...operationArgs, ...(follow ? ['--follow'] : []), ...serviceArgs]);
+  return executeCompose(cli, [...composeArgs, ...(follow ? ['--follow'] : [])]);
 }
 
 try {

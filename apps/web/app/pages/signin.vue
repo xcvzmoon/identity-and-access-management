@@ -20,7 +20,6 @@
   definePageMeta({ auth: 'guest' });
 
   const session = useUserSession();
-  const error = shallowRef<string | null>(null);
   const form = useForm({
     schema: formSchema,
     initialInput: {
@@ -28,6 +27,7 @@
       password: '',
     },
   });
+  const error = shallowRef<string | null>(null);
 
   async function submit(input: FormInput): Promise<void> {
     try {
@@ -36,11 +36,13 @@
         method: 'POST',
         body: input,
       });
-      await session.fetch();
+      await session.refresh();
+
       if (!session.loggedIn.value) {
         error.value = 'Could not load your session.';
         return;
       }
+
       await navigateTo('/account');
     } catch {
       error.value = 'Authentication failed.';
@@ -110,6 +112,13 @@
         block
       />
     </Form>
+
+    <NuxtLink
+      to="/recover-password"
+      class="text-sm text-primary underline underline-offset-4"
+    >
+      Verify your email or reset your password
+    </NuxtLink>
 
     <p class="text-sm text-muted">
       Need an account?

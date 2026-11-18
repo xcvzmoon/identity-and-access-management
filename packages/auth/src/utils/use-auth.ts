@@ -1,5 +1,6 @@
 import type { Auth } from './auth.ts';
 import { useDatabase } from '@iam/database';
+import { createAccountMailer } from './account-email.ts';
 import { createAuth } from './auth.ts';
 import { useAuthEnv } from './env.ts';
 
@@ -15,10 +16,22 @@ let auth: Auth | null = null;
  */
 export function useAuth(): Auth {
   if (!auth) {
-    const options = useAuthEnv();
+    const { smtpUrl, smtpFrom, ...options } = useAuthEnv();
     const database = useDatabase();
 
-    auth = createAuth(database, options);
+    if (smtpUrl) {
+      const mail = createAccountMailer(smtpUrl, smtpFrom);
+      auth = createAuth(database, {
+        ...options,
+        sendPasswordRecoveryEmail: async (message) =>
+          mail({
+            ...message,
+            purpose: 'password-recovery',
+          }),
+      });
+    } else {
+      auth = createAuth(database, options);
+    }
   }
 
   return auth;

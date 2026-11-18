@@ -20,10 +20,8 @@ RUN pnpm exec vp -C packages/shared run build:utils \
 
 FROM build AS api-build
 RUN pnpm exec vp -C packages/auth run build \
+    && pnpm exec vp -C apps/web run build \
     && pnpm exec vp -C apps/api run build
-
-FROM build AS web-build
-RUN pnpm exec vp -C apps/web run build
 
 FROM base AS runtime
 ENV NODE_ENV=production HOST=0.0.0.0
@@ -34,10 +32,4 @@ FROM runtime AS api
 COPY --link --from=api-build /app/apps/api/.output ./.output
 ENV APP_ENV=production PORT=3000
 EXPOSE 3000
-USER node
-
-FROM runtime AS web
-COPY --link --from=web-build /app/apps/web/.output ./.output
-ENV PORT=5173
-EXPOSE 5173
 USER node

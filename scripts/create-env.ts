@@ -52,6 +52,7 @@ async function promptDatabaseEnv(template: string): Promise<string> {
       if (!hidden) {
         process.stdout.write(chunk);
       }
+
       done();
     },
   });
@@ -75,11 +76,14 @@ async function promptDatabaseEnv(template: string): Promise<string> {
     if (secret) {
       hidden = true;
     }
+
     try {
       const answer = terminal.question(secret ? '' : question, { signal: cancellation.signal });
+
       if (secret) {
         process.stdout.write(question);
       }
+
       const value = await answer;
       return value === '' ? fallback : value;
     } finally {
@@ -91,6 +95,7 @@ async function promptDatabaseEnv(template: string): Promise<string> {
   }
 
   const defaults = parseEnv(template);
+
   try {
     const values = {
       DB_HOST: await ask('PostgreSQL host', defaults.DB_HOST),
@@ -99,21 +104,27 @@ async function promptDatabaseEnv(template: string): Promise<string> {
       DB_USER: await ask('PostgreSQL username'),
       DB_PASSWORD: await ask('PostgreSQL password', '', 'hidden'),
     };
+
     if (!isDatabasePort(values.DB_PORT)) {
       throw new Error('PostgreSQL port must be between 1 and 65535.');
     }
+
     let contents = template;
+
     for (const [key, value] of Object.entries(values)) {
       if (value === '') {
         throw new Error(`${key} is required.`);
       }
+
       if (!isPortableEnvValue(value)) {
         throw new Error(
           `${key} contains characters that Node and Docker Compose parse differently in double-quoted dotenv values.`,
         );
       }
+
       contents = contents.replace(new RegExp(`^${key}=.*$`, 'mu'), () => `${key}="${value}"`);
     }
+
     return contents;
   } finally {
     terminal.close();
@@ -123,10 +134,12 @@ async function promptDatabaseEnv(template: string): Promise<string> {
 function replaceEnvFile(destinationPath: string, existing: string, contents: string): boolean {
   const lock = `${destinationPath}.create-env`;
   mkdirSync(lock, { mode: privateDirectoryMode });
+
   try {
     if (readFileSync(destinationPath, 'utf8') !== existing) {
       return false;
     }
+
     const temporaryPath = path.join(lock, '.env');
     writeFileSync(temporaryPath, contents, { mode: privateFileMode });
     renameSync(temporaryPath, destinationPath);
@@ -159,7 +172,7 @@ async function prepareEnvFile(example: string, mode: CreationMode): Promise<EnvF
 
   const contents = interactiveDatabase
     ? await promptDatabaseEnv(template)
-    : template.replaceAll(/^(?:AUTH_SECRET|NUXT_APP_SECRET)=""$/gmu, (assignment) =>
+    : template.replaceAll(/^AUTH_SECRET=""$/gmu, (assignment) =>
         assignment.replace('""', `"${generateSecret()}"`),
       );
 
@@ -173,6 +186,7 @@ async function prepareEnvFile(example: string, mode: CreationMode): Promise<EnvF
 function writeEnvFile(file: EnvFile, mode: CreationMode): void {
   const { destination, existing, contents } = file;
   const destinationPath = path.join(rootDirectory, destination);
+
   if (existing !== null) {
     if (replaceEnvFile(destinationPath, existing, contents)) {
       const action = mode === 'recreate' ? 'Recreated' : 'Configured';
@@ -180,6 +194,7 @@ function writeEnvFile(file: EnvFile, mode: CreationMode): void {
     } else {
       consola.info(`Keeping ${destination}`);
     }
+
     return;
   }
 
@@ -193,6 +208,7 @@ function writeEnvFile(file: EnvFile, mode: CreationMode): void {
     if (!(error instanceof Error && 'code' in error && error.code === 'EEXIST')) {
       throw error;
     }
+
     consola.info(`Keeping ${destination}`);
   }
 }
@@ -203,6 +219,7 @@ async function createEnvFiles(mode: CreationMode): Promise<void> {
   }).toSorted();
 
   const files = await Promise.all(examples.map(async (example) => prepareEnvFile(example, mode)));
+
   for (const file of files) {
     if (file !== null) {
       writeEnvFile(file, mode);
