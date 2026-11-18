@@ -18,3 +18,4 @@ export {
   appRoles,
   appAccessEvents,
 } from './application-roles.ts';
+export { apiKeys, appMachineKeys, appMachinePrincipals } from './application-machine-keys.ts';
