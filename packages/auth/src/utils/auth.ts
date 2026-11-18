@@ -10,6 +10,7 @@ import { betterAuth } from 'better-auth';
 import { jwt, organization } from 'better-auth/plugins';
 import { and, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
 import { accountCodes } from './account-otp.ts';
+import { applicationApiKeys, applicationMachineEndpoint } from './application-machine-endpoint.ts';
 import { applicationTokenResponses } from './oidc-token-responses.ts';
 import { createApplicationOidcProvider } from './oidc.ts';
 import { passwordRecovery } from './password-recovery.ts';
@@ -28,6 +29,8 @@ type AuthConfiguration = BetterAuthOptions & {
     ReturnType<typeof jwt>,
     ReturnType<typeof createApplicationOidcProvider>,
     ReturnType<typeof applicationTokenResponses>,
+    ReturnType<typeof applicationApiKeys>,
+    ReturnType<typeof applicationMachineEndpoint>,
     ReturnType<typeof accountCodes>,
     ReturnType<typeof passwordRecovery>,
   ];
@@ -151,6 +154,8 @@ export function createAuth(database: AuthDatabase, options: AuthOptions): Auth {
         options.registration,
       ),
       applicationTokenResponses(readTokenAccess),
+      applicationApiKeys(),
+      applicationMachineEndpoint(database, () => auth),
       accountCodes(options),
       passwordRecovery(database, options, () => auth),
     ],

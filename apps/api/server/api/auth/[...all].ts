@@ -34,6 +34,7 @@ const publicAuthEndpoints = new Set([
   'GET /api/auth/get-session',
   `POST ${passwordRecoveryPath}`,
   'GET /api/auth/ok',
+  'GET /api/auth/machine/installation',
   'GET /api/auth/jwks',
   `GET ${authorizationPath}`,
   `POST ${authorizationPath}`,
