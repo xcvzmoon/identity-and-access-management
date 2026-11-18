@@ -31,6 +31,15 @@ export type DatabaseEnvOptions = Pick<
 >;
 
 /**
+ * Requires certificate and host verification whenever PostgreSQL TLS is enabled.
+ * @param {boolean} ssl - Whether the caller enabled database TLS.
+ * @returns {false | { rejectUnauthorized: true }} TLS options for the PostgreSQL driver.
+ */
+export function databaseTlsOptions(ssl: boolean): false | { rejectUnauthorized: true } {
+  return ssl ? { rejectUnauthorized: true } : false;
+}
+
+/**
  * Loads database configuration through the shared environment loader.
  * Local mode requires the consuming workspace path. Other modes use process variables.
  * Port defaults to 5432; SSL and query logging default to false.
@@ -46,5 +55,6 @@ export function useDatabaseEnv(options: DatabaseEnvOptions = {}): DatabaseConfig
       db: databaseEnvSchema.entries,
     },
   });
+
   return env.db;
 }

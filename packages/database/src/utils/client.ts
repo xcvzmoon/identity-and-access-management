@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { EnhancedQueryLogger } from 'drizzle-query-logger';
 import postgres from 'postgres';
 import { relations } from '../relations.ts';
+import { databaseTlsOptions } from './env.ts';
 
 /** A Drizzle database and its application-owned PostgreSQL connection pool. */
 export type Database = PostgresJsDatabase<typeof relations> & {
@@ -26,7 +27,7 @@ export function createDatabase(config: DatabaseConfig): Database {
     user: config.user,
     password: config.password,
     database: config.database,
-    ssl: config.ssl,
+    ssl: databaseTlsOptions(config.ssl),
   });
   const logger = config.logger ? new EnhancedQueryLogger() : false;
   return drizzle({ client, relations, logger });

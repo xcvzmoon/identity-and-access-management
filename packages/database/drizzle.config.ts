@@ -1,5 +1,5 @@
 import { defineConfig } from 'drizzle-kit';
-import { useDatabaseEnv } from './src/utils/env.ts';
+import { databaseTlsOptions, useDatabaseEnv } from './src/utils/env.ts';
 
 const env = useDatabaseEnv({
   workspacePath: import.meta.dirname,
@@ -16,6 +16,6 @@ export default defineConfig({
     user: env.user,
     password: env.password,
     database: env.database,
-    ssl: env.ssl,
+    ssl: databaseTlsOptions(env.ssl),
   },
 });

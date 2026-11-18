@@ -2,7 +2,7 @@ import type { DatabaseConfig } from '../src/utils/env.ts';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import postgres, { PostgresError } from 'postgres';
-import { useDatabaseEnv } from '../src/utils/env.ts';
+import { databaseTlsOptions, useDatabaseEnv } from '../src/utils/env.ts';
 
 const workspacePath = path.resolve(import.meta.dirname, '..');
 const maintenanceDatabase = 'postgres';
@@ -21,7 +21,7 @@ async function ensureDatabase(config: DatabaseConfig): Promise<void> {
     port,
     user,
     password,
-    ssl,
+    ssl: databaseTlsOptions(ssl),
   };
 
   const target = postgres({
