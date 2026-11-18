@@ -326,6 +326,13 @@
       "skillPath": ".agents/skills/schedule/SKILL.md",
       "computedHash": "b8202b8b00c886eb1b27a3915dc4fa801fb162efdc13b8f4503390ba8583a230"
     },
+    "security-audit": {
+      "source": "cloudflare/security-audit-skill",
+      "commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+      "sourceType": "github",
+      "skillPath": "skills/security-audit/SKILL.md",
+      "computedHash": "8513eb3b2c39b8d05ef4f47b32ef4d18280b93a5efb91d8df6272f7435034af5"
+    },
     "skill-creator": {
       "source": "poteto/noodle",
       "sourceType": "github",
