@@ -57,7 +57,6 @@ export const typeImportsFirstRule = defineRule({
 
             return named.map((specifier, index) => {
               const replacement = ordered[index];
-
               if (!replacement) {
                 return null;
               }

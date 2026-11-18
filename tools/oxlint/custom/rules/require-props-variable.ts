@@ -20,7 +20,6 @@ export const requirePropsVariableRule = defineRule({
 
         let propsExpression = node;
         const parent = node.parent;
-
         if (
           parent.type === "CallExpression" &&
           parent.callee.type === "Identifier" &&
@@ -31,7 +30,6 @@ export const requirePropsVariableRule = defineRule({
         }
 
         const declaration = propsExpression.parent;
-
         if (
           declaration.type === "VariableDeclarator" &&
           declaration.init === propsExpression &&
