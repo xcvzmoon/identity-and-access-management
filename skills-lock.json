@@ -332,6 +332,13 @@
       "skillPath": "skills/skill-creator/SKILL.md",
       "computedHash": "209caf49b5d29ebd30c17bc55b060b8c473f404c3d77ee71dc4fbc9fa97c8ca2"
     },
+    "technical-writing": {
+      "source": "cursor/plugins",
+      "commit": "93b916d4a1e806507e22f4716b352fa91f2b227e",
+      "sourceType": "github",
+      "skillPath": "harness/pstack/claude-code/skills/technical-writing/SKILL.md",
+      "computedHash": "4a8b50628c064dc9cd1c6e7d4e7325c21ffd3572f52775d3a0381fd8a69259f7"
+    },
     "testing": {
       "source": "poteto/noodle",
       "sourceType": "github",
