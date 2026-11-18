@@ -30,6 +30,7 @@ export const sessions = iamSchema.table(
     ...generateTimestamps(),
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
+    activeOrganizationId: uuid('active_organization_id'),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),

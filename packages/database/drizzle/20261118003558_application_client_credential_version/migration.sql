@@ -1,0 +1,1 @@
+ALTER TABLE "iam"."app_clients" ADD COLUMN "credential_version" uuid DEFAULT gen_random_uuid() NOT NULL;
