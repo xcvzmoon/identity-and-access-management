@@ -15,8 +15,10 @@
   "dependencies": {
     "@formisch/vue": "catalog:",
     "@iam/shared": "workspace:*",
+    "@iconify-json/lucide": "catalog:web",
     "@nuxt/image": "catalog:web",
     "@nuxt/ui": "catalog:web",
+    "@simplewebauthn/browser": "catalog:web",
     "@tiptap/core": "catalog:web",
     "@tiptap/extension-bubble-menu": "catalog:web",
     "@tiptap/extension-code": "catalog:web",
@@ -46,6 +48,7 @@
   "devDependencies": {
     "@golar/vue": "catalog:web",
     "golar": "catalog:web",
+    "openid-client": "catalog:web",
     "vue-tsc": "catalog:web"
   }
 }

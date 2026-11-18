@@ -14,7 +14,8 @@
   "dependencies": {
     "@iam/auth": "workspace:*",
     "@iam/database": "workspace:*",
-    "nitro": "catalog:api"
+    "nitro": "catalog:api",
+    "valibot": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
