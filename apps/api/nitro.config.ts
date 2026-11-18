@@ -33,6 +33,7 @@ export default defineConfig({
     '/signin': privatePage,
     '/signup': privatePage,
     '/account': privatePage,
+    '/admin': privatePage,
     '/recover-password': privatePage,
     '/oidc/**': {
       headers: {

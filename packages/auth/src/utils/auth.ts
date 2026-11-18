@@ -1,7 +1,7 @@
 import type { useDatabase } from '@iam/database';
 import type { BetterAuthOptions } from 'better-auth';
 import type { Jwk } from 'better-auth/plugins';
-import type { AccountCodeMailer } from './account-email.ts';
+import type { AccountCodeMailer, OrganizationInvitationMailer } from './account-email.ts';
 import type { AccessLookup } from './oidc-token-responses.ts';
 import type { ManagedRegistration } from './oidc.ts';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter/relations-v2';
@@ -10,9 +10,15 @@ import { betterAuth } from 'better-auth';
 import { jwt, organization } from 'better-auth/plugins';
 import { and, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
 import { accountCodes } from './account-otp.ts';
+import { adminAccess } from './admin-access.ts';
+import { adminInteraction } from './admin-interaction.ts';
+import { administratorPasskeys } from './admin-passkeys.ts';
 import { applicationApiKeys, applicationMachineEndpoint } from './application-machine-endpoint.ts';
 import { applicationTokenResponses } from './oidc-token-responses.ts';
 import { createApplicationOidcProvider } from './oidc.ts';
+import { organizationInvitations } from './organization-invitations.ts';
+import { organizationMembership } from './organization-membership.ts';
+import { organizationOwnership } from './organization-ownership.ts';
 import { passwordRecovery } from './password-recovery.ts';
 import {
   issuerSigningAlgorithm,
@@ -31,8 +37,14 @@ type AuthConfiguration = BetterAuthOptions & {
     ReturnType<typeof applicationTokenResponses>,
     ReturnType<typeof applicationApiKeys>,
     ReturnType<typeof applicationMachineEndpoint>,
+    ReturnType<typeof administratorPasskeys>,
+    ReturnType<typeof adminInteraction>,
+    ReturnType<typeof adminAccess>,
     ReturnType<typeof accountCodes>,
     ReturnType<typeof passwordRecovery>,
+    ReturnType<typeof organizationInvitations>,
+    ReturnType<typeof organizationMembership>,
+    ReturnType<typeof organizationOwnership>,
   ];
 };
 
@@ -49,6 +61,7 @@ export type AuthOptions = {
   webOrigin: string;
   registration?: ManagedRegistration;
   sendPasswordRecoveryEmail?: AccountCodeMailer;
+  sendOrganizationInvitation?: OrganizationInvitationMailer;
 };
 
 function logAuthEvent(level: string): void {
@@ -156,8 +169,14 @@ export function createAuth(database: AuthDatabase, options: AuthOptions): Auth {
       applicationTokenResponses(readTokenAccess),
       applicationApiKeys(),
       applicationMachineEndpoint(database, () => auth),
+      administratorPasskeys(options.webOrigin),
+      adminInteraction(database, options, () => auth),
+      adminAccess(database, options, () => auth),
       accountCodes(options),
       passwordRecovery(database, options, () => auth),
+      organizationInvitations(database, options, () => auth),
+      organizationMembership(database, options, () => auth),
+      organizationOwnership(database, options, () => auth),
     ],
     emailAndPassword: {
       enabled: true,

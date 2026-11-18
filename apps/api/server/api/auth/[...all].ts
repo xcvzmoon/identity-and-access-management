@@ -18,6 +18,7 @@ const maxRecoveryBodyBytes = 4096;
 const maxUserInfoBodyBytes = 4096;
 const maxAuthorizationQueryLength = 8192;
 const authorizationPath = '/api/auth/oauth2/authorize';
+const invitationsPath = '/api/auth/account/organization-invitations';
 const userInfoPath = '/api/auth/oauth2/userinfo';
 const serverProtocolPaths = new Set([
   '/api/auth/oauth2/token',
@@ -27,12 +28,19 @@ const serverProtocolPaths = new Set([
 
 const authBodyLimits = new Map([
   [passwordRecoveryPath, maxRecoveryBodyBytes],
+  [invitationsPath, maxRecoveryBodyBytes],
   [userInfoPath, maxUserInfoBodyBytes],
 ]);
 
 const publicAuthEndpoints = new Set([
   'GET /api/auth/get-session',
+  'POST /api/auth/admin/interaction',
+  'POST /api/auth/admin/access',
+  'POST /api/auth/admin/member-status',
+  'POST /api/auth/admin/member-role',
+  'POST /api/auth/admin/transfer-ownership',
   `POST ${passwordRecoveryPath}`,
+  `POST ${invitationsPath}`,
   'GET /api/auth/ok',
   'GET /api/auth/machine/installation',
   'GET /api/auth/jwks',
@@ -96,7 +104,11 @@ async function readAuthRequest(event: H3Event): Promise<Request> {
     assertBodySize(event, authBodyLimits.get(pathname) ?? maxAuthBodyBytes);
   }
 
-  if (pathname === passwordRecoveryPath) {
+  if (
+    pathname.startsWith('/api/auth/admin/') ||
+    pathname === passwordRecoveryPath ||
+    pathname === invitationsPath
+  ) {
     await requireBrowserOrigin(event);
 
     const [mediaType = ''] = (headers.get('content-type') ?? '').split(';');
@@ -130,7 +142,7 @@ export default defineHandler(async (event) => {
     });
   }
 
-  if (pathname === passwordRecoveryPath) {
+  if (pathname === passwordRecoveryPath || pathname === invitationsPath) {
     event.res.headers.set('Cache-Control', 'no-store');
   }
 

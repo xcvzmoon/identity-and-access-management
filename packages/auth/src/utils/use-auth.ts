@@ -28,6 +28,12 @@ export function useAuth(): Auth {
             ...message,
             purpose: 'password-recovery',
           }),
+        sendOrganizationInvitation: async (message) =>
+          mail({
+            ...message,
+            purpose: 'organization-invitation',
+            accountUrl: new URL('/account', options.webOrigin).href,
+          }),
       });
     } else {
       auth = createAuth(database, options);

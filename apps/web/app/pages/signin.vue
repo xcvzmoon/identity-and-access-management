@@ -19,6 +19,7 @@
 
   definePageMeta({ auth: 'guest' });
 
+  const route = useRoute();
   const session = useUserSession();
   const form = useForm({
     schema: formSchema,
@@ -43,7 +44,7 @@
         return;
       }
 
-      await navigateTo('/account');
+      await navigateTo(route.query.redirect === '/admin' ? '/admin' : '/account');
     } catch {
       error.value = 'Authentication failed.';
     } finally {

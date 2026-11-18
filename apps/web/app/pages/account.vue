@@ -51,6 +51,8 @@
       Verify your email and set your password
     </NuxtLink>
 
+    <AccountInvitations v-if="userSession.user.value?.emailVerified" />
+
     <UAlert
       v-if="error"
       :description="error"
