@@ -41,6 +41,7 @@ function isWorkspacePlan(value: unknown): value is WorkspacePlan {
 
   return Object.values(value.plan).every((task) => isWorkspaceTask(task));
 }
+
 // Structural checks are limited to the external JSON boundary above.
 // oxlint-enable anti-slop/no-runtime-typeof
 
@@ -70,5 +71,6 @@ export function getWorkspaces(rootDirectory: string, task: 'build' | 'typecheck'
   const workspaces = Object.values(result.plan)
     .filter((entry) => entry.name === task && entry.package !== '.')
     .map(({ package: workspace }) => workspace);
+
   return [...new Set(workspaces)];
 }

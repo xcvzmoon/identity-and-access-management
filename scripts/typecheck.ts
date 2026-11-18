@@ -12,6 +12,7 @@ function typecheck(): void {
     stdio: 'pipe',
   });
   const workspaces = getWorkspaces(rootDirectory, 'typecheck');
+
   for (const workspace of workspaces) {
     consola.info(`Typechecking ${workspace}`);
     execFileSync('vp', ['-C', workspace, 'run', 'typecheck'], {
@@ -19,6 +20,7 @@ function typecheck(): void {
       stdio: 'pipe',
     });
   }
+
   consola.success('Typecheck complete');
 }
 

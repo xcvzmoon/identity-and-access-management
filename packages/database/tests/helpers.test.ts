@@ -56,6 +56,7 @@ test('requires the creator and attaches audit actor foreign keys with safe defau
       ({ onDelete }: Pick<ForeignKey, 'onDelete'>) => onDelete,
     ),
   ).toEqual(['restrict', 'set null', 'set null']);
+
   for (const foreignKey of getTableConfig(records).foreignKeys) {
     expect(foreignKey.reference().foreignColumns).toEqual([users.id]);
   }

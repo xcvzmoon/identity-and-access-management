@@ -20,6 +20,7 @@ function readAppEnvironment(source: EnvSource): 'local' | 'testing' | 'staging' 
   ) {
     return environment;
   }
+
   throw new EnvValidationError([
     {
       envVar: 'APP_ENV',
@@ -38,6 +39,7 @@ function readWorkspaceEnv(workspacePath: string): EnvSource {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       return {};
     }
+
     throw error;
   }
 }
@@ -93,7 +95,6 @@ export function useEnv<TSchema extends EnvSchema>(
   }
 
   const environment = readAppEnvironment(appEnvSource);
-
   if (environment === 'local') {
     if (workspacePath === '') {
       throw new TypeError('workspacePath is required when APP_ENV is local');
