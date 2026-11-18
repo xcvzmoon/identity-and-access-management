@@ -21,6 +21,7 @@ export const users = iamSchema.table('users', {
   ...generateTimestamps(),
 });
 
+/** IAM sessions, including the passkey and time of the last admin verification. */
 export const sessions = iamSchema.table(
   'sessions',
   {
@@ -31,6 +32,8 @@ export const sessions = iamSchema.table(
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
     activeOrganizationId: uuid('active_organization_id'),
+    adminPasskeyId: uuid('admin_passkey_id'),
+    adminVerifiedAt: timestamp('admin_verified_at', TIMESTAMP_CONFIG),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
