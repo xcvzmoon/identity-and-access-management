@@ -39,6 +39,14 @@ Each sample returns a timestamp and aggregate counts for both runtime roles in t
 
 Each IdP process emits an `account-email-backlog` event at startup and every minute. `pendingDeliveries` includes submissions waiting for an SMTP connection and those awaiting a relay response. `oldestPendingMs` is the age of the oldest outstanding submission in that process. Both fields return to zero when all submissions settle. Use the collector’s replica identifier when inspecting the samples.
 
+Configure the host monitor to pass the latest JSON event for each expected replica to [check-mail-backlog.sh](../deploy/check-mail-backlog.sh) on standard input. Run it every minute, even if the collector has received nothing. Use an empty input for a missing replica. The argument is the relay acceptance deadline in milliseconds, chosen by the service owner. For example, to check a 30-second deadline, run:
+
+```sh
+sh deploy/check-mail-backlog.sh 30000 < latest-replica-sample.json
+```
+
+The check requires jq. Exit 0 means the latest sample is within the deadline. Exit 2 signals an overdue delivery or a problem with the sample, including a timestamp older than three minutes or ahead of the monitor clock. Exit 3 signals a monitor configuration error.
+
 Page the identity on-call when the oldest pending delivery on any replica exceeds the agreed relay acceptance deadline. Treat missing samples as lost visibility. Inspect `account-email-delivery` failures alongside the backlog because a rejection also removes the submission from the pending count. After a restart the counters describe the new process. Confirm delivery and recovery notifications with the on-call team during deployment rehearsal.
 
 ## Local rehearsal origins
