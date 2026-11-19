@@ -486,6 +486,21 @@ export const oauthClientEvents = idpSchema.table(
   (table) => [index('oauth_client_events_created_at_idx').on(table.createdAt)],
 );
 
+export const installationRoleEvents = idpSchema.table(
+  'installation_role_events',
+  {
+    id: generateUuid(),
+    clientId: text('client_id').notNull(),
+    organizationId: uuid('organization_id'),
+    actorUserId: uuid('actor_user_id'),
+    role: text('role').notNull(),
+    previousPermissions: text('previous_permissions').array(),
+    newPermissions: text('new_permissions').array(),
+    createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
+  },
+  (table) => [index('installation_role_events_created_at_idx').on(table.createdAt)],
+);
+
 export const ownerRecoveryEvents = idpSchema.table(
   'owner_recovery_events',
   {

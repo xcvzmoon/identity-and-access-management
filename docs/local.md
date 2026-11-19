@@ -160,6 +160,19 @@ ORDER BY created_at, id;
 
 The migration starts a new history for existing clients. Apply it before deploying the retention job, which removes events older than 90 days.
 
+#### Reconstruct an installation role
+
+The audit reader can use this query alongside grant history to see which permissions a role gained or lost. It includes definitions supplied at client registration and removals caused by client deletion. A null permission set means the role was absent. An empty array means the role existed with no permissions.
+
+```sql
+SELECT created_at, organization_id, actor_user_id, previous_permissions, new_permissions
+FROM iam_idp.installation_role_events
+WHERE client_id = :'client_id' AND role = :'role'
+ORDER BY created_at, id;
+```
+
+History begins when the installation role audit migration runs. Reordering or repeating a permission leaves the effective set unchanged. Apply the migration before deploying the updated 90-day retention job.
+
 #### Check retained rate-limit row ages
 
 Capture the [aggregate age report](../apps/idp/api/scripts/report-rate-limit-retention.sql) before and after a purge. Run it with an operator login that can read `iam_idp.rate_limits.last_request`. The query needs only that column and scans the table once. On large installations, run the report outside peak traffic.

@@ -301,4 +301,50 @@ BEGIN
 END
 $verify$;
 
+SET LOCAL ROLE iam_idp_runtime;
+INSERT INTO iam_idp.oauth_clients (client_id, reference_id, redirect_uris, metadata)
+VALUES ('role-audit', current_setting('iam.fixture_org'), ARRAY['https://audit.invalid/callback'],
+        '{"rolePermissions":{"editor":["write","read"],"guest":[]},"private":"fixture-unrelated"}');
+UPDATE iam_idp.oauth_clients SET metadata='{"rolePermissions":{"editor":["read","write","read"],"guest":[]}}'
+WHERE client_id='role-audit';
+SAVEPOINT before_role_edit;
+UPDATE iam_idp.oauth_clients SET metadata='{"rolePermissions":{"invalid":[false]}}' WHERE client_id='role-audit';
+ROLLBACK TO before_role_edit;
+UPDATE iam_idp.oauth_clients SET metadata='{"rolePermissions":{"editor":["read"]}}' WHERE client_id='role-audit';
+DELETE FROM iam_idp.oauth_clients WHERE client_id='role-audit';
+
+SET LOCAL ROLE iam_audit_reader;
+DO $verify$
+BEGIN
+  IF (SELECT count(*) FROM iam_idp.installation_role_events WHERE client_id='role-audit') <> 5 OR
+     NOT EXISTS (SELECT FROM iam_idp.installation_role_events WHERE client_id='role-audit' AND role='editor'
+                 AND previous_permissions IS NULL AND new_permissions=ARRAY['read','write']) OR
+     NOT EXISTS (SELECT FROM iam_idp.installation_role_events WHERE client_id='role-audit' AND role='editor'
+                 AND previous_permissions=ARRAY['read','write'] AND new_permissions=ARRAY['read']) OR
+     NOT EXISTS (SELECT FROM iam_idp.installation_role_events WHERE client_id='role-audit' AND role='editor'
+                 AND previous_permissions=ARRAY['read'] AND new_permissions IS NULL) OR
+     NOT EXISTS (SELECT FROM iam_idp.installation_role_events WHERE client_id='role-audit' AND role='guest'
+                 AND previous_permissions IS NULL AND new_permissions=ARRAY[]::text[]) OR
+     NOT EXISTS (SELECT FROM iam_idp.installation_role_events WHERE client_id='role-audit' AND role='guest'
+                 AND previous_permissions=ARRAY[]::text[] AND new_permissions IS NULL) OR
+     EXISTS (SELECT FROM iam_idp.installation_role_events WHERE client_id='role-audit'
+             AND (actor_user_id IS DISTINCT FROM current_setting('iam.management_actor_id')::uuid
+             OR organization_id IS DISTINCT FROM current_setting('iam.fixture_org')::uuid)) OR
+     has_table_privilege('iam_idp_runtime','iam_idp.installation_role_events','SELECT, INSERT, UPDATE, DELETE') THEN
+    RAISE EXCEPTION 'Installation role history or privileges mismatch';
+  END IF;
+END
+$verify$;
+RESET ROLE;
+UPDATE iam_idp.installation_role_events SET created_at=now()-interval '91 days'
+WHERE client_id='role-audit' AND role='guest' AND new_permissions IS NULL;
+SET LOCAL ROLE iam_audit_retention;
+DO $verify$
+BEGIN
+  IF iam_idp.purge_expired_installation_role_events() <> 1 THEN
+    RAISE EXCEPTION 'Installation role retention mismatch';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;
