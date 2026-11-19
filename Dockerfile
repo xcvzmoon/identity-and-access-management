@@ -24,7 +24,9 @@ RUN if [ -f .env.example ]; then \
     && pnpm run build
 
 FROM base AS runtime
-RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends zlib1g=1:1.3.dfsg+really1.3.1-1+deb13u1 \
+    && rm -rf /var/lib/apt/lists/* /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 ARG WORKSPACE
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 LABEL org.opencontainers.image.source="https://github.com/xcvzmoon/identity-and-access-management"
