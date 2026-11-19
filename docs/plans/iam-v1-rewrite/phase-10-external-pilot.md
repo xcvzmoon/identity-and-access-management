@@ -4,16 +4,14 @@
 
 ## Changes
 
-- Replace the POC container targets and Compose paths with packaging for
-  the four workspaces. Configure ingress for the IdP issuer and the
-  separate console origin. Pin the production issuer hostname before
-  registering external clients.
+- Package the four workspaces with Docker and Compose. Configure ingress
+  for the IdP issuer and the separate console origin. Pin the production
+  issuer hostname before registering external clients.
 - Deploy at least two IdP API replicas behind one issuer. Use the same
   database and signing-key state. Document migrations, backup and
   restore, operator recovery, key rotation, and rollback.
 - Publish v1 integration and deployment instructions for the supported
   client profile. Rehearse with the rewrite database and fixtures.
-  The old application workspaces were already retired.
 
 ## Verification
 
