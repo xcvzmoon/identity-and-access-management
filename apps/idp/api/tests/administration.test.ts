@@ -1,5 +1,5 @@
 import type { APIResponse, Page } from 'playwright';
-import { eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { constants } from 'node:http2';
@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 import * as valibot from 'valibot';
 import { expect, test, vi } from 'vite-plus/test';
 import { useDatabase } from '../server/database/index.ts';
-import { oauthClients, ownerRecoveryEvents } from '../server/database/schema.ts';
+import { oauthClientEvents, oauthClients, ownerRecoveryEvents } from '../server/database/schema.ts';
 import { provisionClient } from '../server/services/registration.service.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { openAuditReader } from './fixtures/audit-reader.ts';
@@ -21,6 +21,7 @@ type Recovery = { operatorId: string; organizationId: string; replacement: Accou
 type Account = Awaited<ReturnType<typeof seedAccount>>;
 
 const TIMEOUT = 120_000;
+const LATEST_EVENT_COUNT = 1;
 const OWNER_PATH = '/api/v1/operator/owner-invitations';
 const MANAGEMENT_PATH = '/api/v1/management';
 const enabled = process.env.IAM_PHASE7_TESTS === '1';
@@ -217,6 +218,20 @@ test.skipIf(!enabled)(
       await database.delete(oauthClients).where(eq(oauthClients.clientId, registration.clientId));
       await database.$client.end();
     });
+    const reader = openAuditReader();
+    const creation = await reader
+      .select({ actor: oauthClientEvents.actorUserId })
+      .from(oauthClientEvents)
+      .where(
+        and(
+          eq(oauthClientEvents.clientId, registration.clientId),
+          eq(oauthClientEvents.operation, 'created'),
+        ),
+      )
+      .orderBy(desc(oauthClientEvents.id))
+      .limit(LATEST_EVENT_COUNT);
+
+    expect(creation).toEqual([{ actor: operator.userId }]);
     await cluster.startConsole(registration);
 
     const browser = await chromium.launch();

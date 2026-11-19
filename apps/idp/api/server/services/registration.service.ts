@@ -33,17 +33,28 @@ const MIN_CALLBACKS = 1;
 /**
  * Restricts managed client creation to an internal provisioning instance.
  *
+ * @param {RegistrationDatabase} database - Connection used by the issuer. Trusted provisioning binds it to the registration transaction.
  * @param {ClientRegistration} [registration] - The registration authorized by trusted provisioning code.
  * @returns {RegistrationPolicy} Better Auth client registration hooks.
  */
-export function createRegistrationPolicy(registration?: ClientRegistration): RegistrationPolicy {
+export function createRegistrationPolicy(
+  database: RegistrationDatabase,
+  registration?: ClientRegistration,
+): RegistrationPolicy {
   if (!registration) {
     return { clientPrivileges: () => false };
   }
 
   return {
     generateClientId: () => (registration.kind === 'console' ? CONSOLE_CLIENT_ID : randomUUID()),
-    clientPrivileges: ({ action, user }) => action === 'create' && user?.emailVerified === true,
+    clientPrivileges: async ({ action, user }) => {
+      if (action !== 'create' || user?.emailVerified !== true) {
+        return false;
+      }
+
+      await database.execute(sql`SELECT set_config('iam.management_actor_id', ${user.id}, true)`);
+      return true;
+    },
     clientReference: () =>
       registration.kind === 'installation' ? registration.organizationId : CONSOLE_CLIENT_ID,
   };

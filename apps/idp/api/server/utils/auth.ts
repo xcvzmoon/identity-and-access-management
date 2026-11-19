@@ -77,7 +77,7 @@ function configureAuth(database: AuthDatabase, options: AuthOptions) {
         grantTypes: ['authorization_code'],
         allowDynamicClientRegistration: false,
         ...authorizationPolicy,
-        ...createRegistrationPolicy(options.registration),
+        ...createRegistrationPolicy(database, options.registration),
       }),
       organization({
         allowUserToCreateOrganization: false,

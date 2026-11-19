@@ -57,6 +57,8 @@ umask 077
 vpx apps/idp/api/scripts/provision-console.ts < "$COOKIE_FILE" > "$NEW_SECRET_FILE"
 ```
 
+After provisioning, the audit reader can check the `created` event for `iam-console` in `iam_idp.oauth_client_events`. Its `actor_user_id` identifies the verified operator who ran the command.
+
 Store the returned value as `OIDC_CLIENT_SECRET` in the console runtime environment. Remove the temporary credential files and end the provisioning session. Start all services with `docker compose up -d`. For the Portless stack, run `vp run docker:portless up -d`. Check that discovery returns the exact issuer and open `/account` on the console origin. Configure daily audit retention with its dedicated login. [Audit retention](local.md#audit-retention)
 
 Register the reference installation through the console, grant a test member a role with `reports.read`, and run its backend behind a separate HTTPS hostname. [Connect a server-backed app](client-integration.md) · [Start the reference app](local.md#sign-in-through-the-reference-app)
