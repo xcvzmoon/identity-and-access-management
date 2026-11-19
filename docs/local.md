@@ -38,7 +38,7 @@ HTTPS setup below to exercise the IdP account pages.
    [IdP example](../apps/idp/api/.env.example) · [Console example](../apps/console/api/.env.example)
 
 Both APIs require `OIDC_ISSUER_URL`. The console API also requires
-`CONSOLE_ORIGIN`. Use bare HTTPS origins, with no trailing slash. The
+`CONSOLE_ORIGIN` and the reserved client's `OIDC_CLIENT_SECRET`. Use bare HTTPS origins, with no trailing slash. The
 examples use `https://idp.localhost` and `https://console.localhost`. Use the direct HTTP ports above for smoke checks.
 
 Each migrator owns its application schema and journal schema. The runtime
@@ -69,6 +69,25 @@ Open `/sign-in` for an existing account. Send invitees a link to
 `/invite#token=<invitation-token>`. A new user verifies their email and
 signs in to accept. A verified existing user can sign in and accept
 directly. The invitation grants membership only to its invited address.
+
+## Sign in to the console
+
+Serve the console on its own HTTPS hostname. Route `/api/*` on that host to
+the console API and all other paths to the console web server. Keep cookies
+and callback query strings out of proxy logs.
+
+Use the reserved `iam-console` registration. To provision it in a fresh
+environment, call the IdP's `provisionClient` from trusted provisioning
+code with a verified session, `kind: 'console'`, a name, and an exact
+redirect URI of `${CONSOLE_ORIGIN}/api/v1/callback`. Store the returned
+client secret in the console API's `OIDC_CLIENT_SECRET` setting. Apply
+both APIs' migrations. The IdP migration adds the profile and email scopes
+to an existing console registration.
+
+Open `/account` on the console origin. A verified account can view its
+profile and start password recovery without an organization membership.
+**Sign out of console** ends the local session. **Sign out of IAM** also
+opens the issuer's confirmation page to end SSO in this browser.
 
 ## Sign in through the reference app
 

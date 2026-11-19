@@ -112,3 +112,24 @@ vp test --run apps/idp/api/tests/live-access.test.ts
 The fixture routes sign-in and sign-out to one API process and introspection
 to a second process using the same issuer and database. Reserve ports 56451
 through 56455 for the fixture. Discard the database after the run.
+
+### Console session
+
+Build all four workspaces. Apply both APIs' migrations to a disposable
+`iam_phase6_test` database. Export the IdP runtime settings and set
+`IAM_PHASE6_CONSOLE_DB_PASSWORD` for the `iam_console_runtime` role.
+Use a trusted test certificate covering `localhost`, `console.localhost`,
+and `reports.localhost`. Reserve loopback ports 56471 through 56477 and
+install Chromium as described in the OIDC issuer fixture.
+
+```sh
+NODE_EXTRA_CA_CERTS="/absolute/path/to/test-certificate.pem" \
+IAM_PHASE6_TLS_KEY="/absolute/path/to/test-key.pem" \
+OIDC_ISSUER_URL="https://localhost:56471" \
+IAM_PHASE6_TESTS="1" \
+vp test --run apps/idp/api/tests/console-session.test.ts
+```
+
+The fixture provisions the console client and passes its secret directly
+to the console API process. It starts with a verified user without
+memberships and later grants the same user access to the reference app.
