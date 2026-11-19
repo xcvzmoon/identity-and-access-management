@@ -1,3 +1,3 @@
-// Keep the schema entry point importable until it exports table definitions.
-// oxlint-disable-next-line unicorn/require-module-specifiers
-export {};
+import { pgSchema } from 'drizzle-orm/pg-core';
+
+export const idpSchema = pgSchema('iam_idp');

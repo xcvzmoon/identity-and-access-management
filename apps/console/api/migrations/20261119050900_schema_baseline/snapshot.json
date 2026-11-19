@@ -1,0 +1,13 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "5bb0ab64-cffe-47b6-be94-0e44b938209b",
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
+  "ddl": [
+    {
+      "name": "iam_console",
+      "entityType": "schemas"
+    }
+  ],
+  "renames": []
+}
