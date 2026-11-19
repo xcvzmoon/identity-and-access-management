@@ -15,6 +15,7 @@ import { checkInstallationConsent } from './fixtures/oidc-consent.ts';
 import { authorizationUrl, exchange } from './fixtures/oidc-protocol.ts';
 import { seedOidc } from './fixtures/oidc.ts';
 import { verifySigningKeys } from './fixtures/signing-keys.ts';
+import { recordExchangeCapacity } from './fixtures/token-exchange-capacity.ts';
 
 type Reader = ReturnType<typeof openAuditReader>;
 type Fixture = Awaited<ReturnType<typeof seedOidc>>;
@@ -240,6 +241,10 @@ test.skipIf(!enabled)(
         const page = await browser.newPage({ ignoreHTTPSErrors: true });
 
         await checkConsent(page, fixture, callback, reader);
+        const exchangeReport = process.env.IAM_PHASE4_EXCHANGE_REPORT;
+        if (exchangeReport) {
+          await recordExchangeCapacity(page, fixture.north, callback, exchangeReport);
+        }
         await checkAuthorization(page, fixture, callback);
         await checkExchange(page, fixture, callback, reader);
         await checkInstallationConsent(page, fixture, callback, reader);

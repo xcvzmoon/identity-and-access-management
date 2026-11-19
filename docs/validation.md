@@ -125,6 +125,8 @@ app, and checks SSO reuse and renewed consent after a role change. It also
 checks tenant isolation, callback and PKCE enforcement, code replay, and
 revocation before exchange. Discard the fixture database after the run.
 
+The release gate writes `token-exchange-capacity.json` for eight single-use authorization codes issued to one confidential client. The fixture prepares each code with its own S256 verifier before timing begins. It redeems up to two codes at once and counts HTTP 200 responses with nonempty access and ID tokens, a bearer token type and a positive lifetime. The report records failures, successful exchanges per second, and nearest-rank p95 and p99 latency through receipt of the response body. With eight exchanges, both percentiles equal the slowest successful exchange. Set `IAM_PHASE4_EXCHANGE_REPORT` to a new file path to collect the report in a standalone phase 4 run.
+
 ### Live access across IdP processes
 
 Create a disposable PostgreSQL database named `iam_phase5_test` and apply

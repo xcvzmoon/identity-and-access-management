@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { useEnv } from '../../server/utils/env.ts';
 
-type Client = { clientId: string; clientSecret: string };
+export type Client = { clientId: string; clientSecret: string };
 
 const RANDOM_BYTES = 32;
 

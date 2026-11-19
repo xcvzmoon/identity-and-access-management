@@ -77,6 +77,9 @@ function runReleaseTests(): void {
       env: {
         ...process.env,
         ...settings,
+        ...(name === 'phase-4' && {
+          IAM_PHASE4_EXCHANGE_REPORT: path.join(directory, 'token-exchange-capacity.json'),
+        }),
         ...(name === 'phase-5' && {
           IAM_PHASE5_INTROSPECTION_REPORT: path.join(directory, 'introspection-capacity.json'),
         }),
