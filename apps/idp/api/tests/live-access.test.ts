@@ -21,6 +21,7 @@ import { measureRequests } from './fixtures/request-capacity.ts';
 type Fixture = Awaited<ReturnType<typeof seedOidc>>;
 type Cluster = Awaited<ReturnType<typeof startCluster>>;
 type Client = { clientId: string; clientSecret: string };
+type Observation = { at: string; elapsedMs: number };
 
 const INTROSPECTION_REQUESTS = 32;
 const CONCURRENT_REQUESTS = 4;
@@ -180,6 +181,53 @@ async function probeIntrospection(endpoint: URL, netrc: string): Promise<number>
   }
 }
 
+async function recordReplicaRecovery(
+  page: Page,
+  cluster: Cluster,
+  probe: { endpoint: URL; netrc: string },
+  resource: string,
+): Promise<void> {
+  const started = performance.now();
+
+  function observed(): Observation {
+    return {
+      at: new Date().toISOString(),
+      elapsedMs: Math.round(performance.now() - started),
+    };
+  }
+
+  const stopRequested = observed();
+  await cluster.stopReplica();
+  const replicaStopped = observed();
+  const discovery = await fetch(new URL('/.well-known/openid-configuration', probe.endpoint));
+  expect(discovery.status).toBe(OK);
+  expect(await probeIntrospection(probe.endpoint, probe.netrc)).toBe(CRITICAL);
+  const monitorCritical = observed();
+  await expectStatus(page, resource, UNAVAILABLE);
+  const protectedRequestUnavailable = observed();
+  const restartRequested = observed();
+  await cluster.startReplica();
+  const replicaReady = observed();
+  expect(await probeIntrospection(probe.endpoint, probe.netrc)).toBe(HEALTHY);
+  const monitorHealthy = observed();
+  await expectStatus(page, resource, OK);
+  const protectedRequestRecovered = observed();
+  const output = process.env.IAM_PHASE5_RECOVERY_REPORT;
+  if (output) {
+    const timeline = {
+      stopRequested,
+      replicaStopped,
+      monitorCritical,
+      protectedRequestUnavailable,
+      restartRequested,
+      replicaReady,
+      monitorHealthy,
+      protectedRequestRecovered,
+    };
+    await writeFile(output, `${JSON.stringify(timeline)}\n`, { flag: 'wx' });
+  }
+}
+
 async function checkIntrospectionRecovery(
   page: Page,
   cluster: Cluster,
@@ -198,14 +246,7 @@ async function checkIntrospectionRecovery(
       { mode: PRIVATE_FILE },
     );
     expect(await probeIntrospection(endpoint, netrc)).toBe(HEALTHY);
-    await cluster.stopReplica();
-    const discovery = await fetch(new URL('/.well-known/openid-configuration', env.oidcIssuerUrl));
-    expect(discovery.status).toBe(OK);
-    expect(await probeIntrospection(endpoint, netrc)).toBe(CRITICAL);
-    await expectStatus(page, resource, UNAVAILABLE);
-    await cluster.startReplica();
-    expect(await probeIntrospection(endpoint, netrc)).toBe(HEALTHY);
-    await expectStatus(page, resource, OK);
+    await recordReplicaRecovery(page, cluster, { endpoint, netrc }, resource);
   } finally {
     await rm(directory, {
       recursive: true,

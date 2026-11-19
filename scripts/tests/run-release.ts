@@ -84,6 +84,7 @@ function runReleaseTests(): void {
           IAM_PHASE4_EXCHANGE_REPORT: path.join(directory, 'token-exchange-capacity.json'),
         }),
         ...(name === 'phase-5' && {
+          IAM_PHASE5_RECOVERY_REPORT: path.join(directory, 'introspection-recovery.json'),
           IAM_PHASE5_INTROSPECTION_REPORT: path.join(directory, 'introspection-capacity.json'),
         }),
         ...(verifyIngress && {
