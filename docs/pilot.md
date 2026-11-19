@@ -25,6 +25,16 @@ Exit 0 confirms that the writable server admitted an ordinary login and answered
 
 Rehearse on a disposable primary with a small connection limit. Hold enough ordinary connections to exhaust the available slots, verify exit 2, then release them and verify exit 0. Confirm both notifications with the database on-call. This check covers connection exhaustion. Pool wait time, CPU and storage saturation need separate measurements.
 
+### Measure database sessions during a capacity rehearsal
+
+Sample the [database session report](../deploy/report-database-sessions.sql) while the sign-in, token exchange and introspection workloads run. Connect to each IAM database on the primary using a DBA-controlled statistics login with `pg_read_all_stats`. Keep that privilege off the application and connection-admission logins.
+
+```sh
+psql -Xw --csv -f deploy/report-database-sessions.sql
+```
+
+Each sample returns a timestamp and aggregate counts for both runtime roles in the connected database. Record the sampling interval alongside the workload and request latencies. A session waiting on a lock can also count as active. A nonzero `activity_tracking_disabled` count means the state breakdown is incomplete. Short waits can fall between samples. Measure application-side pool checkout delays separately.
+
 ## Local rehearsal origins
 
 For a local run, set `IDP_HOST="idp.localhost"` and `CONSOLE_HOST="console.localhost"`. Use a test certificate whose SANs include both names, signed by a locally trusted CA. Supply the certificate, key and root CA paths below. Use a recent Docker Compose release with support for the `!override` tag.
