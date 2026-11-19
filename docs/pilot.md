@@ -35,6 +35,12 @@ psql -Xw --csv -f deploy/report-database-sessions.sql
 
 Each sample returns a timestamp and aggregate counts for both runtime roles in the connected database. Record the sampling interval alongside the workload and request latencies. A session waiting on a lock can also count as active. A nonzero `activity_tracking_disabled` count means the state breakdown is incomplete. Short waits can fall between samples. Measure application-side pool checkout delays separately.
 
+## Monitor pending account email
+
+Each IdP process emits an `account-email-backlog` event at startup and every minute. `pendingDeliveries` includes submissions waiting for an SMTP connection and those awaiting a relay response. `oldestPendingMs` is the age of the oldest outstanding submission in that process. Both fields return to zero when all submissions settle. Use the collector’s replica identifier when inspecting the samples.
+
+Page the identity on-call when the oldest pending delivery on any replica exceeds the agreed relay acceptance deadline. Treat missing samples as lost visibility. Inspect `account-email-delivery` failures alongside the backlog because a rejection also removes the submission from the pending count. After a restart the counters describe the new process. Confirm delivery and recovery notifications with the on-call team during deployment rehearsal.
+
 ## Local rehearsal origins
 
 For a local run, set `IDP_HOST="idp.localhost"` and `CONSOLE_HOST="console.localhost"`. Use a test certificate whose SANs include both names, signed by a locally trusted CA. Supply the certificate, key and root CA paths below. Use a recent Docker Compose release with support for the `!override` tag.

@@ -2,11 +2,14 @@ import { log } from 'evlog';
 import { type Transporter, createTransport } from 'nodemailer';
 import { useEnv } from './env.ts';
 
+type AccountEmailBacklog = { pendingDeliveries: number; oldestPendingMs: number };
+
+const EMPTY_AGE_MS = 0;
 const IMPLICIT_TLS_PORT = 465;
 const MAX_CONCURRENT_DELIVERIES = 8;
 
 let transport: Transporter | null = null;
-const pending = new Set<Promise<unknown>>();
+const pending = new Map<Promise<unknown>, number>();
 
 function mailTransport(): Transporter {
   if (transport) {
@@ -76,10 +79,22 @@ export async function sendAccountEmail(
       pending.delete(delivery);
     });
 
-  pending.add(delivery);
+  pending.set(delivery, performance.now());
   if (mode === 'confirmed') {
     await sending;
   }
+}
+
+/**
+ * Reads the count and age of unfinished SMTP submissions in this IdP process.
+ * @returns {AccountEmailBacklog} Age in monotonic milliseconds, or zero when the pool has no pending deliveries.
+ */
+export function getAccountEmailBacklog(): AccountEmailBacklog {
+  const oldest = pending.values().next();
+  return {
+    pendingDeliveries: pending.size,
+    oldestPendingMs: oldest.done ? EMPTY_AGE_MS : Math.floor(performance.now() - oldest.value),
+  };
 }
 
 /** Waits for deliveries already submitted and closes their SMTP pool. Later sends use a new pool. */
@@ -87,6 +102,6 @@ export async function finishAccountEmail(): Promise<void> {
   const draining = transport;
 
   transport = null;
-  await Promise.allSettled(pending);
+  await Promise.allSettled(pending.keys());
   draining?.close();
 }

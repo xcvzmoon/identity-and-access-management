@@ -15,6 +15,11 @@ if grep -Fq 'iam-fixture-log-canary' "$log"; then
   exit 1
 fi
 
+if ! grep -F '"service":"iam-idp-api"' "$log" | grep -F '"event":"account-email-backlog"' | grep -F '"pendingDeliveries":0' | grep -Fq '"oldestPendingMs":0'; then
+  echo 'The IdP did not emit the empty SMTP backlog at startup.' >&2
+  exit 1
+fi
+
 if ! grep -F '"service":"iam-idp-api"' "$log" | grep -F '"event":"api-request"' | grep -Fq '"path":"/api/v1/auth/reset-password/:token"'; then
   echo 'The IdP did not log the password-reset route template.' >&2
   exit 1
