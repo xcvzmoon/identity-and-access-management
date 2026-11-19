@@ -24,15 +24,23 @@
 
   async function signIn(values: valibot.InferOutput<typeof schema>): Promise<void> {
     await submit(async () => {
-      await $fetch('/api/v1/auth/sign-in/email', {
+      const query = new URLSearchParams(globalThis.location.search);
+      const authorization = query.has('sig') || query.has('client_id');
+      const response = await $fetch<unknown>('/api/v1/auth/sign-in/email', {
         method: 'POST',
         body: {
           email: values.email,
           password: values.password,
+          ...(authorization && { oauth_query: query.toString() }),
         },
       });
 
       reset(form);
+
+      if (authorization) {
+        await followAuthorizationRedirect(valibot.parse(authorizationRedirectSchema, response));
+        return;
+      }
 
       signedIn.value = true;
     }, 'Unable to sign in. Check your credentials and verify your email.');
