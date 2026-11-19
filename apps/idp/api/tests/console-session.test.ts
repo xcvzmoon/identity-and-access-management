@@ -19,6 +19,7 @@ const UNAUTHORIZED = 401;
 const FOUND = 302;
 const SEE_OTHER = 303;
 const BAD_REQUEST = 400;
+const EXPIRED_TRANSACTIONS = 2;
 const LOG_CANARY = 'iam-fixture-log-canary';
 
 const enabled = process.env.IAM_PHASE6_TESTS === '1';
@@ -39,13 +40,71 @@ async function checkServerRenderedSignIn(browser: Browser, issuer: string): Prom
   }
 }
 
+async function beginLogin(page: Page, origin: string): Promise<URL> {
+  const login = new URL('/api/v1/login', origin);
+  const response = await page.request.get(login.href, { maxRedirects: 0 });
+  expect(response.status()).toBe(SEE_OTHER);
+  const location = response.headers().location;
+  assert.ok(location);
+  return new URL(location);
+}
+
+function consoleDatabase(): postgres.Sql {
+  const env = useEnv();
+  return postgres({
+    ...env.db,
+    user: 'iam_console_runtime',
+    password: process.env.IAM_PHASE6_CONSOLE_DB_PASSWORD,
+  });
+}
+
+async function checkTransactionExpiry(page: Page, origin: string): Promise<void> {
+  const client = consoleDatabase();
+  const states: string[] = [];
+
+  async function pendingState(): Promise<string> {
+    const authorization = await beginLogin(page, origin);
+    const state = authorization.searchParams.get('state');
+    assert.ok(state);
+    states.push(state);
+    return state;
+  }
+
+  try {
+    const live = await pendingState();
+    const abandoned = await pendingState();
+    const expired = await pendingState();
+    const aged = await client`UPDATE iam_console.authorization_transactions
+      SET expires_at = now() WHERE state IN (${abandoned}, ${expired})`;
+    expect(aged.count).toBe(EXPIRED_TRANSACTIONS);
+
+    const callback = new URL('/api/v1/callback', origin);
+    callback.searchParams.set('state', expired);
+    const rejected = await page.request.get(callback.href, { maxRedirects: 0 });
+    expect(rejected.status()).toBe(BAD_REQUEST);
+    expect(await rejected.text()).toBe('Invalid or expired sign-in.');
+
+    const fresh = await pendingState();
+    const [remaining] = await client`SELECT
+      count(*) FILTER (WHERE state IN (${abandoned}, ${expired}))::int AS expired,
+      count(*) FILTER (WHERE state IN (${live}, ${fresh}))::int AS live
+      FROM iam_console.authorization_transactions`;
+    expect(remaining).toEqual({
+      expired: 0,
+      live: 2,
+    });
+  } finally {
+    try {
+      await client`DELETE FROM iam_console.authorization_transactions WHERE state = ANY(${states}::text[])`;
+    } finally {
+      await client.end();
+    }
+  }
+}
+
 async function checkRejectedLogin(page: Page, origin: string): Promise<void> {
   const login = new URL('/api/v1/login', origin);
-  const pending = await page.request.get(login.href, { maxRedirects: 0 });
-  const location = pending.headers().location;
-  assert.ok(location);
-
-  const authorization = new URL(location);
+  const authorization = await beginLogin(page, origin);
   const state = authorization.searchParams.get('state');
   expect(authorization.searchParams.get('code_challenge_method')).toBe('S256');
   expect(authorization.searchParams.get('nonce')).toBeTruthy();
@@ -57,6 +116,7 @@ async function checkRejectedLogin(page: Page, origin: string): Promise<void> {
   callback.searchParams.set('iss', authorization.origin);
   const canceled = await page.request.get(callback.href, { maxRedirects: 0 });
   expect(canceled.status()).toBe(BAD_REQUEST);
+  expect(await canceled.text()).toBe('Sign-in failed.');
 
   login.searchParams.set('returnTo', 'https://example.invalid/');
   const refused = await page.request.get(login.href, { maxRedirects: 0 });
@@ -150,12 +210,7 @@ async function verifyReports(page: Page, cluster: Cluster, account: Account): Pr
 }
 
 async function checkExpiry(page: Page, origin: string, account: Account): Promise<void> {
-  const env = useEnv();
-  const client = postgres({
-    ...env.db,
-    user: 'iam_console_runtime',
-    password: process.env.IAM_PHASE6_CONSOLE_DB_PASSWORD,
-  });
+  const client = consoleDatabase();
 
   try {
     await client`UPDATE iam_console.sessions SET expires_at = now() WHERE sub = ${account.userId}`;
@@ -224,6 +279,7 @@ test.skipIf(!enabled)(
     const page = await browser.newPage({ ignoreHTTPSErrors: true });
     await checkServerRenderedSignIn(browser, env.oidcIssuerUrl);
     await exerciseIngressLogs(page, env.oidcIssuerUrl);
+    await checkTransactionExpiry(page, cluster.consoleOrigin);
     await checkRejectedLogin(page, cluster.consoleOrigin);
     await openAccount(page, cluster, account);
     await checkExpiry(page, cluster.consoleOrigin, account);

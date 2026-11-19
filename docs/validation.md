@@ -164,7 +164,7 @@ vp test --run apps/idp/api/tests/console-session.test.ts
 
 The fixture provisions the console client and passes its secret directly
 to the console API process. It starts with a verified user without
-memberships and later grants the same user access to the reference app.
+memberships and later grants the same user access to the reference app. The fixture also expires two pending logins, submits one callback, and checks that the next login clears expired transactions while preserving a live one.
 
 ### Administration and owner recovery
 
