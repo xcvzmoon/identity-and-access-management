@@ -1,0 +1,75 @@
+{
+	admin off
+	auto_https off
+	log {
+		exclude http.log.error http.handlers.reverse_proxy
+	}
+}
+
+(access_log) {
+	log {
+		output stdout
+		format filter {
+			wrap json
+			request delete
+			resp_headers delete
+			bytes_read delete
+			size delete
+			user_id delete
+			write_error delete
+		}
+	}
+
+	map {method} {log_method} {
+		~^(GET|HEAD|POST|OPTIONS|PUT|PATCH|DELETE)$ $0
+		default OTHER
+	}
+	map {path} {log_route} {
+		~^/api/v1/auth/reset-password/[^/]+$ /api/v1/auth/reset-password/:token
+		~^/api/v1/auth/oauth2/(authorize|token|consent|introspect|userinfo)$ $0
+		~^/api/v1/auth/(jwks|get-session|sign-out|verify-email|reset-password|request-password-reset|send-verification-email|sign-in/email)$ $0
+		~^/api/v1/auth/passkey/generate-(register|authenticate)-options$ $0
+		~^/api/v1/auth/passkey/verify-(registration|authentication)$ $0
+		~^/api/v1/(management|callback|session|login|sign-out|hello|invitations/(accept|signup)|operator/owner-invitations|app-consent/details)$ $0
+		~^/\.well-known/(openid-configuration|oauth-authorization-server)$ $0
+		~^/(account|consent|forgot-password|invite|management|operator|passkeys|reset-password|sign-in|sign-out|signed-out|verify-email)$ $0
+		default unmatched
+	}
+
+	log_append method {log_method}
+	log_append route {log_route}
+}
+
+https://{$IDP_HOST} {
+	import access_log
+	tls /run/secrets/tls_cert /run/secrets/tls_key
+
+	@api path /api/* /.well-known/*
+	handle @api {
+		reverse_proxy idp-api-1:3000 idp-api-2:3000 {
+			header_up X-Real-IP {remote_host}
+			lb_policy round_robin
+			lb_try_duration 2s
+			health_uri /.well-known/openid-configuration
+			health_interval 5s
+			fail_duration 5s
+		}
+	}
+
+	handle {
+		reverse_proxy idp-web:3000
+	}
+}
+
+https://{$CONSOLE_HOST} {
+	import access_log
+	tls /run/secrets/tls_cert /run/secrets/tls_key
+
+	handle /api/* {
+		reverse_proxy console-api:3000
+	}
+
+	handle {
+		reverse_proxy console-web:3000
+	}
+}

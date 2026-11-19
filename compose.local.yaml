@@ -1,0 +1,21 @@
+x-local-issuer: &local-issuer
+  OIDC_ISSUER_URL: https://${IDP_HOST}:56943
+
+services:
+  idp-api-1:
+    environment: *local-issuer
+
+  idp-api-2:
+    environment: *local-issuer
+
+  console-api:
+    environment:
+      <<: *local-issuer
+      CONSOLE_ORIGIN: https://${CONSOLE_HOST}:56943
+
+  ingress:
+    environment:
+      IDP_HOST: ${IDP_HOST}:56943
+      CONSOLE_HOST: ${CONSOLE_HOST}:56943
+    ports: !override
+      - '127.0.0.1:56943:56943'

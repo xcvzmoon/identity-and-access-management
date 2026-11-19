@@ -1,41 +1,91 @@
+x-runtime: &runtime
+  init: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  tmpfs:
+    - /tmp
+
+x-idp-api: &idp-api
+  <<: *runtime
+  image: ${COMPOSE_PROJECT_NAME}-idp-api-1
+  pull_policy: never
+  env_file: ${IDP_ENV_FILE:-./apps/idp/api/.env}
+  environment:
+    OIDC_ISSUER_URL: https://${IDP_HOST:?Set the issuer hostname}
+    TRUST_PROXY_IP: 'true'
+    NODE_EXTRA_CA_CERTS: /run/secrets/tls_ca
+  secrets:
+    - tls_ca
+
 services:
-  api:
+  idp-api-1:
+    <<: *idp-api
     build:
       context: .
-      target: api
-    env_file:
-      - path: ./packages/auth/.env
-        required: false
-      - path: ./packages/database/.env
-        required: false
-    environment:
-      APP_ENV: production
-      AUTH_IDP_ORIGIN: ${AUTH_IDP_ORIGIN:-http://localhost:5176}
-      DB_HOST: ${DOCKER_DB_HOST:-host.docker.internal}
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
-    ports:
-      - '127.0.0.1:3000:3000'
-    init: true
+      args:
+        WORKSPACE: idp/api
 
-  web:
-    build:
-      context: .
-      target: web
-    environment:
-      NUXT_API_URL: http://api:3000
-      NUXT_IDP_ORIGIN: ${AUTH_IDP_ORIGIN:-http://localhost:5176}
-    ports:
-      - '127.0.0.1:5173:5173'
-    init: true
+  idp-api-2: *idp-api
 
-  idp:
+  idp-web:
+    <<: *runtime
     build:
       context: .
-      target: idp
+      args:
+        WORKSPACE: idp/web
+
+  console-api:
+    <<: *runtime
+    build:
+      context: .
+      args:
+        WORKSPACE: console/api
+    env_file: ${CONSOLE_ENV_FILE:-./apps/console/api/.env}
     environment:
-      NUXT_API_URL: http://api:3000
-      NUXT_PUBLIC_WEB_ORIGIN: ${AUTH_WEB_ORIGIN:-http://localhost:5173}
+      OIDC_ISSUER_URL: https://${IDP_HOST:?Set the issuer hostname}
+      CONSOLE_ORIGIN: https://${CONSOLE_HOST:?Set the console hostname}
+      NODE_EXTRA_CA_CERTS: /run/secrets/tls_ca
+    secrets:
+      - tls_ca
+
+  console-web:
+    <<: *runtime
+    build:
+      context: .
+      args:
+        WORKSPACE: console/web
+
+  ingress:
+    image: caddy:2.11.9-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
+    restart: unless-stopped
+    environment:
+      IDP_HOST: ${IDP_HOST:?Set the issuer hostname}
+      CONSOLE_HOST: ${CONSOLE_HOST:?Set the console hostname}
     ports:
-      - '127.0.0.1:5176:5176'
-    init: true
+      - '${BIND_ADDRESS:-127.0.0.1}:443:443'
+    networks:
+      default:
+        aliases:
+          - ${IDP_HOST}
+          - ${CONSOLE_HOST}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+    secrets:
+      - tls_cert
+      - tls_key
+    depends_on:
+      - idp-api-1
+      - idp-api-2
+      - idp-web
+      - console-api
+      - console-web
+
+secrets:
+  tls_cert:
+    file: ${TLS_CERT_FILE:?Set the certificate chain PEM path}
+  tls_key:
+    file: ${TLS_KEY_FILE:?Set the private key PEM path}
+  tls_ca:
+    file: ${TLS_CA_FILE:?Set the trusted issuer CA PEM path}
