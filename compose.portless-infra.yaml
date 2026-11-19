@@ -1,0 +1,60 @@
+x-database-ready: &database-ready
+  database:
+    condition: service_healthy
+
+services:
+  idp-api-1:
+    depends_on: *database-ready
+
+  idp-api-2:
+    depends_on: *database-ready
+
+  console-api:
+    depends_on: *database-ready
+
+  database:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: iam_portless
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-d', 'iam_portless']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    secrets:
+      - postgres_password
+    volumes:
+      - pgdata:/var/lib/postgresql
+    ports:
+      - '127.0.0.1:56985:5432'
+
+  mail:
+    image: axllent/mailpit:v1.27.8
+    restart: unless-stopped
+    environment:
+      MP_SMTP_TLS_CERT: /run/secrets/mail_cert
+      MP_SMTP_TLS_KEY: /run/secrets/mail_key
+      MP_DATABASE: /data/mailpit.db
+    labels:
+      portless.enable: 'false'
+    ports:
+      - '127.0.0.1:56986:8025'
+    volumes:
+      - maildata:/data
+    secrets:
+      - mail_cert
+      - mail_key
+
+secrets:
+  postgres_password:
+    file: ./.env.portless.d/postgres-password
+  mail_cert:
+    file: ./.env.portless.d/mail.pem
+  mail_key:
+    file: ./.env.portless.d/mail.key
+
+volumes:
+  pgdata:
+  maildata:
