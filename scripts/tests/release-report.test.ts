@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { expect, test } from 'vite-plus/test';
-import { verifyReleaseReport } from './release-report.ts';
+import { releasePhases, verifyReleaseReport } from './release-report.ts';
 
 const testsDirectory = path.join(import.meta.dirname, 'fixtures');
 const suites = [
@@ -87,4 +87,14 @@ test('rejects a suite failure after passing assertions', () => {
   expect(() => {
     verifyReleaseReport(JSON.stringify(report), suites, testsDirectory);
   }).toThrow();
+});
+
+test('requires the independent client secret cutoff fixture for promotion', () => {
+  const rotation = releasePhases.find((phase) => phase.name === 'rotation');
+  expect(rotation?.suites).toEqual([
+    {
+      file: 'client-secret-rotation.test.ts',
+      titles: ['rotates managed client secrets at immediate cutoff'],
+    },
+  ]);
 });

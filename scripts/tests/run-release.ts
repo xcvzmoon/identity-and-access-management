@@ -24,9 +24,10 @@ function runReleaseTests(): void {
 
   mkdirSync(directory, { mode: 0o700 });
   for (const phase of releasePhases) {
-    const name = `phase-${phase.number}`;
+    const { name } = phase;
+    const fixture = name.replace('-', '');
     const settings = parseEnv(readFileSync(path.join(fixtures, `${name}.env`), 'utf8'));
-    const database = `iam_phase${phase.number}_test`;
+    const database = `iam_${fixture}_test`;
     if (settings.DB_DATABASE !== database) {
       throw new Error(`${name}.env must set DB_DATABASE to ${database}.`);
     }
@@ -34,7 +35,7 @@ function runReleaseTests(): void {
     const output = path.join(directory, `${name}.json`);
     const files = phase.suites.map((suite) => path.join(testsDirectory, suite.file));
     const reporter = ['--reporter=json', '--outputFile', output];
-    const verifyIngress = phase.number === '6';
+    const verifyIngress = name === 'phase-6';
     const program = verifyIngress ? 'sh' : 'vp';
     const args = verifyIngress
       ? ['scripts/tests/verify-ingress-logs.sh', ...reporter]
@@ -45,7 +46,7 @@ function runReleaseTests(): void {
       env: {
         ...process.env,
         ...settings,
-        [`IAM_PHASE${phase.number}_TESTS`]: '1',
+        [`IAM_${fixture.toUpperCase()}_TESTS`]: '1',
       },
       stdio: 'inherit',
     });
@@ -81,7 +82,9 @@ function runReleaseTests(): void {
     dirty,
     startedAt,
     finishedAt: new Date().toISOString(),
-    phases: releasePhases.map((phase) => phase.number),
+    phases: releasePhases.map((phase) => phase.name.replace('phase-', '')),
+    passedCases: releasePhases.flatMap((phase) => phase.suites.flatMap((suite) => suite.titles))
+      .length,
   };
   writeFileSync(path.join(directory, 'passed.json'), `${JSON.stringify(receipt)}\n`, {
     flag: 'wx',

@@ -7,13 +7,13 @@ type ReleaseSuite = {
 };
 
 type ReleasePhase = {
-  number: string;
+  name: string;
   suites: readonly ReleaseSuite[];
 };
 
 export const releasePhases: readonly ReleasePhase[] = [
   {
-    number: '3',
+    name: 'phase-3',
     suites: [
       {
         file: 'invitations.test.ts',
@@ -26,7 +26,7 @@ export const releasePhases: readonly ReleasePhase[] = [
     ],
   },
   {
-    number: '4',
+    name: 'phase-4',
     suites: [
       {
         file: 'oidc.test.ts',
@@ -35,7 +35,7 @@ export const releasePhases: readonly ReleasePhase[] = [
     ],
   },
   {
-    number: '5',
+    name: 'phase-5',
     suites: [
       {
         file: 'live-access.test.ts',
@@ -44,7 +44,7 @@ export const releasePhases: readonly ReleasePhase[] = [
     ],
   },
   {
-    number: '6',
+    name: 'phase-6',
     suites: [
       {
         file: 'console-session.test.ts',
@@ -53,7 +53,7 @@ export const releasePhases: readonly ReleasePhase[] = [
     ],
   },
   {
-    number: '7',
+    name: 'phase-7',
     suites: [
       {
         file: 'administration.test.ts',
@@ -66,13 +66,22 @@ export const releasePhases: readonly ReleasePhase[] = [
     ],
   },
   {
-    number: '9',
+    name: 'phase-9',
     suites: [
       {
         file: 'signing-key-rotation.test.ts',
         titles: [
           'concurrent rotation publishes and activates once, then restores the trusted signer',
         ],
+      },
+    ],
+  },
+  {
+    name: 'rotation',
+    suites: [
+      {
+        file: 'client-secret-rotation.test.ts',
+        titles: ['rotates managed client secrets at immediate cutoff'],
       },
     ],
   },
