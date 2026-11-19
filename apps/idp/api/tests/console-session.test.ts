@@ -9,6 +9,7 @@ import { useDatabase } from '../server/database/index.ts';
 import { oauthClients } from '../server/database/schema.ts';
 import { assignAppRole, provisionClient } from '../server/services/registration.service.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
+import { recordLoginCapacity } from './fixtures/console-login-capacity.ts';
 import { startCluster } from './fixtures/live-processes.ts';
 import { installReports, seedAccount } from './fixtures/oidc.ts';
 
@@ -323,6 +324,23 @@ test.skipIf(!enabled)(
     await exerciseIngressLogs(page, env.oidcIssuerUrl);
     await checkTransactionExpiry(page, cluster.consoleOrigin);
     await checkConcurrentCleanup(page, cluster.consoleOrigin);
+    const output = process.env.IAM_PHASE6_LOGIN_REPORT;
+    if (output) {
+      const client = consoleDatabase();
+      try {
+        await recordLoginCapacity(
+          {
+            page,
+            origin: cluster.consoleOrigin,
+            issuer: env.oidcIssuerUrl,
+            client,
+          },
+          output,
+        );
+      } finally {
+        await client.end();
+      }
+    }
     await checkRejectedLogin(page, cluster.consoleOrigin);
     await openAccount(page, cluster, account);
     await checkExpiry(page, cluster.consoleOrigin, account);

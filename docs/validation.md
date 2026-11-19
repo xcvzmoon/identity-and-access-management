@@ -166,6 +166,10 @@ The fixture provisions the console client and passes its secret directly
 to the console API process. It starts with a verified user without
 memberships and later grants the same user access to the reference app. The fixture also expires two pending logins, submits one callback, and checks that the next login clears expired transactions while preserving a live one. With 202 expired rows and one held row lock, two concurrent logins each remove 100 rows. After the lock is released, a third login clears the remaining two.
 
+The release gate writes `console-login-capacity.json` alongside the phase reports. To collect it in a standalone phase 6 run, set `IAM_PHASE6_LOGIN_REPORT` to a new file path. On the warmed console, each sample starts 128 authorizations with up to eight requests in flight. The first starts with an empty expiry backlog. The second seeds 12,800 expired transactions. Seeding and final row counts fall outside the timed interval.
+
+The report gives successful redirects per second, failed attempts, and nearest-rank p95 and p99 latency for successful redirects. Each sample must leave 128 live fixture transactions and clear its seeded backlog. These timings cover the console login endpoint through its authorization redirect. Password verification, token exchange, and live introspection require separate workloads.
+
 ### Administration and owner recovery
 
 Build all four workspaces, install Playwright Chromium, and apply both

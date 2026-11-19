@@ -77,6 +77,9 @@ function runReleaseTests(): void {
       env: {
         ...process.env,
         ...settings,
+        ...(verifyIngress && {
+          IAM_PHASE6_LOGIN_REPORT: path.join(directory, 'console-login-capacity.json'),
+        }),
         [`IAM_${fixture.toUpperCase()}_TESTS`]: '1',
       },
       stdio: 'inherit',
