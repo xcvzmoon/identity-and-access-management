@@ -55,8 +55,10 @@ async function getConfiguration(): Promise<oidc.Configuration> {
 }
 
 function prepareResponse(event: H3Event): void {
-  event.res.headers.set('cache-control', 'no-store');
-  event.res.headers.set('referrer-policy', 'no-referrer');
+  for (const headers of [event.res.headers, event.res.errHeaders]) {
+    headers.set('cache-control', 'no-store');
+    headers.set('referrer-policy', 'no-referrer');
+  }
 }
 
 function setBrowserCookie(event: H3Event, name: string, value: string, maxAge: number): void {

@@ -48,6 +48,10 @@ async function checkRejectedLogin(page: Page, origin: string): Promise<void> {
 
   const session = await page.request.get(new URL('/api/v1/session', origin).href);
   expect(session.status()).toBe(UNAUTHORIZED);
+  expect(session.headers()).toMatchObject({
+    'cache-control': 'no-store',
+    'referrer-policy': 'no-referrer',
+  });
 }
 
 async function exerciseIngressLogs(page: Page, origin: string): Promise<void> {
