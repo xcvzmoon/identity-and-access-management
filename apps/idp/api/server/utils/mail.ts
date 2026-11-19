@@ -65,6 +65,7 @@ export async function sendAccountEmail(
   const env = useEnv();
   const smtp = mailTransport();
   const sending = smtp.sendMail({
+    ...(mode === 'confirmed' && { signal: AbortSignal.timeout(env.smtp.confirmedTimeoutMs) }),
     from: env.smtp.from,
     to,
     subject,

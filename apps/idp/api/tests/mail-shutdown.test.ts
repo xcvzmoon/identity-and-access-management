@@ -4,7 +4,7 @@ import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import * as valibot from 'valibot';
-import { expect, test, vi } from 'vite-plus/test';
+import { afterAll, beforeAll, expect, test, vi } from 'vite-plus/test';
 import { initializeEnv } from '../server/utils/env.ts';
 import {
   finishAccountEmail,
@@ -13,6 +13,7 @@ import {
 } from '../server/utils/mail.ts';
 
 const EPHEMERAL_PORT = 0;
+const POOL_CONNECTIONS = 8;
 const RELAY_DELAY_MS = 20;
 const NO_PENDING_AGE = 0;
 const ONE_DELIVERY = 1;
@@ -37,6 +38,7 @@ function initializeFixtureEnv(port: number): void {
     SMTP_HOST: '127.0.0.1',
     SMTP_PORT: String(port),
     SMTP_FROM: 'issuer@example.test',
+    SMTP_CONFIRMED_TIMEOUT_MS: '1000',
     SMTP_USER: 'fixture',
     SMTP_PASSWORD: randomUUID(),
     OPERATOR_USER_IDS: '',
@@ -97,21 +99,78 @@ async function checkPendingDeliveries(server: Server): Promise<void> {
   }
 }
 
-test('shutdown waits for confirmed SMTP delivery and propagates a relay rejection', async () => {
-  const server = createServer();
+const server = createServer();
+
+beforeAll(async () => {
   const listening = once(server, 'listening');
   server.listen(EPHEMERAL_PORT, '127.0.0.1');
   await listening;
   const address = valibot.parse(valibot.object({ port: valibot.number() }), server.address());
+  initializeFixtureEnv(address.port);
+});
 
+afterAll(async () => {
+  await finishAccountEmail();
+  await server[Symbol.asyncDispose]();
+  vi.unstubAllEnvs();
+});
+
+test('shutdown waits for confirmed SMTP delivery and propagates a relay rejection', async () => {
+  expect(getAccountEmailBacklog()).toEqual(EMPTY_BACKLOG);
+  await checkPendingDeliveries(server);
+  expect(getAccountEmailBacklog()).toEqual(EMPTY_BACKLOG);
+});
+
+test('confirmed delivery aborts a stalled SMTP submission at its deadline', async () => {
+  const first = nextConnection(server);
+  const sending = sendAccountEmail(
+    'owner@example.test',
+    'Test invitation',
+    'https://issuer.example.test/invite',
+    'confirmed',
+  );
+  const rejected = expect(sending).rejects.toMatchObject({ code: 'EABORT' });
+  const socket = await first;
   try {
-    initializeFixtureEnv(address.port);
-    expect(getAccountEmailBacklog()).toEqual(EMPTY_BACKLOG);
-    await checkPendingDeliveries(server);
+    const closed = once(socket, 'close');
+    await rejected;
+    await closed;
+    await finishAccountEmail();
     expect(getAccountEmailBacklog()).toEqual(EMPTY_BACKLOG);
   } finally {
-    await finishAccountEmail();
-    await server[Symbol.asyncDispose]();
-    vi.unstubAllEnvs();
+    socket.destroy();
   }
+});
+
+test('confirmed delivery expires while waiting for an occupied SMTP pool', async () => {
+  const sockets: Socket[] = [];
+  function trackConnection(socket: Socket): void {
+    sockets.push(socket);
+  }
+
+  server.on('connection', trackConnection);
+  try {
+    await Promise.all(
+      Array.from({ length: POOL_CONNECTIONS }, async () =>
+        sendAccountEmail('user@example.test', 'Test verification', 'https://issuer.example.test'),
+      ),
+    );
+    await expect.poll(() => sockets.length).toBe(POOL_CONNECTIONS);
+    await expect(
+      sendAccountEmail(
+        'owner@example.test',
+        'Test invitation',
+        'https://issuer.example.test',
+        'confirmed',
+      ),
+    ).rejects.toMatchObject({ code: 'EABORT' });
+    expect(getAccountEmailBacklog().pendingDeliveries).toBe(POOL_CONNECTIONS);
+  } finally {
+    server.off('connection', trackConnection);
+    for (const socket of sockets) {
+      socket.end('421 Temporary relay failure\r\n');
+    }
+    await finishAccountEmail();
+  }
+  expect(getAccountEmailBacklog()).toEqual(EMPTY_BACKLOG);
 });

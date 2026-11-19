@@ -11,6 +11,8 @@ type Env = InferEnvOutput<typeof runtimeSchema>;
 const MIN_SECRET_LENGTH = 32;
 const MIN_PORT = 1;
 const MAX_PORT = 65_535;
+const MIN_TIMER_MS = 1;
+const MAX_TIMER_MS = 2_147_483_647;
 
 const nonEmptyStringSchema = v.pipe(v.string(), v.nonEmpty());
 
@@ -71,6 +73,13 @@ const runtimeSchema = {
       v.maxValue(MAX_PORT),
     ),
     from: v.pipe(v.string(), v.email()),
+    confirmedTimeoutMs: v.pipe(
+      v.optional(v.pipe(v.string(), v.digits()), '30000'),
+      v.transform(Number),
+      v.integer(),
+      v.minValue(MIN_TIMER_MS),
+      v.maxValue(MAX_TIMER_MS),
+    ),
     user: v.optional(nonEmptyStringSchema),
     password: v.optional(nonEmptyStringSchema),
   },

@@ -39,6 +39,8 @@ Each sample returns a timestamp and aggregate counts for both runtime roles in t
 
 Each IdP process emits an `account-email-backlog` event at startup and every minute. `pendingDeliveries` includes submissions waiting for an SMTP connection and those awaiting a relay response. `oldestPendingMs` is the age of the oldest outstanding submission in that process. Both fields return to zero when all submissions settle. Use the collector’s replica identifier when inspecting the samples.
 
+The IdP waits up to `SMTP_CONFIRMED_TIMEOUT_MS` (default 30,000 milliseconds) for the relay to accept an invitation email. The deadline starts when the IdP submits the message and includes time waiting for a pooled connection. On timeout the invitation operation fails. A relay may have accepted the message just before the timeout, so check the invitation state before retrying.
+
 Configure the host monitor to pass the latest JSON event for each expected replica to [check-mail-backlog.sh](../deploy/check-mail-backlog.sh) on standard input. Run it every minute, even if the collector has received nothing. Use an empty input for a missing replica. The argument is the relay acceptance deadline in milliseconds, chosen by the service owner. For example, to check a 30-second deadline, run:
 
 ```sh
