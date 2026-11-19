@@ -49,7 +49,7 @@ sh deploy/check-mail-backlog.sh 30000 < latest-replica-sample.json
 
 The check requires jq. Exit 0 means the latest sample is within the deadline. Exit 2 signals an overdue delivery or a problem with the sample, including a timestamp older than three minutes or ahead of the monitor clock. Exit 3 signals a monitor configuration error.
 
-Page the identity on-call when the oldest pending delivery on any replica exceeds the agreed relay acceptance deadline. Treat missing samples as lost visibility. Inspect `account-email-delivery` failures alongside the backlog because a rejection also removes the submission from the pending count. After a restart the counters describe the new process. Confirm delivery and recovery notifications with the on-call team during deployment rehearsal.
+Page the identity on-call when the oldest pending delivery on any replica exceeds the agreed relay acceptance deadline. Treat missing samples as lost visibility. Inspect `account-email-delivery` failures alongside the backlog because a rejection also removes the submission from the pending count. Each failure event records the delivery mode and elapsed milliseconds from submission. A `reason` of `smtp_reply` includes the numeric `smtpResponseCode`. A `submission_deadline` means the confirmed send exhausted its time budget. Other failures use `delivery_error`. The event omits relay text, addresses and account links. After a restart the counters describe the new process. Confirm delivery and recovery notifications with the on-call team during deployment rehearsal.
 
 ## Local rehearsal origins
 

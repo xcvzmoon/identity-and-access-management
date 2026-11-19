@@ -1,12 +1,31 @@
 import { log } from 'evlog';
 import { type Transporter, createTransport } from 'nodemailer';
+import * as valibot from 'valibot';
 import { useEnv } from './env.ts';
 
 type AccountEmailBacklog = { pendingDeliveries: number; oldestPendingMs: number };
 
+type DeliveryFailure =
+  | { reason: 'submission_deadline' | 'delivery_error' }
+  | { reason: 'smtp_reply'; smtpResponseCode: number };
+
 const EMPTY_AGE_MS = 0;
 const IMPLICIT_TLS_PORT = 465;
 const MAX_CONCURRENT_DELIVERIES = 8;
+const MIN_SMTP_REPLY = 200;
+const MAX_SMTP_REPLY = 599;
+
+const smtpErrorSchema = valibot.object({
+  code: valibot.optional(valibot.string()),
+  responseCode: valibot.optional(
+    valibot.pipe(
+      valibot.number(),
+      valibot.integer(),
+      valibot.minValue(MIN_SMTP_REPLY),
+      valibot.maxValue(MAX_SMTP_REPLY),
+    ),
+  ),
+});
 
 let transport: Transporter | null = null;
 const pending = new Map<Promise<unknown>, number>();
@@ -42,12 +61,18 @@ function mailTransport(): Transporter {
   return transport;
 }
 
-function logDeliveryFailure(delivery: 'queued' | 'confirmed'): void {
-  log.error({
-    event: 'account-email-delivery',
-    outcome: 'failed',
-    delivery,
-  });
+function deliveryFailureDetails(cause: unknown): DeliveryFailure {
+  const parsed = valibot.safeParse(smtpErrorSchema, cause);
+  if (parsed.success && parsed.output.code === 'EABORT') {
+    return { reason: 'submission_deadline' };
+  }
+  if (parsed.success && parsed.output.responseCode) {
+    return {
+      reason: 'smtp_reply',
+      smtpResponseCode: parsed.output.responseCode,
+    };
+  }
+  return { reason: 'delivery_error' };
 }
 
 /** Sends an account link. Confirmed delivery propagates SMTP errors to the caller.
@@ -64,6 +89,7 @@ export async function sendAccountEmail(
 ): Promise<void> {
   const env = useEnv();
   const smtp = mailTransport();
+  const started = performance.now();
   const sending = smtp.sendMail({
     ...(mode === 'confirmed' && { signal: AbortSignal.timeout(env.smtp.confirmedTimeoutMs) }),
     from: env.smtp.from,
@@ -72,15 +98,21 @@ export async function sendAccountEmail(
     text: `${subject}\n\n${url}\n\nIf you did not request this email, you can ignore it.`,
   });
 
-  const delivery = sending
-    .catch(() => {
-      logDeliveryFailure(mode);
-    })
-    .finally(() => {
-      pending.delete(delivery);
+  function reportFailure(cause: unknown): void {
+    log.error({
+      event: 'account-email-delivery',
+      outcome: 'failed',
+      delivery: mode,
+      elapsedMs: Math.floor(performance.now() - started),
+      ...deliveryFailureDetails(cause),
     });
+  }
 
-  pending.set(delivery, performance.now());
+  const delivery = sending.catch(reportFailure).finally(() => {
+    pending.delete(delivery);
+  });
+
+  pending.set(delivery, started);
   if (mode === 'confirmed') {
     await sending;
   }

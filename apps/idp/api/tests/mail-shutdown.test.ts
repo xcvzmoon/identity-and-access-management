@@ -1,10 +1,11 @@
 import type { Server, Socket } from 'node:net';
+import { log } from 'evlog';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import * as valibot from 'valibot';
-import { afterAll, beforeAll, expect, test, vi } from 'vite-plus/test';
+import { afterAll, afterEach, beforeAll, expect, test, vi } from 'vite-plus/test';
 import { initializeEnv } from '../server/utils/env.ts';
 import {
   finishAccountEmail,
@@ -86,7 +87,7 @@ async function checkPendingDeliveries(server: Server): Promise<void> {
       queued.end('421 Temporary relay failure\r\n');
       await expect.poll(() => getAccountEmailBacklog().pendingDeliveries).toBe(ONE_DELIVERY);
       expect(drained).toBe(false);
-      confirmed.end('421 Temporary relay failure\r\n');
+      confirmed.end('554 Rejected owner@example.test private-fixture-text\r\n');
       await rejected;
       await shutdown;
       expect(drained).toBe(true);
@@ -100,6 +101,7 @@ async function checkPendingDeliveries(server: Server): Promise<void> {
 }
 
 const server = createServer();
+const elapsedMs: unknown = expect.any(Number);
 
 beforeAll(async () => {
   const listening = once(server, 'listening');
@@ -115,13 +117,40 @@ afterAll(async () => {
   vi.unstubAllEnvs();
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 test('shutdown waits for confirmed SMTP delivery and propagates a relay rejection', async () => {
+  const failure = vi.spyOn(log, 'error');
   expect(getAccountEmailBacklog()).toEqual(EMPTY_BACKLOG);
   await checkPendingDeliveries(server);
+  expect(failure.mock.calls).toEqual(
+    [
+      {
+        delivery: 'queued',
+        smtpResponseCode: 421,
+      },
+      {
+        delivery: 'confirmed',
+        smtpResponseCode: 554,
+      },
+    ].map(({ delivery, smtpResponseCode }) => [
+      {
+        event: 'account-email-delivery',
+        outcome: 'failed',
+        delivery,
+        elapsedMs,
+        reason: 'smtp_reply',
+        smtpResponseCode,
+      },
+    ]),
+  );
   expect(getAccountEmailBacklog()).toEqual(EMPTY_BACKLOG);
 });
 
 test('confirmed delivery aborts a stalled SMTP submission at its deadline', async () => {
+  const failure = vi.spyOn(log, 'error');
   const first = nextConnection(server);
   const sending = sendAccountEmail(
     'owner@example.test',
@@ -136,6 +165,17 @@ test('confirmed delivery aborts a stalled SMTP submission at its deadline', asyn
     await rejected;
     await closed;
     await finishAccountEmail();
+    expect(failure.mock.calls).toEqual([
+      [
+        {
+          event: 'account-email-delivery',
+          outcome: 'failed',
+          delivery: 'confirmed',
+          elapsedMs,
+          reason: 'submission_deadline',
+        },
+      ],
+    ]);
     expect(getAccountEmailBacklog()).toEqual(EMPTY_BACKLOG);
   } finally {
     socket.destroy();
