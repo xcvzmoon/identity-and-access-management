@@ -407,4 +407,40 @@ BEGIN
 END
 $verify$;
 
+WITH queued AS (
+  INSERT INTO iam_idp.invitations (organization_id, inviter_id, email, role, status, created_at, expires_at)
+  SELECT current_setting('iam.fixture_org')::uuid, id, 'delivery@example.invalid', 'owner', 'pending',
+         now() - interval '2 hours', now() + interval '1 day'
+  FROM iam_idp.users WHERE email = 'metadata@example.invalid'
+  RETURNING id
+)
+INSERT INTO iam_idp.owner_invitation_deliveries (invitation_id, next_attempt_at, attempt_id)
+SELECT id, now() + interval '1 minute', uuidv7() FROM queued;
+
+DO $verify$
+BEGIN
+  IF has_function_privilege('iam_audit_reader', 'iam_idp.invitation_delivery_backlog()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Backlog reporting requires an explicit grant';
+  END IF;
+END
+$verify$;
+RESET ROLE;
+GRANT EXECUTE ON FUNCTION iam_idp.invitation_delivery_backlog() TO iam_audit_reader;
+SET LOCAL ROLE iam_audit_reader;
+DO $verify$
+BEGIN
+  IF has_any_column_privilege(current_user, 'iam_idp.invitations', 'SELECT')
+     OR has_any_column_privilege(current_user, 'iam_idp.owner_invitation_deliveries', 'SELECT')
+     OR has_any_column_privilege(current_user, 'iam_idp.member_invitation_deliveries', 'SELECT') THEN
+    RAISE EXCEPTION 'Backlog reporting role can read individual deliveries';
+  END IF;
+  IF NOT EXISTS (SELECT FROM iam_idp.invitation_delivery_backlog()
+                 WHERE queue = 'owner' AND pending_deliveries = 1 AND oldest_pending_ms >= 7200000)
+     OR NOT EXISTS (SELECT FROM iam_idp.invitation_delivery_backlog()
+                    WHERE queue = 'member' AND pending_deliveries = 0 AND oldest_pending_ms = 0) THEN
+    RAISE EXCEPTION 'Unexpected backlog age for deferred or empty queue';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;
