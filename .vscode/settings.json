@@ -42,5 +42,6 @@
   },
   "[github-actions-workflow]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
-  }
+  },
+  "yaml.customTags": ["!override sequence"]
 }
