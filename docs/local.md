@@ -183,6 +183,8 @@ psql -X --no-password -v ON_ERROR_STOP=1 --csv -f apps/idp/api/scripts/report-ra
 
 The output contains counts by age and the oldest age in whole hours. Rows become eligible for deletion **after** 720 hours. A nonzero `over_744_hours` count means eligible rows have persisted longer than one daily interval. Check the scheduler, purge failures and row locks. Future timestamps have their own count. The oldest age is empty when there are no past or current timestamps.
 
+Run [check-rate-limit-retention.sh](../deploy/check-rate-limit-retention.sh) from the monitoring host to alert on rows older than 744 hours. Configure libpq for the writable primary with a login granted schema USAGE and SELECT on `rate_limits.last_request`. The check uses the timestamp index and stops at the first overdue row. Exit 0 means the deadline is met, exit 2 means an overdue row exists, and exit 3 means the monitor could not verify retention. Run this check independently of the purge completion marker because a successful purge can skip locked rows.
+
 #### Schedule retention on a Linux host
 
 On a systemd host with the PostgreSQL client installed, place the purge script at `/usr/local/libexec/iam/purge-expired-audit-events.sh`. Copy [iam-retention.service](../deploy/systemd/iam-retention.service) and [iam-retention.timer](../deploy/systemd/iam-retention.timer) into `/etc/systemd/system/`. Configure the retention login's host, port, database, username and TLS settings as libpq environment variables in `/etc/iam/retention.env`. Put its matching password entry in `/etc/iam/retention.pgpass`, owned by root with mode 0600. The service manager supplies a private copy to the job. Make any configured CA certificate readable by the service.
