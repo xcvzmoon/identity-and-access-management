@@ -33,6 +33,8 @@ From the repository root, supply the following settings to Compose. Keep secrets
 
 Configure PostgreSQL and SMTP addresses reachable from inside the containers. Use `DB_SSL="true"` for remote PostgreSQL connections and provide its CA chain in the API trust bundle. Configure an authenticated TLS relay for remote email delivery. Disable database query logging in production. Keep the same `BETTER_AUTH_SECRET` and PostgreSQL primary across both IdP API replicas. Keep an independently recoverable copy of the secret alongside the credentials required for disaster recovery.
 
+When updating the Node base image, inspect the chosen tag with `docker buildx imagetools inspect node:<tag>`. Pin the top-level index digest in the Dockerfile and check that the index includes each deployment architecture.
+
 Build the workspace images and start the issuer. Use a protected temporary value for the console client secret if a value is required for initial configuration. Delay console traffic until its registration exists.
 
 ```sh
