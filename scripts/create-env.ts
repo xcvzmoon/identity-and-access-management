@@ -1,14 +1,6 @@
 import { consola } from 'consola';
 import { execFileSync } from 'node:child_process';
-import {
-  existsSync,
-  globSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { Writable } from 'node:stream';
@@ -27,7 +19,6 @@ const privateFileMode = 0o600;
 const privateDirectoryMode = 0o700;
 const minPort = 1;
 const maxPort = 65_535;
-const databaseExample = path.join('packages', 'database', '.env.example');
 
 function generateSecret(): string {
   return execFileSync('openssl', ['rand', '-base64', '32'], { encoding: 'utf8' }).trim();
@@ -45,7 +36,7 @@ function isDatabasePort(value: string): boolean {
   return /^\d+$/u.test(value) && port >= minPort && port <= maxPort;
 }
 
-async function promptDatabaseEnv(template: string): Promise<string> {
+async function promptDatabaseEnv(workspace: string, template: string): Promise<string> {
   let hidden = false;
   const output = new Writable({
     write(chunk: Buffer, _encoding, done): void {
@@ -97,11 +88,13 @@ async function promptDatabaseEnv(template: string): Promise<string> {
   const defaults = parseEnv(template);
 
   try {
+    consola.info(`Configuring PostgreSQL for ${workspace}`);
+
     const values = {
       DB_HOST: await ask('PostgreSQL host', defaults.DB_HOST),
       DB_PORT: await ask('PostgreSQL port', defaults.DB_PORT),
-      DB_DATABASE: await ask('PostgreSQL database'),
-      DB_USER: await ask('PostgreSQL username'),
+      DB_DATABASE: await ask('PostgreSQL database', defaults.DB_DATABASE),
+      DB_USER: await ask('PostgreSQL username', defaults.DB_USER),
       DB_PASSWORD: await ask('PostgreSQL password', '', 'hidden'),
     };
 
@@ -149,32 +142,28 @@ function replaceEnvFile(destinationPath: string, existing: string, contents: str
   }
 }
 
-async function prepareEnvFile(example: string, mode: CreationMode): Promise<EnvFile | null> {
-  const destination = path.join(path.dirname(example), '.env');
+async function prepareEnvFile(workspace: string, mode: CreationMode): Promise<EnvFile | null> {
+  const destination = path.join(workspace, '.env');
   const destinationPath = path.join(rootDirectory, destination);
-  const interactiveDatabase =
-    example === databaseExample && process.stdin.isTTY && process.stdout.isTTY;
+  const interactiveDatabase = process.stdin.isTTY && process.stdout.isTTY;
   const exists = existsSync(destinationPath);
   if (exists && mode === 'preserve' && !interactiveDatabase) {
     consola.info(`Keeping ${destination}`);
     return null;
   }
 
-  const template = readFileSync(path.join(rootDirectory, example), 'utf8').replace(
-    /^APP_ENV=.*$/mu,
-    'APP_ENV="local"',
-  );
+  const template = readFileSync(path.join(rootDirectory, workspace, '.env.example'), 'utf8');
   const existing = exists ? readFileSync(destinationPath, 'utf8') : null;
   if (existing !== null && mode === 'preserve' && existing !== template) {
     consola.info(`Keeping ${destination}`);
     return null;
   }
 
-  const contents = interactiveDatabase
-    ? await promptDatabaseEnv(template)
-    : template.replaceAll(/^AUTH_SECRET=""$/gmu, (assignment) =>
-        assignment.replace('""', `"${generateSecret()}"`),
-      );
+  const configured = interactiveDatabase ? await promptDatabaseEnv(workspace, template) : template;
+  const contents = configured.replaceAll(
+    /^(?:BETTER_AUTH_SECRET|OIDC_CLIENT_SECRET)=""$/gmu,
+    (assignment) => assignment.replace('""', `"${generateSecret()}"`),
+  );
 
   return {
     destination,
@@ -214,13 +203,10 @@ function writeEnvFile(file: EnvFile, mode: CreationMode): void {
 }
 
 async function createEnvFiles(mode: CreationMode): Promise<void> {
-  const examples = globSync(['.env.example', '{apps,packages,scripts,tools}/*/.env.example'], {
-    cwd: rootDirectory,
-  }).toSorted();
+  const idp = await prepareEnvFile('apps/idp/api', mode);
+  const consoleApi = await prepareEnvFile('apps/console/api', mode);
 
-  const files = await Promise.all(examples.map(async (example) => prepareEnvFile(example, mode)));
-
-  for (const file of files) {
+  for (const file of [idp, consoleApi]) {
     if (file !== null) {
       writeEnvFile(file, mode);
     }
