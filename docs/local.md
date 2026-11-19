@@ -199,6 +199,8 @@ journalctl -u iam-retention.service
 
 The timer runs daily at 02:00 UTC and catches up after host downtime. After a successful purge, the service updates the modification time of `/var/lib/iam-retention/last-success`. Enabling this timer runs the purge against the database named in the environment file.
 
+The purge allows five seconds per database connection attempt and 30 seconds per SQL statement by default. Adjust these with `PGCONNECT_TIMEOUT` and a `statement_timeout` setting in `PGOPTIONS` if the deployment requires different limits. The systemd service allows one hour for the whole run. On timeout, the completion marker keeps its previous timestamp. Earlier batches stay committed. Check database availability, locks and backlog age before restarting the service to process the remaining rows.
+
 Run [check-retention-age.sh](../deploy/systemd/check-retention-age.sh) from an independent host monitoring agent with permission to stat the marker. With `DynamicUser=yes`, systemd stores the state beneath `/var/lib/private`; a host-level collector may need a narrowly scoped privilege rule to run the check. The check uses GNU stat on Linux and requires no database credentials.
 
 ```sh

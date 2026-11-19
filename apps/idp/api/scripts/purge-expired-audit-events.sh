@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+export PGCONNECT_TIMEOUT="${PGCONNECT_TIMEOUT:-5}"
+export PGOPTIONS="-c statement_timeout=30s${PGOPTIONS:+ $PGOPTIONS}"
+
 while true; do
   deleted=$(psql -XAt --no-password -v ON_ERROR_STOP=1 -c '
     SELECT iam_idp.purge_expired_audit_events()

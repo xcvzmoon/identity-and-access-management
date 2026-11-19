@@ -5,6 +5,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
+TimeoutStartSec=1h
 DynamicUser=yes
 EnvironmentFile=/etc/iam/retention.env
 LoadCredential=pgpass:/etc/iam/retention.pgpass
