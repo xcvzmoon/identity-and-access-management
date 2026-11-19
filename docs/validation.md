@@ -38,8 +38,7 @@ file using double-quoted literal values. The runner overlays the file on the cal
 and enables the phase's tests. Add `rotation.env` with the IdP runtime settings for a fresh
 `DB_DATABASE="iam_rotation_test"`. This fixture registers the reserved console client and checks
 immediate secret cutoff. Add a separate `phase-8.env` with the libpq settings for the
-disposable audit fixture, including `PGDATABASE="iam_phase8_test"`. Use a new evidence directory
-under an existing parent.
+disposable audit fixture, including `PGDATABASE="iam_phase8_test"`. Use a new evidence directory outside the checkout under an existing parent.
 
 ```sh
 vp run --no-cache test:release /private/path/fixture-env /private/path/release-evidence
@@ -48,7 +47,11 @@ vp run --no-cache test:release /private/path/fixture-env /private/path/release-e
 Each phase writes its own Vitest JSON report. The gate checks the exit status, suite and case
 outcomes, case count and required test titles. It exits on the first failure. A successful run
 checks the phase 6 ingress logs, runs the audit-access SQL assertions and writes `passed.json`
-with those results, the checkout revision, initial dirty state, timestamps, phases and total passing case count.
+with those results, the checkout revision and dirty flag, Node version, per-workspace build digests,
+timestamps, phases and total passing case count. The runner compares the revision, dirty flag and
+four build digests after each phase and after the SQL checks. A mismatch stops the run before the
+receipt is written. Each digest covers relative paths, regular-file contents and symlink targets
+in one local Nitro output directory.
 Use a clean checkout with matching images for release evidence. Restrict access to failed
 reports because test diagnostics can include fixture data. For a retry, provide a new evidence
 directory. Record image digests alongside the receipt and run the packaged-deployment checks below.
