@@ -22,6 +22,16 @@ ORDER BY created_at DESC;
 
 Route stderr events with `event=signing-key-rotation` and either `outcome=failed` or `outcome=rollback-failed` to the identity on-call. A failed transaction leaves the prior state intact. The next tick retries. Alert separately if a staged key remains past its activation time by more than two ticks or an active key is over 91 days old. Successful transition logs identify both key IDs. Compare the public JWKS from every issuer replica when investigating a missed transition.
 
+After the first JWKS request initializes the keyring, run [check-signing-key-rotation.sh](../apps/idp/api/scripts/check-signing-key-rotation.sh) every minute from a monitoring host with `psql` and libpq settings for the primary. Use a dedicated monitoring login. A DBA can grant it the four metadata columns the check reads:
+
+```sql
+GRANT USAGE ON SCHEMA iam_idp TO iam_key_monitor;
+GRANT SELECT (alg, created_at, activate_after, expires_at)
+  ON iam_idp.signing_keys TO iam_key_monitor;
+```
+
+Route exit 2 to the identity on-call for a missing active signer or a missed transition. Exit 3 means monitoring lost visibility, including when the connection reaches a standby. Exit 0 clears the alert. During commissioning, verify alert delivery and recovery against a disposable issuer before enabling the production check.
+
 ## Restore a trusted signer
 
 Confirm the target was previously active, is still present in every replica's JWKS, and is trusted by the relying parties. From the matching source release, load the IdP runtime environment and run the following in `apps/idp/api`:
