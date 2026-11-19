@@ -288,6 +288,38 @@ async function checkAccess(
   await checkIntrospectionRecovery(page, cluster, fixture.north, resource);
 }
 
+async function checkOfflineRevocation(
+  page: Page,
+  cluster: Cluster,
+  fixture: Fixture,
+  otherInstallationToken: string,
+): Promise<void> {
+  const env = useEnv();
+  const issuer = new URL(env.oidcIssuerUrl);
+  const resource = new URL(`/reports/${fixture.userId}`, cluster.appOrigin).href;
+  const assignment = {
+    userId: fixture.userId,
+    clientId: fixture.north.clientId,
+    organizationId: fixture.north.organizationId,
+  };
+
+  await assignAppRole({
+    ...assignment,
+    role: 'reader',
+  });
+  await login(page, cluster.appOrigin, new URL('/callback', cluster.appOrigin).href);
+  await expectStatus(page, resource, OK);
+  await cluster.stopReplica();
+  await revokeAppGrant(assignment);
+  await expectStatus(page, resource, UNAVAILABLE);
+  await cluster.startReplica();
+  await expectStatus(page, resource, UNAUTHORIZED);
+  expect(await introspect(issuer, fixture.south, otherInstallationToken)).toMatchObject({
+    active: true,
+    permissions: ['reports.read'],
+  });
+}
+
 async function checkRevocation(
   page: Page,
   cluster: Cluster,
@@ -319,6 +351,7 @@ async function checkRevocation(
   });
 
   await measureLiveIntrospection(issuer, fixture, south.token);
+  await checkOfflineRevocation(page, cluster, fixture, south.token);
 
   await assignAppRole({
     ...assignment,
