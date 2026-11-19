@@ -8,7 +8,7 @@
 | Identity provider (IdP)  | The IAM service responsible for authenticating users and issuing tokens to registered apps.                             |
 | Console                  | The IAM web app for managing accounts, organizations, app registrations, and access grants.                             |
 | Verified email           | An email address whose ownership the user proved during account verification.                                           |
-| Session                  | Server-side state for an authenticated user. The IdP and console manage their own session state and cookies.            |
+| Session                  | Server-side state for an authenticated user. The IdP and each application own separate sessions.                        |
 | SSO session              | The user's session with the IdP that registered apps can reuse during sign-in.                                          |
 | Application session      | A user's session with a specific app, established after sign-in.                                                        |
 | App sign-out             | Ending the user's session in one app.                                                                                   |
@@ -17,8 +17,8 @@
 | Membership               | A link between a user and one organization. It has its own ID, role, and suspension state.                              |
 | Organization invitation  | An admin's offer of organization membership to a person with a specific email address.                                  |
 | Organization role        | `owner`, `admin`, or `member`. The role governs organization management.                                                |
-| Application              | The registration owned by an organization, including its permission catalog.                                            |
-| Installation             | The private deployment scope for an app, tied to the owning organization.                                               |
+| Application              | A product that uses IAM for sign-in and defines permissions for its resources.                                          |
+| Installation             | An organization-specific app deployment and OAuth registration with its own grants and role definitions.                |
 | Assignment or app grant  | A member's access to an installation. Its current roles determine product permissions.                                  |
 | Permission catalog       | The set of product permission keys defined for an application.                                                          |
 | Installation role        | A named set of app permissions that can be assigned within one installation.                                            |
@@ -34,12 +34,13 @@
 | Nonce                    | A client value checked against the ID token to bind it to the sign-in request.                                          |
 | Consent                  | The user's decision to authorize an application. IAM ties consent to the current app grant version.                     |
 | ID token                 | A signed OIDC token that the app uses as proof of sign-in.                                                              |
-| Access token             | A credential that IAM can validate for UserInfo and introspection, or invalidate through revocation.                    |
+| Access token             | A credential the app presents to UserInfo or introspection. Its live access depends on the grant and SSO session.       |
 | Introspection            | A server-side token status check. IAM includes current product permissions in active responses.                         |
 | UserInfo                 | The OIDC endpoint that returns the subject `sub` for a current IAM access token.                                        |
 | JWKS and `kid`           | The JSON Web Key Set publishes public signing keys. A key ID identifies an individual key.                              |
 | Passkey and step-up      | A WebAuthn credential and the extra verification required before sensitive administration.                              |
 | Machine principal        | An installation-scoped identity for an app backend without a signed-in user. Machine lookup is deferred in v1.          |
+| Portless                 | The local HTTPS proxy that gives each Compose ingress a named development origin.                                       |
 | Runtime role             | The restricted PostgreSQL login the API uses to connect.                                                                |
 | Migration owner          | The PostgreSQL role that owns schema changes and grants runtime privileges.                                             |
 

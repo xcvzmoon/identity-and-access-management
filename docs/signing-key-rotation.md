@@ -1,12 +1,12 @@
-# IdP signing-key rotation
+# Operate IdP signing keys
 
 Apply the IdP migrations before upgrading the issuer processes. Complete the rollout across all replicas within the publication window. Every replica needs the same Better Auth secret and a connection to the same PostgreSQL primary.
 
-## Timing and status
+## Monitor publication and activation
 
-The first signing or JWKS request initializes the keyring. Each running issuer checks it at startup and every minute. Once the active RSA key is 90 days old, one issuer publishes an encrypted replacement under a PostgreSQL transaction lock. Clients can fetch its public key immediately. Signing moves to the replacement after one hour. Configure relying parties to refresh their JWKS within ten minutes (the installed jose remote JWKS default). The one-hour window allows several refresh opportunities. Confirm the maximum cache age with each external client before onboarding.
+The first signing or JWKS request initializes the keyring. Each replica checks it at startup and every minute. Once the active RSA key reaches 90 days, a replica stages a replacement under a PostgreSQL transaction lock. The private key is encrypted at rest and the public key appears in JWKS immediately. The issuer activates it one hour later. Configure relying parties to refresh their JWKS within ten minutes (the installed jose remote JWKS default). The one-hour window allows several refresh opportunities. Confirm the maximum cache age with each external client before onboarding.
 
-The former key stays published for 30 days after its last activation ends. The issuer's default access tokens live for one hour and its ID tokens for ten hours. Keep custom client token lifetimes plus clock tolerance below the retention period. The scheduler deletes retired keys after that period.
+JWKS retains a retired public key for 30 days after its last activation ends. The issuer's default access tokens live for one hour and its ID tokens for ten hours. Keep custom client token lifetimes plus clock tolerance below the retention period. The scheduler deletes retired keys after that period.
 
 Query the primary for key IDs, transition times and the current state:
 
@@ -22,7 +22,7 @@ ORDER BY created_at DESC;
 
 Route stderr events with `event=signing-key-rotation` and either `outcome=failed` or `outcome=rollback-failed` to the identity on-call. A failed transaction leaves the prior state intact. The next tick retries. Alert separately if a staged key remains past its activation time by more than two ticks or an active key is over 91 days old. Successful transition logs identify both key IDs. Compare the public JWKS from every issuer replica when investigating a missed transition.
 
-## Roll back to a trusted key
+## Restore a trusted signer
 
 Confirm the target was previously active, is still present in every replica's JWKS, and is trusted by the relying parties. From the matching source release, load the IdP runtime environment and run the following in `apps/idp/api`:
 

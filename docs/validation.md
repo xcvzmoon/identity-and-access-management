@@ -20,22 +20,22 @@ the IdP API and `GET /api/v1/hello` from the console API.
 The APIs need a reachable database and their runtime credentials.
 [Local database setup](local.md#database-setup)
 
+## Better Auth evaluation
+
+The engine evaluation has a separate lockfile and creates disposable PostgreSQL and TLS fixtures. Install PostgreSQL client and server tools and OpenSSL before running it. From the repository root, run the following commands.
+
+```sh
+pnpm -C evaluations/better-auth install --frozen-lockfile --ignore-scripts
+pnpm -C evaluations/better-auth exec playwright install chromium
+vp -C evaluations/better-auth run evaluate
+vp -C evaluations/better-auth run typecheck
+```
+
+The fixture removes its temporary database and TLS material on exit. The OpenID Foundation runs used a statically registered web client with the suite's exact callback URL, `client_secret_basic`, response type `code`, and the default response mode for PKCE. [Evaluation results](history.md#phase-1--evaluate-better-auth)
+
 ## Integration tests
 
-The [Better Auth evaluation](plans/iam-v1-rewrite/better-auth-evaluation.md#run-the-fixture)
-has its own dependencies and disposable database. Its results support the
-engine choice. The v1 workspaces need their own verification as they gain
-the database and auth flows.
-
-| Fixture                   | Required checks                                                                                                                                                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Fresh PostgreSQL database | Apply each API's migrations with its own credentials. Check runtime access within each schema and denied reads and writes across schemas. [Phase 2](plans/iam-v1-rewrite/phase-02-establish-apps-and-storage.md)         |
-| Browser and reference app | Verify invitation acceptance, recovery, OIDC, consent, tenant isolation, and console sessions. [Phases 3 to 6](plans/iam-v1-rewrite/overview.md#phases)                                                                  |
-| Two IdP processes         | Use one test issuer and database. Revoke an app grant or end SSO through one process, then verify the next protected request through the other. [Phase 5](plans/iam-v1-rewrite/phase-05-live-access-and-iam-sign-out.md) |
-| Packaged pilot deployment | Test two IdP replicas, owner recovery, rotation and rollback, and backup and restore. [Phase 10](plans/iam-v1-rewrite/phase-10-external-pilot.md)                                                                        |
-
-Run integration tests against disposable data. Record which checks ran, which
-were skipped, and which fixture and deployment each result covers.
+Use a separate disposable database for each fixture. The test commands retain their original phase numbers in environment variable names. Record the revision, settings, checks that ran, and checks that were skipped.
 
 ### Invitation signup and recovery
 
@@ -182,6 +182,16 @@ With the console session fixture environment configured, run
 the fixture proxy and upstream process output for synthetic credentials.
 Repeat the checks against the deployed proxy and its log sinks during the pilot.
 
+### Signing-key rotation
+
+Apply the IdP migrations to a disposable database with an empty keyring. Export the IdP runtime settings for that database and run the concurrency fixture from the repository root.
+
+```sh
+IAM_PHASE9_TESTS="1" vp test --run apps/idp/api/tests/signing-key-rotation.test.ts
+```
+
+The test checks concurrent publication, activation, overlap, and rollback. [Signing-key operations](signing-key-rotation.md)
+
 ## Packaged deployment
 
-Rehearse against a fresh rewrite database with the two IdP API containers behind the same HTTPS issuer. Record the issuer and release for every run. [Deployment and recovery runbook](pilot.md) · [Phase 10 rehearsal evidence](plans/iam-v1-rewrite/phase-10-external-pilot.md) · [Application fixture results](pilot-fixtures.md)
+Rehearse against a fresh rewrite database with the two IdP API containers behind the same HTTPS issuer. Record the issuer and release for every run. [Deployment and recovery runbook](pilot.md) · [Recorded rehearsal](history.md#phase-10--rehearse-the-packaged-pilot-locally)

@@ -1,118 +1,30 @@
-# IAM v1 architecture
+# IAM architecture
 
-[Documentation index](README.md) · [Launch scope](rewrite-scope.md) · [Implementation plan](plans/iam-v1-rewrite/overview.md)
+## Workspace ownership
 
-## Target monorepo structure
+| Workspace                                    | Framework | Owns                                                                                                              |
+| -------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------- |
+| [IdP web](../apps/idp/web/README.md)         | Nuxt      | Hosted sign-in, invitation signup, recovery, consent, passkey and operator pages                                  |
+| [IdP API](../apps/idp/api)                   | Nitro     | Better Auth, OIDC endpoints, identity and SSO, organizations, installation grants, signing keys, and audit events |
+| [Console web](../apps/console/web/README.md) | Nuxt      | Account and organization management pages                                                                         |
+| [Console API](../apps/console/api)           | Nitro     | Console OIDC client, callback, application sessions, and IdP management requests                                  |
 
-The IdP and console each have a Nuxt frontend and a Nitro API. The four
-workspaces already exist. Build the rewrite inside them using each
-workspace's existing framework configuration.
+The Nuxt apps maintain their own pages, modules, and styles. The APIs keep method-specific handlers under `server/api/` or `server/routes/`. Services implement policy, repositories perform database operations, and each API owns its schema and migrations. Build and package names are listed in the workspace reference. [Workspace reference](development.md)
 
-```text
-.
-├── apps/
-│   ├── idp/
-│   │   ├── web/
-│   │   │   ├── app/
-│   │   │   ├── golar.config.ts
-│   │   │   ├── nuxt.config.ts
-│   │   │   └── package.json
-│   │   └── api/
-│   │       ├── migrations/
-│   │       ├── server/
-│   │       │   ├── api/
-│   │       │   └── database/
-│   │       │       ├── index.ts
-│   │       │       ├── relations.ts
-│   │       │       └── schema/
-│   │       ├── drizzle.config.ts
-│   │       ├── nitro.config.ts
-│   │       └── package.json
-│   └── console/
-│       ├── web/
-│       │   ├── app/
-│       │   ├── golar.config.ts
-│       │   ├── nuxt.config.ts
-│       │   └── package.json
-│       └── api/
-│           ├── migrations/
-│           ├── server/
-│           │   ├── api/
-│           │   └── database/
-│           │       ├── index.ts
-│           │       ├── relations.ts
-│           │       └── schema/
-│           ├── drizzle.config.ts
-│           ├── nitro.config.ts
-│           └── package.json
-├── docs/
-├── evaluations/
-│   └── better-auth/
-├── scripts/
-├── tools/
-├── package.json
-├── pnpm-lock.yaml
-├── pnpm-workspace.yaml
-└── vite.config.ts
-```
+## Origins and routing
 
-| Workspace                                 | V1 ownership                                                                                                                            |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| [`apps/idp/web`](../apps/idp/web)         | Hosted sign-in, invitation signup, password recovery, consent, and passkey prompts                                                      |
-| [`apps/idp/api`](../apps/idp/api)         | Better Auth, OIDC endpoints, IAM accounts and SSO sessions, organizations, app registrations and grants, signing keys, and audit events |
-| [`apps/console/web`](../apps/console/web) | Account and organization pages, application administration, and sign-in redirects through the console API                               |
-| [`apps/console/api`](../apps/console/api) | Console OIDC client, callback and application session, and calls to the IdP management interface on the user's behalf                   |
+Every deployment has one canonical HTTPS issuer shared by its organizations. Issuer ingress sends `/api/*` and `/.well-known/*` to the IdP API and page requests to IdP web. The console has a separate HTTPS origin. Its ingress sends `/api/*`, including `/api/v1/callback`, to the console API and page requests to console web.
 
-Each Nuxt app keeps its own modules, app config, and styles. The target uses
-standalone Nuxt apps without a Nuxt layer. The workspace catalog provides
-shared dependency versions. Product code and runtime configuration live in
-the four app workspaces. The Better Auth evaluation has its own lockfile and
-runs independently of the product builds.
-[Workspace manifest](../pnpm-workspace.yaml) · [Evaluation fixture](../evaluations/better-auth)
+Caddy distributes issuer API requests across two replicas in the packaged deployment. Both share PostgreSQL state, a Better Auth secret, and the canonical issuer URL. In local development, Portless gives each public hostname a stable route and terminates host HTTPS. Caddy also serves the canonical issuer over TLS inside the Compose network, where the console backend reaches it for discovery and token exchange. [Local setup](local.md) · [Pilot deployment](pilot.md)
 
-Add pages to each web workspace under `app/pages/` as its flows are built.
-Add HTTP handlers under the owning API's `server/api/` or `server/routes/`,
-according to the public URL. Keep schema definitions and migration history
-with that API's database code.
+## Storage boundaries
 
-Routes validate HTTP input and format responses. Put application policy in
-`server/services/<domain>.service.ts` and Drizzle queries in
-`server/repositories/<domain>.repository.ts`. The invitation repository checks eligibility before signup.
-The invitation service uses Better Auth’s organization plugin to accept the
-invitation and create the membership in one database transaction.
+The IdP is authoritative for accounts, SSO sessions, membership, grants, and signing keys. The console stores its own application sessions and retains an encrypted access token for management requests. Each API has its own PostgreSQL schema, migration journal, migrator, and restricted runtime login. The IdP runtime appends audit events. Dedicated database roles read them or run retention. [Database setup](local.md#database-setup) · [Audit retention](local.md#audit-retention)
 
-To list the workspace files as tracked in Git, run `git ls-files apps`.
-The [workspace reference](development.md) lists package names and commands.
+## Sign-in and authorization
 
-## Deployment and data boundaries
+The console and customer app backends run Authorization Code with S256 PKCE. Better Auth serves the OIDC endpoints. IAM checks invitation eligibility and installation grants, and prompts for customer-app consent when the approved grant changes. The IdP can reuse its SSO session. Each client validates the callback and ID token before starting its own session.
 
-One public HTTPS issuer URL identifies the IdP for the deployment. At that
-origin, ingress routes hosted pages to IdP web and issuer endpoints to IdP
-API. The console has its own origin, with pages served by console web and
-the OIDC callback and session endpoints served by console API. The local dev
-ports are direct entry points for the scaffolds.
-[Local setup](local.md) · [External pilot phase](plans/iam-v1-rewrite/phase-10-external-pilot.md)
+Each customer app installation has a distinct OAuth client. The backend introspects the user's access token for every protected request and checks permissions and resource ownership. Grant revocation or IAM sign-out affects the next live check. The backend withholds protected resources if introspection fails. App sign-out clears the app's own session.
 
-Each API owns its PostgreSQL schema, migrations, and database credentials.
-The IdP is the source of truth for identity, tenant data, and customer app
-authorization. The console owns its application sessions. For organization
-operations, console API calls the IdP management interface and the IdP
-checks the user's membership, role, and recent passkey verification where
-required. The fresh database and isolation checks are part of Phase 2.
-[Database ownership phase](plans/iam-v1-rewrite/phase-02-establish-apps-and-storage.md)
-
-## Sign-in and access
-
-The console and customer app backends redirect users to the IdP using
-Authorization Code with S256 PKCE. Better Auth runs the OIDC endpoints.
-IAM checks invitation eligibility, installation grants, and consent.
-The IdP can reuse the current SSO session. Each client validates the
-callback and ID token and starts its own application session.
-[Issuer phase](plans/iam-v1-rewrite/phase-04-oidc-issuer-and-app-grants.md)
-
-Each customer installation has its own OAuth client. On every protected
-request, the app backend checks current access with the IdP and enforces
-its own resource permissions. When the grant is revoked, IAM sign-out ends
-the token's SSO session, or the check is unavailable, the app denies access.
-App sign-out ends the local application session.
-[Live access decision](adr/0004-check-app-grants-live.md) · [Per-installation clients](adr/0005-register-one-client-per-installation.md)
+For organization management, the console API forwards requests on the user's behalf. The IdP checks live console authorization, target organization membership, role, and session-bound passkey verification. [Client integration](client-integration.md) · [Architecture decisions](README.md#architecture-decisions)

@@ -45,6 +45,12 @@ This is a [Nitro](https://nitro.build) v3 server project (built on H3 v2). Nitro
 
 <!-- NITRO END -->
 
+# Repository context
+
+IAM v1 has four workspaces under `apps/idp/` and `apps/console/`. The IdP owns hosted identity, OIDC, and app grants. The console is an OIDC client with its own session. Keep each API's routes, services, database schema, and migrations in its workspace.
+
+Start with the [architecture](docs/architecture.md) for ownership, the [local guide](docs/local.md) for Portless and direct development, and the [validation guide](docs/validation.md) for test setup. The [project history](docs/history.md) records the rewrite phases, verification, and deployment changes.
+
 # Project conventions
 
 ## Guiding principle

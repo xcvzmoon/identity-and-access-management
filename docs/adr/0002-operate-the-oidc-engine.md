@@ -1,5 +1,5 @@
-# Operate the OIDC engine
+# Operate Better Auth as the OIDC engine
 
-For v1, IAM will run an established OpenID Connect implementation on infrastructure we operate. This gives us control over deployment and authorization policy while reusing the protocol implementation. We own upgrades, availability, and on-call response for the engine.
+IAM runs Better Auth on infrastructure it operates and owns upgrades, availability, and on-call response. Better Auth implements the protocol handlers. IAM supplies invitation policy, installation grants, live authorization, audit, and signing-key activation.
 
-Use Better Auth as the v1 engine. Version `1.7.26` passed the application proof and the selected OpenID Foundation discovery and PKCE modules. Better Auth owns the protocol handlers. IAM owns invitation eligibility, per-installation authorization, live grant checks, and signing-key activation. [Evaluation evidence](../plans/iam-v1-rewrite/better-auth-evaluation.md)
+The v1 evaluation selected Better Auth `1.7.26` after the browser and database fixtures and selected OpenID Foundation discovery and PKCE modules passed. [Evaluation history](../history.md#phase-1--evaluate-better-auth)

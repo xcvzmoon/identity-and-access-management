@@ -1,4 +1,4 @@
-# Workspace and build reference
+# Workspace commands and builds
 
 [Documentation index](README.md) · [Local setup](local.md) · [Validation](validation.md)
 
@@ -11,9 +11,7 @@
 | [`apps/console/web`](../apps/console/web/package.json) | `@iam/console-web` | Nuxt `.output/`  |
 | [`apps/console/api`](../apps/console/api/package.json) | `@iam/console-api` | Nitro `.output/` |
 
-The root pins Node and pnpm in `package.json`. The workspace catalogs pin
-dependencies shared by each workspace type. The root build script selects
-all four workspaces. Each build writes its output inside its workspace.
+The root manifest pins Node and pnpm. The workspace catalogs pin shared dependency versions. Build output stays in the workspace that produced it. The Better Auth evaluation has a separate lockfile and build environment.
 [Root scripts](../package.json) · [Workspace catalog](../pnpm-workspace.yaml)
 
 Each API requires a valid `.env` in its own workspace for `dev` and `build`.
@@ -27,16 +25,17 @@ returns HTTP 500 if a startup check fails.
 
 Run workspace commands from the repository root.
 
-| Command                           | Behavior                                                                                       |
-| --------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `vp install`                      | Install dependencies and prepare the Nuxt workspaces.                                          |
-| `vp run build`                    | Build all four workspaces.                                                                     |
-| `vp -C apps/idp/web run build`    | Build one workspace. Substitute its path for another workspace.                                |
-| `vp -C apps/idp/api run dev`      | Start one workspace in development. Use the same form for its `preview` script after building. |
-| `vp check`                        | Run the Vite+ format, lint, and type-aware checks.                                             |
-| `vp run typecheck`                | Run the root and workspace TypeScript checks.                                                  |
-| `vp test --run`                   | Run the root test suite once.                                                                  |
-| `vp -C apps/idp/api run db:check` | Check one API's migration history.                                                             |
+| Command                                | Behavior                                                                                                  |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `vp install`                           | Install dependencies and prepare the Nuxt workspaces.                                                     |
+| `vp run build`                         | Build all four workspaces.                                                                                |
+| `vp -C apps/idp/web run build`         | Build one workspace. Substitute its path for another workspace.                                           |
+| `vp -C apps/idp/api run dev`           | Start one workspace in development. Use the same form for its `preview` script after building.            |
+| `vp check`                             | Run the Vite+ format, lint, and type-aware checks.                                                        |
+| `vp run typecheck`                     | Run the root and workspace TypeScript checks.                                                             |
+| `vp run docker:portless up -d --build` | Build and run the Compose stack behind Portless. See the [Portless setup](local.md#docker-with-portless). |
+| `vp test --run`                        | Run the root test suite once.                                                                             |
+| `vp -C apps/idp/api run db:check`      | Check one API's migration history.                                                                        |
 
 Each API keeps its migration history in its own `migrations/` directory.
 Export the required `DB_*` settings before running any Drizzle script.
@@ -55,7 +54,7 @@ Apply the generated fields and relations under `server/database/` using
 the existing UUID and timestamp helpers. Run `vp run db:generate` from the
 same workspace to generate the SQL migration and snapshot.
 
-## Code conventions and tooling
+## Repository conventions
 
 `AGENTS.md` defines project conventions, including dotenv quoting, TypeScript
 naming, validation, and directive comments. Vite+ configures Oxfmt, Oxlint,

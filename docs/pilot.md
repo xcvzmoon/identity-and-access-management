@@ -17,7 +17,7 @@ vp -C apps/console/api run db:migrate
 
 For a local run, set `IDP_HOST="idp.localhost"` and `CONSOLE_HOST="console.localhost"`. Use a test certificate whose SANs include both names, signed by a locally trusted CA. Supply the certificate, key and root CA paths below. Use a recent Docker Compose release with support for the `!override` tag.
 
-From the repository root in a POSIX shell, run `export COMPOSE_FILE="compose.yaml:compose.local.yaml"` before the Compose commands below. This binds ingress to loopback on port 56943 and sets both public origins to that port across the ingress and API containers. Set the same full origins in any host-side provisioning commands and client registrations. The packaged run used a loopback DNS alias for the issuer. [Recorded origins](plans/iam-v1-rewrite/phase-10-external-pilot.md)
+From the repository root in a POSIX shell, run `export COMPOSE_FILE="compose.yaml:compose.local.yaml"` before the Compose commands below. This binds ingress to loopback on port 56943 and sets both public origins to that port across the ingress and API containers. Set the same full origins in any host-side provisioning commands and client registrations. The packaged run used a loopback DNS alias for the issuer. [Recorded origins](history.md#phase-10--rehearse-the-packaged-pilot-locally)
 
 ## Start the services
 
@@ -44,14 +44,18 @@ docker compose up -d --no-deps ingress
 
 Provision a named operator from a trusted checkout. Verify the operator's email address and configure the approved user ID in the IdP runtime file. Run `docker compose up -d --force-recreate idp-api-1 idp-api-2` to load the updated allowlist. Sign in, enroll a passkey, and select **Verify passkey**. Use that session within five minutes. [Operator provisioning](local.md#provision-an-operator)
 
-For a fresh deployment, load the IdP runtime environment and set `CONSOLE_ORIGIN` to the public console HTTPS origin in a trusted provisioning shell. Load the same operator allowlist, issuer URL, and secret as the running replicas. Supply the operator session's Cookie header value through a protected file. Capture the issued secret in a new restricted file.
+## Provision the console client
+
+Sign in on the issuer as an allowlisted, verified operator and verify a passkey. Run the command within the five-minute step-up window.
+
+Load the IdP runtime environment and set `CONSOLE_ORIGIN` to the public console HTTPS origin in a trusted provisioning shell. Load the same operator allowlist, issuer URL, and secret as the running replicas. Supply the operator session's Cookie header value through a protected file. Capture the issued secret in a new restricted file.
 
 ```sh
 umask 077
 vpx apps/idp/api/scripts/provision-console.ts < "$COOKIE_FILE" > "$NEW_SECRET_FILE"
 ```
 
-Store the returned value as `OIDC_CLIENT_SECRET` in the console runtime environment. Remove the temporary credential files and end the provisioning session. Start all services with `docker compose up -d`. Check `docker compose ps`, issuer discovery, and console sign-in at `/account`. Configure daily audit retention with its dedicated login. [Audit retention](local.md#audit-retention)
+Store the returned value as `OIDC_CLIENT_SECRET` in the console runtime environment. Remove the temporary credential files and end the provisioning session. Start all services with `docker compose up -d`. For the Portless stack, run `vp run docker:portless up -d`. Check that discovery returns the exact issuer and open `/account` on the console origin. Configure daily audit retention with its dedicated login. [Audit retention](local.md#audit-retention)
 
 Register the reference installation through the console, grant a test member a role with `reports.read`, and run its backend behind a separate HTTPS hostname. [Connect a server-backed app](client-integration.md) · [Start the reference app](local.md#sign-in-through-the-reference-app)
 
@@ -81,8 +85,8 @@ Record the date, release, issuer, console origin, image IDs, database migration 
 - Exercise owner recovery, signing-key rollover and rollback, and database restore. Record the post-recovery checks and the observed key IDs.
 - Check deployed ingress and application log destinations for exposure of synthetic test credentials. Run the workspace, PostgreSQL permissions, and browser checks with the documented test settings. [Validation procedures](validation.md)
 
-The Phase 1 OpenID Foundation suite passed discovery and one positive confidential-client PKCE test on the evaluation fixture. Full Basic OP coverage remains open. The Basic OP plan also exercises code exchange and reuse, redirect URI matching, token signatures, UserInfo, scopes, prompt and session behavior, request objects, and client authentication. Its `client_secret_post` variant exceeds the v1 installation profile, which registers `client_secret_basic`. Its refresh-token case depends on advertised support. Discovery is a separate test. [Basic OP module list for release-v5.3.4](https://github.com/openid-certification/conformance-suite/blob/release-v5.3.4/src/main/java/net/openid/conformance/openid/OIDCCBasicTestPlan.java)
+The OpenID Foundation evaluation passed discovery and one positive confidential-client PKCE test on the evaluation fixture. Full Basic OP coverage remains open. The Basic OP plan also exercises code exchange and reuse, redirect URI matching, token signatures, UserInfo, scopes, prompt and session behavior, request objects, and client authentication. Its `client_secret_post` variant exceeds the v1 installation profile, which registers `client_secret_basic`. Its refresh-token case depends on advertised support. Discovery is a separate test. [Basic OP module list for release-v5.3.4](https://github.com/openid-certification/conformance-suite/blob/release-v5.3.4/src/main/java/net/openid/conformance/openid/OIDCCBasicTestPlan.java)
 
-Run `oidcc-basic-certification-test-plan` for a statically registered confidential code client against the packaged issuer. Record the suite version, variants, each remaining module's result or reason for exclusion, and unresolved failures. Obtain a release decision on that record before onboarding an external client. [Conformance results and run IDs](plans/iam-v1-rewrite/better-auth-evaluation.md#openid-foundation-conformance)
+Run `oidcc-basic-certification-test-plan` for a statically registered confidential code client against the packaged issuer. Record the suite version, variants, each remaining module's result or reason for exclusion, and unresolved failures. Obtain a release decision on that record before onboarding an external client. [Conformance results and run IDs](history.md#phase-1--evaluate-better-auth)
 
 For this review, the product issues authorization codes to statically registered web clients and requires S256 PKCE and `client_secret_basic`. The Basic OP test setup calls for two Basic-authenticated registrations to check client binding and a third registration supporting `client_secret_post`. IAM's registration service issues Basic-authenticated clients only. Record that mismatch in the conformance decision. The application fixtures exercise code exchange, issuer and audience checks, and installation isolation. The remaining suite modules have no recorded result for this release. [OpenID Foundation OP testing instructions](https://openid.net/certification/connect_op_testing/)
