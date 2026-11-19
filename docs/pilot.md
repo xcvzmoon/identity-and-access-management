@@ -92,3 +92,15 @@ The OpenID Foundation evaluation passed discovery and one positive confidential-
 Run `oidcc-basic-certification-test-plan` for a statically registered confidential code client against the packaged issuer. Record the suite version, variants, each remaining module's result or reason for exclusion, and unresolved failures. Obtain a release decision on that record before onboarding an external client. [Conformance results and run IDs](history.md#phase-1--evaluate-better-auth)
 
 For this review, the product issues authorization codes to statically registered web clients and requires S256 PKCE and `client_secret_basic`. The Basic OP test setup calls for two Basic-authenticated registrations to check client binding and a third registration supporting `client_secret_post`. IAM's registration service issues Basic-authenticated clients only. Record that mismatch in the conformance decision. The application fixtures exercise code exchange, issuer and audience checks, and installation isolation. The remaining suite modules have no recorded result for this release. [OpenID Foundation OP testing instructions](https://openid.net/certification/connect_op_testing/)
+
+### Verify the release manifest before promotion
+
+The release signer signs the exact bytes of the clean build manifest after reviewing its commit and all four image digests. Use OpenSSL 3, an Ed25519 signing key and jq for this procedure. Supply the public key from the release operator's trust configuration and the expected commit from the approved deployment record.
+
+```sh
+openssl pkeyutl -sign -rawin -inkey "$SIGNING_KEY" -in manifest.json -out manifest.sig
+digest=$(sh scripts/verify-release-manifest.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifest.sig "$APPROVED_COMMIT" idp/api) || exit 1
+docker pull "$IDP_API_REPOSITORY@$digest"
+```
+
+Repeat verification for each workspace using its configured repository. The current manifest covers Linux arm64. Keep the signing key separate from the deployment environment.
