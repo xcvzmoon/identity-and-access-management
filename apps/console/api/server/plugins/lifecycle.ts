@@ -7,7 +7,10 @@ export default definePlugin(async (app): Promise<void> => {
   initializeEnv();
 
   // Register cleanup before probing so shutdown can close the pool even if the probe fails.
-  app.hooks.hook('close', async () => useDatabase().$client.end());
+  app.hooks.hook('close', async () => {
+    const database = useDatabase();
+    await database.$client.end();
+  });
 
   await checkDbConnection();
 });
