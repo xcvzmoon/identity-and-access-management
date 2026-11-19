@@ -1,0 +1,164 @@
+{
+  "revision": "4c02ffa8cf609334e38b9b91b7aab90b92453b03",
+  "scope": "disposable local Linux arm64 deployment",
+  "receiptSha256": "272e2da6ad20a10ee7759de85a94feab9938d32460914ed837aa5da78fe2c59d",
+  "passedCases": 10,
+  "auditAccess": "passed",
+  "ingressLogs": "passed",
+  "images": {
+    "idp/api": {
+      "manifestDigest": "sha256:c3333c973091a1126e965c4b77a4a3ea35c8c92490fd5602b19fca3f4f08107d",
+      "bundleSha256": "31786eb4a244f66bd909be547697b00984c1c82e9890f248348087d360fba16f"
+    },
+    "console/api": {
+      "manifestDigest": "sha256:23f0b73369fdf5fa7402f90d52581ce1053736536853d93d3465a088838b3ebe",
+      "bundleSha256": "cf51cdc852715c518c3a53fa5229fc55644e8735907c48d072f07d4b8f102251"
+    },
+    "idp/web": {
+      "manifestDigest": "sha256:d184e323f9574fc0fa62580c19b985a7f408eb9f9541211c51f130485d95ed38",
+      "bundleSha256": "b603b010a7058e02cb7f5e66b1f2b73189091ae75bb0c3ed74fe4a5e1092034d"
+    },
+    "console/web": {
+      "manifestDigest": "sha256:5475d63e6f78185bebd412a3b75a94c36576710dbb3f9f4e80c135c4c6fc4501",
+      "bundleSha256": "f2738080e9a55f20c41d663f23ab0568f74eec81bf9f350f649715e39548d995"
+    }
+  },
+  "edge": {
+    "revision": "4c02ffa8cf609334e38b9b91b7aab90b92453b03",
+    "topology": "disposable single-host Compose",
+    "edge": {
+      "issuer": {
+        "content-security-policy": "frame-ancestors 'none'",
+        "referrer-policy": "no-referrer",
+        "cache-control": "no-store",
+        "x-frame-options": null
+      },
+      "consent": {
+        "content-security-policy": "frame-ancestors 'none'",
+        "referrer-policy": "no-referrer",
+        "cache-control": "no-store",
+        "x-frame-options": null
+      },
+      "console": {
+        "content-security-policy": "frame-ancestors 'none'",
+        "referrer-policy": "same-origin",
+        "cache-control": "no-store",
+        "x-frame-options": null
+      },
+      "discovery": {
+        "status": 200,
+        "expectedIssuer": true
+      }
+    },
+    "noHostApiPortBindings": {
+      "idp-api-1": true,
+      "idp-api-2": true,
+      "console-api": true
+    }
+  },
+  "promotion": {
+    "revision": "4c02ffa8cf609334e38b9b91b7aab90b92453b03",
+    "verifiedServices": 5,
+    "failedLastImageWithheldOutput": true
+  },
+  "migrationJournals": {
+    "revision": "4c02ffa8cf609334e38b9b91b7aab90b92453b03",
+    "executionsPerWorkspace": 2,
+    "journalRows": {
+      "idp": 18,
+      "console": 3
+    }
+  },
+  "restore": {
+    "commit": "4c02ffa8cf609334e38b9b91b7aab90b92453b03",
+    "postgres_image": "sha256:d4e55489302f9c75af116f3b3147f613e712f07e5eb8dabec82d9147dd0a00e5",
+    "recorded_at": "2026-11-19T22:07:17.370148+00:00",
+    "result": "passed",
+    "method": "SQL migrations from commit, offline PostgreSQL, database roles pre-provisioned",
+    "previous_idp_migrations": 7,
+    "upgraded_idp_migrations": 18,
+    "console_migrations": 3,
+    "session_membership_grant_preserved": true,
+    "retention_job": {
+      "before": {
+        "120_days": 1,
+        "under_one_day": 1
+      },
+      "after": {
+        "120_days": 0,
+        "under_one_day": 1
+      }
+    },
+    "pre_upgrade_restore_verified": true,
+    "restored_upgrade_verified": true,
+    "synthetic_session_and_grant_invalidation_verified": true,
+    "elapsed_seconds": 1.871125
+  },
+  "databaseFailover": {
+    "revision": "4c02ffa8cf609334e38b9b91b7aab90b92453b03",
+    "replicaCaughtUpBeforeStop": true,
+    "manualPromotion": true,
+    "fixtureRowsRecovered": 1,
+    "postPromotionWrite": true,
+    "ordinaryAdmission": true,
+    "elapsedSeconds": 0.4810610000000004
+  },
+  "alternateIngress": {
+    "revision": "4c02ffa8cf609334e38b9b91b7aab90b92453b03",
+    "singleHost": true,
+    "manualEdgeSelection": true,
+    "originalIngressStopped": true,
+    "issuerDiscovery": true,
+    "consolePage": true
+  },
+  "keyboardRecovery": {
+    "revision": "4c02ffa8cf609334e38b9b91b7aab90b92453b03",
+    "browser": "local Chromium",
+    "signInControlsReached": true,
+    "keyboardRecoveryRequestSubmitted": true,
+    "accessibleConfirmationObserved": true
+  },
+  "runtimePackageScans": {
+    "idp-api": {
+      "imageId": "sha256:9819a88337fd883406bb413864c5a77dab05f62e13ac336c045422ebf6961664",
+      "severity": {
+        "High": 72,
+        "Medium": 79,
+        "Negligible": 50,
+        "Low": 17
+      },
+      "withListedFix": 0
+    },
+    "console-api": {
+      "imageId": "sha256:63b0d39c24762b3a728b0ec30e5fa23bca2ab6ebdd108e63cc8d7e8a92612514",
+      "severity": {
+        "High": 72,
+        "Medium": 79,
+        "Negligible": 50,
+        "Low": 17
+      },
+      "withListedFix": 0
+    },
+    "idp-web": {
+      "imageId": "sha256:617c56696d03149d9c5eb4a5eec05d4ed993f9756de6802f67ece472d3d81bea",
+      "severity": {
+        "High": 72,
+        "Medium": 79,
+        "Negligible": 50,
+        "Low": 17
+      },
+      "withListedFix": 0
+    },
+    "console-web": {
+      "imageId": "sha256:685d1fc9535acc514752b207f77b7482e80e355fa79d8cb9a68a9e9ef75f52fb",
+      "severity": {
+        "High": 72,
+        "Medium": 79,
+        "Negligible": 50,
+        "Low": 17
+      },
+      "withListedFix": 0
+    }
+  },
+  "executionArchive": "image-promotion-zylbmezc"
+}
