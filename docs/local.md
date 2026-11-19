@@ -118,6 +118,22 @@ For a busy existing deployment, build the two retention indexes from the
 audit migration with `CREATE INDEX CONCURRENTLY` before applying it, and
 verify both indexes are valid. The migration reuses those indexes. When upgrading an installation that predates restricted audit access, deploy the compatible IdP API to every replica before the audit migration tightens its grants. See the recorded rollout in the project history. [Audit history](history.md#phase-8--restrict-audit-access-and-expire-events)
 
+#### Schedule retention on a Linux host
+
+On a systemd host with the PostgreSQL client installed, place the purge script at `/usr/local/libexec/iam/purge-expired-audit-events.sh`. Copy [iam-retention.service](../deploy/systemd/iam-retention.service) and [iam-retention.timer](../deploy/systemd/iam-retention.timer) into `/etc/systemd/system/`. Configure the retention login's host, port, database, username and TLS settings as libpq environment variables in `/etc/iam/retention.env`. Put its matching password entry in `/etc/iam/retention.pgpass`, owned by root with mode 0600. The service manager supplies a private copy to the job. Make any configured CA certificate readable by the service.
+
+After applying the retention migrations, run:
+
+```sh
+systemctl daemon-reload
+systemctl start iam-retention.service
+systemctl enable --now iam-retention.timer
+systemctl list-timers iam-retention.timer
+journalctl -u iam-retention.service
+```
+
+The timer runs daily at 02:00 UTC and catches up after host downtime. Monitor service failures and alert if a successful completion is overdue. Enabling this timer runs the purge against the database named in the environment file.
+
 ### Password sign-in telemetry
 
 The IdP counts password sessions issued and requests rejected by Better Auth (HTTP 4xx)

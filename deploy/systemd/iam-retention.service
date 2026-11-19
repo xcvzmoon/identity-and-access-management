@@ -1,0 +1,16 @@
+[Unit]
+Description=Expire IAM audit events, sign-in history and idle rate limits
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+EnvironmentFile=/etc/iam/retention.env
+LoadCredential=pgpass:/etc/iam/retention.pgpass
+Environment=PGPASSFILE=%d/pgpass
+ExecStart=/bin/sh /usr/local/libexec/iam/purge-expired-audit-events.sh
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
