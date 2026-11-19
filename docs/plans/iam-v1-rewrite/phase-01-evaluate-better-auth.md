@@ -2,6 +2,8 @@
 
 [Implementation plan](overview.md) · [Engine ownership decision](../../adr/0002-operate-the-oidc-engine.md)
 
+[Evaluation evidence and reproduction commands](better-auth-evaluation.md)
+
 ## Goal
 
 Prove the latest stable Better Auth release with a small, disposable implementation before making the rewrite depend on it. Run the IdP and a confidential console client on separate origins. Use a fresh PostgreSQL database and a reference customer client.
