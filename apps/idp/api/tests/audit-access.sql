@@ -175,4 +175,48 @@ BEGIN
 END
 $verify$;
 
+SET LOCAL ROLE iam_idp_runtime;
+INSERT INTO iam_idp.users (name,email) VALUES ('Grant fixture','grant-audit@example.invalid');
+INSERT INTO iam_idp.organizations (name,slug,created_at) VALUES ('Grant fixture','grant-audit',now());
+INSERT INTO iam_idp.memberships (user_id,organization_id,role,created_at)
+SELECT u.id,o.id,'member',now() FROM iam_idp.users u CROSS JOIN iam_idp.organizations o
+WHERE u.email='grant-audit@example.invalid' AND o.slug='grant-audit';
+INSERT INTO iam_idp.oauth_clients (client_id,redirect_uris) VALUES ('grant-audit',ARRAY['https://audit.invalid/callback']);
+INSERT INTO iam_idp.app_installations (client_id,organization_id)
+SELECT 'grant-audit',id FROM iam_idp.organizations WHERE slug='grant-audit';
+INSERT INTO iam_idp.app_grants (client_id,user_id,organization_id,role)
+SELECT 'grant-audit',m.user_id,m.organization_id,'reader' FROM iam_idp.memberships m
+JOIN iam_idp.organizations o ON o.id=m.organization_id WHERE o.slug='grant-audit';
+
+SET LOCAL iam.management_actor_id = '00000000-0000-4000-8000-000000000123';
+UPDATE iam_idp.app_grants SET role='editor' WHERE client_id='grant-audit';
+UPDATE iam_idp.app_grants SET role='editor' WHERE client_id='grant-audit';
+SAVEPOINT before_reversal;
+UPDATE iam_idp.app_grants SET role='reader' WHERE client_id='grant-audit';
+ROLLBACK TO before_reversal;
+DELETE FROM iam_idp.app_installations WHERE client_id='grant-audit';
+
+SET LOCAL ROLE iam_audit_reader;
+DO $verify$
+BEGIN
+  IF (SELECT count(*) FROM iam_idp.app_grant_events WHERE client_id='grant-audit') <> 3 OR
+     NOT EXISTS (SELECT FROM iam_idp.app_grant_events WHERE client_id='grant-audit' AND actor_user_id IS NULL AND previous_role IS NULL AND new_role='reader') OR
+     NOT EXISTS (SELECT FROM iam_idp.app_grant_events WHERE client_id='grant-audit' AND actor_user_id='00000000-0000-4000-8000-000000000123' AND previous_role='reader' AND new_role='editor') OR
+     NOT EXISTS (SELECT FROM iam_idp.app_grant_events WHERE client_id='grant-audit' AND actor_user_id='00000000-0000-4000-8000-000000000123' AND previous_role='editor' AND new_role IS NULL) OR
+     has_table_privilege('iam_idp_runtime','iam_idp.app_grant_events','SELECT, INSERT, UPDATE, DELETE') THEN
+    RAISE EXCEPTION 'Grant history or access restrictions mismatch';
+  END IF;
+END
+$verify$;
+RESET ROLE;
+UPDATE iam_idp.app_grant_events SET created_at=now()-interval '91 days' WHERE client_id='grant-audit' AND previous_role IS NULL;
+SET LOCAL ROLE iam_audit_retention;
+DO $verify$
+BEGIN
+  IF iam_idp.purge_expired_app_grant_events() <> 1 THEN
+    RAISE EXCEPTION 'Grant audit retention mismatch';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;

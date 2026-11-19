@@ -118,6 +118,21 @@ For a busy existing deployment, build the two retention indexes from the
 audit migration with `CREATE INDEX CONCURRENTLY` before applying it, and
 verify both indexes are valid. The migration reuses those indexes. When upgrading an installation that predates restricted audit access, deploy the compatible IdP API to every replica before the audit migration tightens its grants. See the recorded rollout in the project history. [Audit history](history.md#phase-8--restrict-audit-access-and-expire-events)
 
+#### Investigate an installation grant change
+
+Apply the app grant audit migration before deploying the updated retention job. Each committed assignment, role change or removal creates a row in `iam_idp.app_grant_events`, including removals caused by deleting a membership. The IdP supplies the verified actor ID for console management commands. A null actor means that the writer supplied no management actor. The history starts when the migration runs and expires after 90 days.
+
+With the audit reader role, supply the client and user IDs as psql variables and run:
+
+```sql
+SELECT created_at, organization_id, actor_user_id, previous_role, new_role
+FROM iam_idp.app_grant_events
+WHERE client_id = :'client_id' AND user_id = :'user_id'
+ORDER BY created_at, id;
+```
+
+A null previous role marks the initial assignment. A null new role marks revocation. A rolled-back change leaves no event.
+
 #### Check retained rate-limit row ages
 
 Capture the [aggregate age report](../apps/idp/api/scripts/report-rate-limit-retention.sql) before and after a purge. Run it with an operator login that can read `iam_idp.rate_limits.last_request`. The query needs only that column and scans the table once. On large installations, run the report outside peak traffic.

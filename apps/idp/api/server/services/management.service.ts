@@ -2,7 +2,7 @@ import type { H3Event } from 'nitro/h3';
 import { decodeBasicCredentials } from '@better-auth/core/oauth2';
 import { isAPIError } from 'better-auth/api';
 import { makeSignature } from 'better-auth/crypto';
-import { and, eq, gt, inArray } from 'drizzle-orm';
+import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import { assertBodySize, readBody } from 'nitro/h3';
 import * as valibot from 'valibot';
 import { recordManagementAction } from '../../../../../shared/server/api-logging.ts';
@@ -381,6 +381,8 @@ async function executeCommand(tx: Transaction, actor: Actor, command: Command): 
   await requireFreshStepUp(actor.userId, actor.sessionId, tx);
 
   const headers = await sessionHeaders(session.token);
+  await tx.execute(sql`SELECT set_config('iam.management_actor_id', ${actor.userId}, true)`);
+
   return mutateOrganization(tx, command, headers, membership);
 }
 
