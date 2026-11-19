@@ -4,6 +4,7 @@
 
   definePageMeta({ alias: '/' });
 
+  const formReady = ref(false);
   const signedIn = ref(false);
   const { error, pending, submit } = useAccountAction();
   const schema = valibot.object({
@@ -20,6 +21,10 @@
       email: '',
       password: '',
     },
+  });
+
+  onMounted(() => {
+    formReady.value = true;
   });
 
   async function signIn(values: valibot.InferOutput<typeof schema>): Promise<void> {
@@ -71,6 +76,7 @@
           <input
             v-model="field.input"
             v-bind="field.props"
+            :disabled="!formReady"
             type="email"
             autocomplete="username"
             required
@@ -93,6 +99,7 @@
           <input
             v-model="field.input"
             v-bind="field.props"
+            :disabled="!formReady"
             type="password"
             autocomplete="current-password"
             required
@@ -113,6 +120,7 @@
       </p>
       <UButton
         type="submit"
+        :disabled="!formReady"
         :loading="pending"
       >
         Sign in

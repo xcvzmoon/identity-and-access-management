@@ -1,4 +1,4 @@
-import type { Page } from 'playwright';
+import type { Browser, Page } from 'playwright';
 import { eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
@@ -22,6 +22,22 @@ const BAD_REQUEST = 400;
 const LOG_CANARY = 'iam-fixture-log-canary';
 
 const enabled = process.env.IAM_PHASE6_TESTS === '1';
+
+async function checkServerRenderedSignIn(browser: Browser, issuer: string): Promise<void> {
+  const page = await browser.newPage({
+    ignoreHTTPSErrors: true,
+    javaScriptEnabled: false,
+  });
+
+  try {
+    await page.goto(new URL('/sign-in', issuer).href);
+    expect(await page.getByLabel('Email address').isDisabled()).toBe(true);
+    expect(await page.getByLabel('Password', { exact: true }).isDisabled()).toBe(true);
+    expect(await page.getByRole('button', { name: 'Sign in' }).isDisabled()).toBe(true);
+  } finally {
+    await page.close();
+  }
+}
 
 async function checkRejectedLogin(page: Page, origin: string): Promise<void> {
   const login = new URL('/api/v1/login', origin);
@@ -206,6 +222,7 @@ test.skipIf(!enabled)(
     const browser = await chromium.launch();
     onTestFinished(async () => browser.close());
     const page = await browser.newPage({ ignoreHTTPSErrors: true });
+    await checkServerRenderedSignIn(browser, env.oidcIssuerUrl);
     await exerciseIngressLogs(page, env.oidcIssuerUrl);
     await checkRejectedLogin(page, cluster.consoleOrigin);
     await openAccount(page, cluster, account);
