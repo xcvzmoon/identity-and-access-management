@@ -132,7 +132,15 @@ systemctl list-timers iam-retention.timer
 journalctl -u iam-retention.service
 ```
 
-The timer runs daily at 02:00 UTC and catches up after host downtime. Monitor service failures and alert if a successful completion is overdue. Enabling this timer runs the purge against the database named in the environment file.
+The timer runs daily at 02:00 UTC and catches up after host downtime. After a successful purge, the service updates the modification time of `/var/lib/iam-retention/last-success`. Enabling this timer runs the purge against the database named in the environment file.
+
+Run [check-retention-age.sh](../deploy/systemd/check-retention-age.sh) from an independent host monitoring agent with permission to stat the marker. With `DynamicUser=yes`, systemd stores the state beneath `/var/lib/private`; a host-level collector may need a narrowly scoped privilege rule to run the check. The check uses GNU stat on Linux and requires no database credentials.
+
+```sh
+sh /usr/local/libexec/iam/check-retention-age.sh
+```
+
+Install the script at the path above and route nonzero exits to the on-call receiver. Exit 2 means that the marker is missing, unreadable, in the future or older than 26 hours. This gives the daily job two hours of grace. Keep the service failure alert for immediate notification when a run fails. During commissioning, run the check once before the first purge and once after it succeeds to verify the alert and recovery.
 
 ### Password sign-in telemetry
 

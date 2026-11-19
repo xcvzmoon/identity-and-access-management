@@ -9,7 +9,9 @@ DynamicUser=yes
 EnvironmentFile=/etc/iam/retention.env
 LoadCredential=pgpass:/etc/iam/retention.pgpass
 Environment=PGPASSFILE=%d/pgpass
+StateDirectory=iam-retention
 ExecStart=/bin/sh /usr/local/libexec/iam/purge-expired-audit-events.sh
+ExecStartPost=/usr/bin/touch /var/lib/iam-retention/last-success
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
