@@ -63,6 +63,12 @@
           Reset password
         </UButton>
       </div>
+      <NuxtLink
+        to="/management"
+        class="text-primary underline"
+      >
+        Manage organizations
+      </NuxtLink>
       <section
         class="grid gap-3 border-t border-default pt-6"
         aria-labelledby="session-title"
