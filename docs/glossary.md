@@ -5,10 +5,17 @@
 | Term                     | Meaning in IAM                                                                                                          |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | Identity                 | The user account and its stable IAM user ID.                                                                            |
+| Identity provider (IdP)  | The IAM service responsible for authenticating users and issuing tokens to registered apps.                             |
+| Console                  | The IAM web app for managing accounts, organizations, app registrations, and access grants.                             |
 | Verified email           | An email address whose ownership the user proved with the account code flow.                                            |
 | Session                  | A PostgreSQL record for an authenticated IAM browser. An HTTP-only cookie identifies the session.                       |
+| SSO session              | The user's session with the IdP that registered apps can reuse during sign-in.                                          |
+| Application session      | A user's session with a specific app, established after sign-in.                                                        |
+| App sign-out             | Ending the user's session in one app.                                                                                   |
+| IAM sign-out             | Ending the user's current SSO session with the IdP.                                                                     |
 | Tenant                   | The organization boundary for membership, management authority, and private installations.                              |
 | Membership               | A link between a user and one organization. It has its own ID, role, and suspension state.                              |
+| Organization invitation  | An admin's offer of organization membership to a person with a specific email address.                                  |
 | Organization role        | `owner`, `admin`, or `member`. The role governs organization management.                                                |
 | Application              | The registration owned by an organization, including its permission catalog.                                            |
 | Installation             | The private deployment scope for an app, tied to the owning organization.                                               |

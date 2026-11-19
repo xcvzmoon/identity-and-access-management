@@ -14,6 +14,16 @@ admins decide who can use each app and which app permissions each member gets.
 | [Application access](application-access.md)   | Tenant isolation, app roles, the OIDC exchange, credential types, and revocation |
 | [Glossary](glossary.md)                       | IAM, database, and protocol terms used in the docs                               |
 
+### Rewrite decisions
+
+[Launch scope](rewrite-scope.md) · [Implementation plan](plans/iam-v1-rewrite/overview.md)
+
+- [IAM owns the OIDC issuer](adr/0001-iam-owns-the-oidc-issuer.md)
+- [Operate the OIDC engine](adr/0002-operate-the-oidc-engine.md)
+- [Use one issuer per deployment](adr/0003-use-one-issuer-per-deployment.md)
+- [Check app grants live](adr/0004-check-app-grants-live.md)
+- [Register one OAuth client per app installation](adr/0005-register-one-client-per-installation.md)
+
 ## Learn by doing
 
 [Connect your first private application](first-app.md) with the reference
