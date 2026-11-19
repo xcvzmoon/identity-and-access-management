@@ -16,7 +16,8 @@ type Cluster = {
   consoleOrigin: string;
   startConsole: (client: Client) => Promise<void>;
   startApp: (client: Client) => Promise<void>;
-  setIntrospectionAvailable: (available: boolean) => void;
+  stopReplica: () => Promise<void>;
+  startReplica: () => Promise<void>;
   close: () => Promise<void>;
 };
 
@@ -36,7 +37,7 @@ async function start(
   script: string,
   port: number,
   env: NodeJS.ProcessEnv = {},
-): Promise<void> {
+): Promise<ChildProcess> {
   const probe = createTcpServer();
   probe.listen(port, LOOPBACK);
   await once(probe, 'listening');
@@ -75,6 +76,16 @@ async function start(
     ]);
   } finally {
     listener.abort();
+  }
+
+  return child;
+}
+
+async function stop(child: ChildProcess): Promise<void> {
+  if (child.exitCode === null && child.signalCode === null) {
+    const stopped = once(child, 'exit');
+    child.kill();
+    await stopped;
   }
 }
 
@@ -119,7 +130,6 @@ export async function startCluster(issuer: URL): Promise<Cluster> {
   const appOrigin = `https://reports.localhost:${issuerPort}`;
   const consoleOrigin = `https://console.localhost:${issuerPort}`;
   const processes: ChildProcess[] = [];
-  let introspectionAvailable = true;
 
   const proxy = createServer(
     {
@@ -129,10 +139,6 @@ export async function startCluster(issuer: URL): Promise<Cluster> {
     (incoming, outgoing) => {
       const path = incoming.url ?? '/';
       const introspection = path === '/api/v1/auth/oauth2/introspect';
-      if (introspection && !introspectionAvailable) {
-        outgoing.writeHead(UNAVAILABLE).end();
-        return;
-      }
 
       let offset = WEB_OFFSET;
       if (incoming.headers.host === new URL(appOrigin).host) {
@@ -170,22 +176,18 @@ export async function startCluster(issuer: URL): Promise<Cluster> {
       await proxy[Symbol.asyncDispose]();
     }
 
-    await Promise.all(
-      processes.map(async (child) => {
-        if (child.exitCode === null && child.signalCode === null) {
-          const stopped = once(child, 'exit');
-          child.kill();
-          await stopped;
-        }
-      }),
-    );
+    await Promise.all(processes.map(async (child) => stop(child)));
   }
 
   try {
     proxy.listen(issuerPort, LOOPBACK);
     await once(proxy, 'listening');
     await start(processes, '../../.output/server/index.mjs', issuerPort + PRIMARY_OFFSET);
-    await start(processes, '../../.output/server/index.mjs', issuerPort + REPLICA_OFFSET);
+    let replica = await start(
+      processes,
+      '../../.output/server/index.mjs',
+      issuerPort + REPLICA_OFFSET,
+    );
     await start(processes, '../../../web/.output/server/index.mjs', issuerPort + WEB_OFFSET);
     const discovery = await fetch(new URL('/.well-known/openid-configuration', issuer));
     expect(discovery.status).toBe(SUCCESS);
@@ -206,8 +208,13 @@ export async function startCluster(issuer: URL): Promise<Cluster> {
           },
         );
       },
-      setIntrospectionAvailable(available) {
-        introspectionAvailable = available;
+      stopReplica: async () => stop(replica),
+      async startReplica() {
+        replica = await start(
+          processes,
+          '../../.output/server/index.mjs',
+          issuerPort + REPLICA_OFFSET,
+        );
       },
       close,
     };

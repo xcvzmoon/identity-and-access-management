@@ -198,14 +198,15 @@ async function checkIntrospectionRecovery(
       { mode: PRIVATE_FILE },
     );
     expect(await probeIntrospection(endpoint, netrc)).toBe(HEALTHY);
-    cluster.setIntrospectionAvailable(false);
+    await cluster.stopReplica();
+    const discovery = await fetch(new URL('/.well-known/openid-configuration', env.oidcIssuerUrl));
+    expect(discovery.status).toBe(OK);
     expect(await probeIntrospection(endpoint, netrc)).toBe(CRITICAL);
     await expectStatus(page, resource, UNAVAILABLE);
-    cluster.setIntrospectionAvailable(true);
+    await cluster.startReplica();
     expect(await probeIntrospection(endpoint, netrc)).toBe(HEALTHY);
     await expectStatus(page, resource, OK);
   } finally {
-    cluster.setIntrospectionAvailable(true);
     await rm(directory, {
       recursive: true,
       force: true,
