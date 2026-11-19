@@ -73,7 +73,9 @@ Discard the fixture database and mailbox when finished.
    command below, route `https://reports.localhost` to
    `http://127.0.0.1:8080`. Leave port 8080 available. The test starts
    the app and supplies the installation's credentials.
-4. Export the IdP runtime settings in the test shell, including the same
+4. Set `IAM_AUDIT_READER_USER` and `IAM_AUDIT_READER_PASSWORD` in the test
+   shell to the credentials of a fixture login with the `iam_audit_reader` role.
+   Export the IdP runtime settings in the test shell, including the same
    `DB_DATABASE`, `OIDC_ISSUER_URL`, and `BETTER_AUTH_SECRET` as the API.
    For local TLS, replace the CA path below with the PEM file for your
    proxy's certificate authority. Run from the repository root.
@@ -139,7 +141,8 @@ memberships and later grants the same user access to the reference app.
 Build all four workspaces, install Playwright Chromium, and apply both
 APIs' migrations to a disposable PostgreSQL database named
 `iam_phase7_test`. Export the IdP runtime settings and the console runtime
-database password as in the console session fixture. Start Mailpit on
+database password as in the console session fixture. Supply the audit reader
+credentials described in the OIDC fixture. Start Mailpit on
 loopback, configure the IdP SMTP settings to use it, and supply a local
 test certificate covering `localhost`, `console.localhost`, and
 `reports.localhost`. Reserve the issuer port and the next six ports.
@@ -159,3 +162,22 @@ exercises the hosted operator workflow, console app registration and role
 assignment, tenant and session denials, and replacement-owner recovery.
 The second test checks challenge binding across two IAM sessions for the
 same user. Discard the fixture database and mailbox after verification.
+
+### Audit access and retention
+
+Create a disposable `iam_phase8_test` database and apply the IdP migrations.
+Use a test administrator who can switch to the runtime, reader, and retention
+roles. The SQL fixture rolls back its changes.
+
+```sh
+psql -X -d iam_phase8_test -f apps/idp/api/tests/audit-access.sql
+```
+
+Run the OIDC and owner recovery browser fixtures above with the migrated
+database for each phase. Use separate runtime and reader logins so the
+fixtures exercise the same permissions as the services.
+
+With the console session fixture environment configured, run
+`sh scripts/tests/verify-ingress-logs.sh` from the repository root. It checks
+the fixture proxy and upstream process output for synthetic credentials.
+Repeat the checks against the deployed proxy and its log sinks during the pilot.

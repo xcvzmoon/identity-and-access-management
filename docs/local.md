@@ -23,7 +23,12 @@ HTTPS setup below to exercise the IdP account pages.
 ## Database setup
 
 1. Create a fresh PostgreSQL database with `createdb iam_v1`.
-2. Apply each API's migrations in a separate shell. For each command, export
+2. Have the PostgreSQL administrator create the two cluster-wide group roles
+   with `CREATE ROLE iam_audit_reader NOLOGIN` and
+   `CREATE ROLE iam_audit_retention NOLOGIN` before applying the IdP migrations.
+   Grant the first role to security reviewers and the second to a dedicated
+   scheduler login. Keep these memberships separate from API runtime accounts.
+3. Apply each API's migrations in a separate shell. For each command, export
    `DB_HOST`, `DB_DATABASE`, `DB_USER`, and `DB_PASSWORD` for its migrator.
    Set `DB_PORT` and `DB_SSL` if your connection differs from the local defaults.
 
@@ -32,7 +37,7 @@ HTTPS setup below to exercise the IdP account pages.
    | IdP     | `vp -C apps/idp/api run db:migrate`     |
    | Console | `vp -C apps/console/api run db:migrate` |
 
-3. In each API directory, copy its `.env.example` to `.env` if needed. Fill in
+4. In each API directory, copy its `.env.example` to `.env` if needed. Fill in
    the matching runtime credentials and double-quote dotenv values. Use the
    local setup commands in shells with the runtime environment.
    [IdP example](../apps/idp/api/.env.example) · [Console example](../apps/console/api/.env.example)
@@ -42,20 +47,41 @@ Both APIs require `OIDC_ISSUER_URL`. The console API also requires
 examples use `https://idp.localhost` and `https://console.localhost`. Use the direct HTTP ports above for smoke checks.
 
 Each migrator owns its application schema and journal schema. The runtime
-role can read and write tables in its application schema. Drizzle needs
+role can read and write ordinary application tables. The IdP runtime has append-only
+access to authorization and owner recovery events. PostgreSQL supplies their IDs and timestamps. Drizzle needs
 database `CREATE` for each migrator to initialize or check the journal
 schema. Runtime roles have `CONNECT` and grants on their own application data.
+
+### Audit retention
+
+The IdP retains authorization and owner recovery events for 90 days. Configure
+a daily scheduler job to run `apps/idp/api/scripts/purge-expired-audit-events.sh`
+with the retention login's libpq connection settings. Each call commits up to
+1,000 expired rows per table. The job stops when it finds no unlocked expired
+rows. Alert on a failed or missed run. Rows become eligible at 90 days and
+are normally removed by the next daily run. Apply a separate expiration
+policy to backups and restored copies. After expiry, the IdP keeps only a digest
+of the organization and case reference to prevent repeat recovery for the same case.
+
+Security reviewers can query both event tables. The retention role can run
+the fixed purge function. Schema owners and database administrators retain
+privileged access. Keep migrator credentials out of the API and scheduler.
+For a busy existing deployment, build the two retention indexes from the
+audit migration with `CREATE INDEX CONCURRENTLY` before applying it, and
+verify both indexes are valid. The migration reuses those indexes. On an
+existing installation, deploy the Phase 8 IdP API to every replica before
+applying the migration. Earlier versions require broader audit table grants.
 
 ## IdP account flows
 
 Serve the IdP web and API workspaces under the HTTPS origin in
 `OIDC_ISSUER_URL`. Configure your reverse proxy to send `/.well-known/*` and
 `/api/*` to the IdP API. Send all other paths to the IdP web server.
-Preserve the public host. Redact the token in the
-`/api/v1/auth/reset-password/<token>` path.
-Keep query strings, request bodies, cookies, and authorization headers out
-of ingress and application access logs. Verification and reset URLs carry
-credentials. If the API accepts traffic exclusively from a trusted proxy that
+Preserve the public host. Configure ingress access logs to record only the
+method, route template, status, and duration. For unmatched routes, use a
+fixed label. Raw paths can contain password reset tokens, and callback queries
+carry authorization codes. Omit headers, bodies, and redirect targets from
+access and error logs on both hosts. If the API accepts traffic exclusively from a trusted proxy that
 overwrites `X-Real-IP` with the client address, set `TRUST_PROXY_IP="true"`
 to rate-limit individual clients behind that proxy.
 
@@ -191,8 +217,9 @@ that user's installation grants in the organization.
    request. Keep the verification evidence in the case system. Use a
    replacement address that is not already a member of the organization.
 2. As an allowlisted operator, verify a passkey. Select **Open recovery** at
-   `/operator`. Enter the organization ID, case reference, and verified
-   replacement address. Confirm the verification and send the invitation.
+   `/operator`. Enter the organization ID, the case identifier from the case system, and the
+   verified replacement address. The case identifier is stored verbatim in the
+   audit trail. Keep evidence, credentials, and recovery links in their original systems. Confirm the verification and send the invitation.
 3. The IdP cancels outstanding owner invitations and records the operator
    ID, organization ID, case reference, timestamp, and `invited` outcome
    when it issues the replacement invitation. Reusing that case reference
