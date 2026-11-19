@@ -4,7 +4,11 @@ import { assertBodySize, getRequestIP } from 'nitro/h3';
 import { isIP } from 'node:net';
 import { useAuth } from '../utils/auth.ts';
 import { useEnv } from '../utils/env.ts';
-import { ForbiddenError, UnsupportedMediaTypeError } from '../utils/http-errors.ts';
+import {
+  ForbiddenError,
+  InternalServerError,
+  UnsupportedMediaTypeError,
+} from '../utils/http-errors.ts';
 
 const MEDIA_TYPE_INDEX = 0;
 const MAX_AUTH_BODY_BYTES = 16_384;
@@ -124,6 +128,36 @@ export async function forwardPostRequestToBetterAuth(
   const auth = useAuth();
   const response = await auth.handler(request);
   return privateResponse(response);
+}
+
+/**
+ * Ends the browser's SSO session and checks the original cookie against storage.
+ * The browser receives the cleared cookie only after the session is inactive.
+ *
+ * @param {H3Event} event - Same-origin JSON sign-out request.
+ * @returns {Promise<Response>} Better Auth's sign-out response.
+ * @throws {InternalServerError} When the session is still active after sign-out.
+ */
+export async function signOutIam(event: H3Event): Promise<Response> {
+  const response = await forwardPostRequestToBetterAuth(event, 'include');
+  if (!response.ok) {
+    return response;
+  }
+
+  const auth = useAuth();
+  const remaining = await auth.api.getSession({
+    headers: authHeaders(event),
+    query: {
+      disableCookieCache: true,
+      disableRefresh: true,
+    },
+  });
+
+  if (remaining) {
+    throw new InternalServerError('Unable to end the IAM session.');
+  }
+
+  return response;
 }
 
 /**

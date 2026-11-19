@@ -54,6 +54,7 @@
       role="status"
     >
       You are signed in. Open your invitation to join your organization.
+      <NuxtLink to="/sign-out">Sign out of IAM</NuxtLink>
     </p>
     <Form
       :of="form"
