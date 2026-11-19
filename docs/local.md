@@ -146,6 +146,20 @@ ORDER BY created_at, id;
 
 A join has an empty previous role. A removal has an empty new role. Unchanged roles and rolled-back transactions leave no events. Apply the migration before updating the retention job, which expires these events after 90 days.
 
+#### Review OAuth client changes
+
+After the OAuth client audit migration, query `iam_idp.oauth_client_events` with the audit reader role. Each creation and deletion creates an event. Updates record changes to the disabled flag or stored client credential. The `credential_changed` flag indicates a changed credential on an update. The audit table contains no credential material. Each event uses the installation's organization reference when it is a UUID and the console management actor when available.
+
+```sql
+SELECT created_at, organization_id, actor_user_id, operation,
+       previous_disabled, new_disabled, credential_changed
+FROM iam_idp.oauth_client_events
+WHERE client_id = :'client_id'
+ORDER BY created_at, id;
+```
+
+The migration starts a new history for existing clients. Apply it before deploying the retention job, which removes events older than 90 days.
+
 #### Check retained rate-limit row ages
 
 Capture the [aggregate age report](../apps/idp/api/scripts/report-rate-limit-retention.sql) before and after a purge. Run it with an operator login that can read `iam_idp.rate_limits.last_request`. The query needs only that column and scans the table once. On large installations, run the report outside peak traffic.

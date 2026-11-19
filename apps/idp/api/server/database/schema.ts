@@ -470,6 +470,22 @@ export const membershipEvents = idpSchema.table(
   (table) => [index('membership_events_created_at_idx').on(table.createdAt)],
 );
 
+export const oauthClientEvents = idpSchema.table(
+  'oauth_client_events',
+  {
+    id: generateUuid(),
+    clientId: text('client_id').notNull(),
+    organizationId: uuid('organization_id'),
+    actorUserId: uuid('actor_user_id'),
+    operation: text('operation', { enum: ['created', 'updated', 'deleted'] }).notNull(),
+    previousDisabled: boolean('previous_disabled'),
+    newDisabled: boolean('new_disabled'),
+    credentialChanged: boolean('credential_changed').notNull(),
+    createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
+  },
+  (table) => [index('oauth_client_events_created_at_idx').on(table.createdAt)],
+);
+
 export const ownerRecoveryEvents = idpSchema.table(
   'owner_recovery_events',
   {

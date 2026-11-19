@@ -260,4 +260,45 @@ BEGIN
 END
 $verify$;
 
+SET LOCAL ROLE iam_idp_runtime;
+INSERT INTO iam_idp.oauth_clients (client_id, reference_id, client_secret, redirect_uris)
+VALUES ('client-audit', current_setting('iam.fixture_org'), 'fixture-before', ARRAY['https://audit.invalid/callback']);
+UPDATE iam_idp.oauth_clients SET disabled=false WHERE client_id='client-audit';
+UPDATE iam_idp.oauth_clients SET client_secret='fixture-after' WHERE client_id='client-audit';
+SAVEPOINT before_client_disable;
+UPDATE iam_idp.oauth_clients SET disabled=true WHERE client_id='client-audit';
+ROLLBACK TO before_client_disable;
+UPDATE iam_idp.oauth_clients SET disabled=true WHERE client_id='client-audit';
+DELETE FROM iam_idp.oauth_clients WHERE client_id='client-audit';
+
+SET LOCAL ROLE iam_audit_reader;
+DO $verify$
+DECLARE
+  org uuid := current_setting('iam.fixture_org')::uuid;
+  actor uuid := '00000000-0000-4000-8000-000000000123';
+BEGIN
+  IF (SELECT count(*) FROM iam_idp.oauth_client_events WHERE client_id='client-audit') <> 4 OR
+     EXISTS (SELECT FROM iam_idp.oauth_client_events WHERE client_id='client-audit'
+             AND (actor_user_id IS DISTINCT FROM actor OR organization_id IS DISTINCT FROM org)) OR
+     NOT EXISTS (SELECT FROM iam_idp.oauth_client_events WHERE client_id='client-audit' AND operation='created' AND previous_disabled IS NULL AND new_disabled=false) OR
+     NOT EXISTS (SELECT FROM iam_idp.oauth_client_events WHERE client_id='client-audit' AND operation='updated' AND credential_changed AND previous_disabled=false AND new_disabled=false) OR
+     NOT EXISTS (SELECT FROM iam_idp.oauth_client_events WHERE client_id='client-audit' AND operation='updated' AND NOT credential_changed AND previous_disabled=false AND new_disabled=true) OR
+     NOT EXISTS (SELECT FROM iam_idp.oauth_client_events WHERE client_id='client-audit' AND operation='deleted' AND previous_disabled=true AND new_disabled IS NULL) OR
+     EXISTS (SELECT FROM iam_idp.oauth_client_events e WHERE to_jsonb(e)::text LIKE '%fixture-before%' OR to_jsonb(e)::text LIKE '%fixture-after%') OR
+     has_table_privilege('iam_idp_runtime','iam_idp.oauth_client_events','SELECT, INSERT, UPDATE, DELETE') THEN
+    RAISE EXCEPTION 'OAuth client history or access restrictions mismatch';
+  END IF;
+END
+$verify$;
+RESET ROLE;
+UPDATE iam_idp.oauth_client_events SET created_at=now()-interval '91 days' WHERE client_id='client-audit' AND operation='deleted';
+SET LOCAL ROLE iam_audit_retention;
+DO $verify$
+BEGIN
+  IF iam_idp.purge_expired_oauth_client_events() <> 1 THEN
+    RAISE EXCEPTION 'OAuth client audit retention mismatch';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;
