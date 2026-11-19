@@ -1,5 +1,5 @@
-import type { Transporter } from 'nodemailer';
 import { log } from 'evlog';
+import { type Transporter, createTransport } from 'nodemailer';
 import { useEnv } from './env.ts';
 
 const IMPLICIT_TLS_PORT = 465;
@@ -8,16 +8,15 @@ const MAX_CONCURRENT_DELIVERIES = 8;
 let transport: Transporter | null = null;
 const pending = new Set<Promise<unknown>>();
 
-async function mailTransport(): Promise<Transporter> {
+function mailTransport(): Transporter {
   if (transport) {
     return transport;
   }
 
-  const nodemailer = await import('nodemailer');
   const env = useEnv();
   const smtp = env.smtp;
 
-  transport ??= nodemailer.createTransport({
+  transport = createTransport({
     pool: true,
     maxConnections: MAX_CONCURRENT_DELIVERIES,
     host: smtp.host,
@@ -61,24 +60,13 @@ export async function sendAccountEmail(
   mode: 'queued' | 'confirmed' = 'queued',
 ): Promise<void> {
   const env = useEnv();
-  const smtp = await mailTransport();
+  const smtp = mailTransport();
   const sending = smtp.sendMail({
     from: env.smtp.from,
     to,
     subject,
     text: `${subject}\n\n${url}\n\nIf you did not request this email, you can ignore it.`,
   });
-
-  if (mode === 'confirmed') {
-    try {
-      await sending;
-    } catch (error) {
-      logDeliveryFailure(mode);
-      throw error;
-    }
-
-    return;
-  }
 
   const delivery = sending
     .catch(() => {
@@ -89,9 +77,16 @@ export async function sendAccountEmail(
     });
 
   pending.add(delivery);
+  if (mode === 'confirmed') {
+    await sending;
+  }
 }
 
+/** Waits for deliveries already submitted and closes their SMTP pool. Later sends use a new pool. */
 export async function finishAccountEmail(): Promise<void> {
-  await Promise.all(pending);
-  transport?.close();
+  const draining = transport;
+
+  transport = null;
+  await Promise.allSettled(pending);
+  draining?.close();
 }
