@@ -517,7 +517,7 @@ export default defineConfig({
       typeAware: true,
       typeCheck: true,
     },
-    ignorePatterns: [...sharedIgnorePatterns, '**.d.ts', 'evaluations/**'],
+    ignorePatterns: [...sharedIgnorePatterns, '**.d.ts'],
   },
   test: {
     passWithNoTests: true,

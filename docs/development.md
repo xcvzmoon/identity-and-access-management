@@ -11,7 +11,7 @@
 | [`apps/console/web`](../apps/console/web/package.json) | `@iam/console-web` | Nuxt `.output/`  |
 | [`apps/console/api`](../apps/console/api/package.json) | `@iam/console-api` | Nitro `.output/` |
 
-The root manifest pins Node and pnpm. The workspace catalogs pin shared dependency versions. Build output stays in the workspace that produced it. The Better Auth evaluation has a separate lockfile and build environment.
+The root manifest pins Node and pnpm. The workspace catalogs pin shared dependency versions. Build output stays in the workspace that produced it.
 [Root scripts](../package.json) · [Workspace catalog](../pnpm-workspace.yaml)
 
 Each API requires a valid `.env` in its own workspace for `dev` and `build`.

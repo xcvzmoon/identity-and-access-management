@@ -20,19 +20,6 @@ the IdP API and `GET /api/v1/hello` from the console API.
 The APIs need a reachable database and their runtime credentials.
 [Local database setup](local.md#database-setup)
 
-## Better Auth evaluation
-
-The engine evaluation has a separate lockfile and creates disposable PostgreSQL and TLS fixtures. Install PostgreSQL client and server tools and OpenSSL before running it. From the repository root, run the following commands.
-
-```sh
-pnpm -C evaluations/better-auth install --frozen-lockfile --ignore-scripts
-pnpm -C evaluations/better-auth exec playwright install chromium
-vp -C evaluations/better-auth run evaluate
-vp -C evaluations/better-auth run typecheck
-```
-
-The fixture removes its temporary database and TLS material on exit. The OpenID Foundation runs used a statically registered web client with the suite's exact callback URL, `client_secret_basic`, response type `code`, and the default response mode for PKCE. [Evaluation results](history.md#phase-1--evaluate-better-auth)
-
 ## Integration tests
 
 Use a separate disposable database for each fixture. The test commands retain their original phase numbers in environment variable names. Record the revision, settings, checks that ran, and checks that were skipped.

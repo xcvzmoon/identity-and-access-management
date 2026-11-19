@@ -8,5 +8,5 @@
     "esModuleInterop": true,
     "types": ["node"]
   },
-  "exclude": ["node_modules", "apps", "packages", "evaluations"]
+  "exclude": ["node_modules", "apps", "packages"]
 }

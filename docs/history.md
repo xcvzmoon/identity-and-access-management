@@ -25,7 +25,7 @@ The fixture covered invitation eligibility, password reset, a console session fo
 | `oidcc-discovery-endpoint-verification`         | `BTP3y43lCmYhApB` |
 | `oidcc-ensure-request-with-valid-pkce-succeeds` | `MHUtlz64XOSypUg` |
 
-The evaluation established the engine choice and left the full Basic OP review open. The fixture and decision landed in `97ec243` and `31d9606`. [Run the evaluation](validation.md#better-auth-evaluation)
+The evaluation established the engine choice and left the full Basic OP review open. The fixture and decision landed in `97ec243` and `31d9606`. The standalone fixture is available in Git at `3b3b091`.
 
 ### Phase 2 · Establish four workspaces and database ownership
 
