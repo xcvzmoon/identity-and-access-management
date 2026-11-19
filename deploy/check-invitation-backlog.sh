@@ -17,9 +17,18 @@ if [ "${#1}" -gt 15 ]; then
 fi
 
 export PGCONNECT_TIMEOUT=5 PGTARGETSESSIONATTRS=read-write
-if ! overdue=$(psql -XqAtw -v ON_ERROR_STOP=1 -v deadline="$1" 2>/dev/null <<'SQL'
+if ! state=$(psql -XqAtw -v ON_ERROR_STOP=1 -v deadline="$1" 2>/dev/null <<'SQL'
 SET statement_timeout = '5s';
-SELECT coalesce(string_agg(queue, ',' ORDER BY queue) FILTER (WHERE oldest_pending_ms > :'deadline'::bigint), 'none')
+SELECT CASE
+  WHEN count(*) <> 2
+    OR count(*) FILTER (WHERE queue = 'member') <> 1
+    OR count(*) FILTER (WHERE queue = 'owner') <> 1
+    OR count(*) FILTER (WHERE pending_deliveries >= 0 AND oldest_pending_ms >= 0
+                        AND (pending_deliveries > 0 OR oldest_pending_ms = 0)) <> 2
+    THEN 'invalid'
+  ELSE coalesce(string_agg(queue, ',' ORDER BY queue)
+                FILTER (WHERE oldest_pending_ms > :'deadline'::bigint), 'none')
+END
 FROM iam_idp.invitation_delivery_backlog();
 SQL
 ); then
@@ -27,8 +36,8 @@ SQL
   exit 2
 fi
 
-case "$overdue" in
+case "$state" in
   none) echo 'OK: invitation queues are within the delivery deadline' ;;
-  owner|member|member,owner) echo "CRITICAL: invitation delivery deadline exceeded for $overdue"; exit 2 ;;
+  owner|member|member,owner) echo "CRITICAL: invitation delivery deadline exceeded for $state"; exit 2 ;;
   *) echo 'UNKNOWN: unexpected invitation backlog result'; exit 3 ;;
 esac
