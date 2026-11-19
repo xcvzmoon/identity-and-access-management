@@ -5,6 +5,7 @@
 Phase 1 is complete. The evidence supports Better Auth `1.7.26` for the
 rewrite. Phase 2 established the PostgreSQL baseline and verified schema
 and migration isolation. Phase 3 verified invitation signup and password recovery. Phase 4 verified the OIDC issuer, installation grants, and consent through the reference app.
+Phase 5 verified live access and IAM sign-out across two IdP processes.
 
 ## Implementation boundaries
 
@@ -29,7 +30,7 @@ and migration isolation. Phase 3 verified invitation signup and password recover
 | [2. Verify the workspaces and establish database ownership](phase-02-establish-apps-and-storage.md) | Complete | Both migration sets apply to fresh PostgreSQL. Each API's runtime role is denied reads and writes in the other schema. Required settings are validated at startup. |
 | [3. Build invitation signup and recovery](phase-03-invitation-signup-and-recovery.md)               | Complete | New and existing invitees join with the verified invited email. Password reset invalidates prior IAM sessions.                                                     |
 | [4. Build the OIDC issuer and app grants](phase-04-oidc-issuer-and-app-grants.md)                   | Complete | A reference app signs in through the issuer. Two installations of the same app have independent clients, grants, and consent.                                      |
-| [5. Implement live checks and IAM sign-out](phase-05-live-access-and-iam-sign-out.md)               | Planned  | The next protected request is denied after revocation or IAM sign-out across two IdP processes, or when the live check is unavailable.                             |
+| [5. Implement live checks and IAM sign-out](phase-05-live-access-and-iam-sign-out.md)               | Complete | The next protected request is denied after revocation or IAM sign-out across two IdP processes, or when the live check is unavailable.                             |
 | [6. Build the console OIDC session](phase-06-console-oidc-session.md)                               | Planned  | A verified user with zero memberships can open their account. The console owns its session and offers both sign-out actions.                                       |
 | [7. Build administration and owner recovery](phase-07-administration-and-owner-recovery.md)         | Planned  | An operator onboards an owner. Admin actions enforce tenant scope and step-up. Locked-out owner recovery is audited.                                               |
 | [8. Verify authorization audit and retention](phase-08-authorization-audit.md)                      | Planned  | Authorization outcomes and owner recovery are traceable. Audit access, retention, and redaction pass checks.                                                       |

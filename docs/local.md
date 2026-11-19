@@ -95,7 +95,22 @@ vp -C examples/reference-app run start
 
 Open `https://reports.localhost` and choose **Sign in with IAM**. Sign in as
 the assigned member and review the app, organization, and role. On approval,
-the app validates the ID token and displays its subject.
+the app validates the ID token and starts an application session. The
+Reports installation needs a role with the `reports.read` permission.
+Configure the installation's role permissions when calling `provisionClient`,
+for example `rolePermissions: { reader: ['reports.read'] }`. The app checks
+the current grant with IAM before serving the signed-in user's report.
+The reference server keeps its app sessions in memory. Restarting it requires
+users to sign in again.
+
+The OAuth provider's default introspection limit is 100 requests per peer IP
+per minute. Each protected report request consumes one check. Account for
+backends sharing an egress address when sizing that limit. A throttled check
+makes the report unavailable.
+
+Open `/sign-out` at the issuer and choose **Sign out of IAM** to end the
+current browser's SSO session. The next protected request using that session
+will be denied, even if the access token has time left.
 
 ## Containers
 

@@ -92,3 +92,23 @@ The fixture registers two installations, signs in through the reference
 app, and checks SSO reuse and renewed consent after a role change. It also
 checks tenant isolation, callback and PKCE enforcement, code replay, and
 revocation before exchange. Discard the fixture database after the run.
+
+### Live access across IdP processes
+
+Create a disposable PostgreSQL database named `iam_phase5_test` and apply
+the IdP migrations. Export its IdP runtime settings in the test shell.
+Build the IdP web and API workspaces and install Chromium as described above.
+Supply a local TLS certificate valid for both `localhost` and
+`reports.localhost`. Both names must resolve to loopback.
+
+```sh
+NODE_EXTRA_CA_CERTS="/absolute/path/to/test-certificate.pem" \
+IAM_PHASE5_TLS_KEY="/absolute/path/to/test-key.pem" \
+OIDC_ISSUER_URL="https://localhost:56451" \
+IAM_PHASE5_TESTS="1" \
+vp test --run apps/idp/api/tests/live-access.test.ts
+```
+
+The fixture routes sign-in and sign-out to one API process and introspection
+to a second process using the same issuer and database. Reserve ports 56451
+through 56455 for the fixture. Discard the database after the run.
