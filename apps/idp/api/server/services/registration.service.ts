@@ -18,6 +18,8 @@ export type ClientRegistration = {
     }
 );
 
+type RegistrationDatabase = Omit<ReturnType<typeof useDatabase>, '$client'>;
+
 type Assignment = { organizationId: string; clientId: string; userId: string };
 
 type RegistrationPolicy = Pick<
@@ -54,11 +56,13 @@ export function createRegistrationPolicy(registration?: ClientRegistration): Reg
  *
  * @param {Headers} headers - Headers carrying the verified provisioning session.
  * @param {ClientRegistration} registration - Registration type, name, organization, and exact callbacks.
+ * @param {RegistrationDatabase} database - Connection or transaction that owns the registration.
  * @returns {Promise<{clientId: string, clientSecret: string}>} Credentials for the app backend.
  */
 export async function provisionClient(
   headers: Headers,
   registration: ClientRegistration,
+  database: RegistrationDatabase = useDatabase(),
 ): Promise<{ clientId: string; clientSecret: string }> {
   const name = registration.name.trim();
   const redirectUris = [...new Set(registration.redirectUris)];
@@ -71,7 +75,6 @@ export async function provisionClient(
     throw new Error('Supply an application name and exact HTTPS callback URLs.');
   }
 
-  const database = useDatabase();
   return database.transaction(async (transaction) => {
     const auth = createAuth(transaction, registration);
     const client = await auth.api.adminCreateOAuthClient({
@@ -115,9 +118,12 @@ export async function provisionClient(
  * and outstanding codes. Repeating the same assignment preserves both.
  *
  * @param {Assignment & {role: string}} input - Organization, client, member, and app role.
+ * @param {RegistrationDatabase} database - Connection or transaction that owns the assignment.
  */
-export async function assignAppRole(input: Assignment & { role: string }): Promise<void> {
-  const database = useDatabase();
+export async function assignAppRole(
+  input: Assignment & { role: string },
+  database: RegistrationDatabase = useDatabase(),
+): Promise<void> {
   const role = input.role.trim();
   const assignments = await database
     .insert(appGrants)
@@ -141,10 +147,12 @@ export async function assignAppRole(input: Assignment & { role: string }): Promi
  * Revokes a member's app assignment in the specified organization.
  *
  * @param {Assignment} input - Organization, client, and member identifiers.
+ * @param {RegistrationDatabase} database - Connection or transaction that owns the revocation.
  */
-export async function revokeAppGrant(input: Assignment): Promise<void> {
-  const database = useDatabase();
-
+export async function revokeAppGrant(
+  input: Assignment,
+  database: RegistrationDatabase = useDatabase(),
+): Promise<void> {
   await database
     .delete(appGrants)
     .where(
