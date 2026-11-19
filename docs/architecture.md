@@ -75,6 +75,12 @@ Add HTTP handlers under the owning API's `server/api/` or `server/routes/`,
 according to the public URL. Keep schema definitions and migration history
 with that API's database code.
 
+Routes validate HTTP input and format responses. Put application policy in
+`server/services/<domain>.service.ts` and Drizzle queries in
+`server/repositories/<domain>.repository.ts`. The invitation repository checks eligibility before signup.
+The invitation service uses Better Auth’s organization plugin to accept the
+invitation and create the membership in one database transaction.
+
 To list the workspace files as tracked in Git, run `git ls-files apps`.
 The [workspace reference](development.md) lists package names and commands.
 

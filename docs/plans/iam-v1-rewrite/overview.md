@@ -4,7 +4,7 @@
 
 Phase 1 is complete. The evidence supports Better Auth `1.7.26` for the
 rewrite. Phase 2 established the PostgreSQL baseline and verified schema
-and migration isolation. Phase 3 builds invitation signup and recovery.
+and migration isolation. Phase 3 verified invitation signup and password recovery. Phase 4 builds the OIDC issuer and app grants.
 
 ## Implementation boundaries
 
@@ -27,7 +27,7 @@ and migration isolation. Phase 3 builds invitation signup and recovery.
 | --------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [1. Evaluate Better Auth](phase-01-evaluate-better-auth.md)                                         | Complete | Engine decision and recorded fixture results, including selected discovery and PKCE conformance checks.                                                            |
 | [2. Verify the workspaces and establish database ownership](phase-02-establish-apps-and-storage.md) | Complete | Both migration sets apply to fresh PostgreSQL. Each API's runtime role is denied reads and writes in the other schema. Required settings are validated at startup. |
-| [3. Build invitation signup and recovery](phase-03-invitation-signup-and-recovery.md)               | Planned  | New and existing invitees join with the verified invited email. Password reset invalidates prior IAM sessions.                                                     |
+| [3. Build invitation signup and recovery](phase-03-invitation-signup-and-recovery.md)               | Complete | New and existing invitees join with the verified invited email. Password reset invalidates prior IAM sessions.                                                     |
 | [4. Build the OIDC issuer and app grants](phase-04-oidc-issuer-and-app-grants.md)                   | Planned  | A reference app signs in through the issuer. Two installations of the same app have independent clients, grants, and consent.                                      |
 | [5. Implement live checks and IAM sign-out](phase-05-live-access-and-iam-sign-out.md)               | Planned  | The next protected request is denied after revocation or IAM sign-out across two IdP processes, or when the live check is unavailable.                             |
 | [6. Build the console OIDC session](phase-06-console-oidc-session.md)                               | Planned  | A verified user with zero memberships can open their account. The console owns its session and offers both sign-out actions.                                       |

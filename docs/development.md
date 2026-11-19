@@ -43,6 +43,18 @@ Export the required `DB_*` settings before running any Drizzle script.
 Use the matching migrator credentials for `db:migrate`.
 [Database setup](local.md#database-setup)
 
+For IdP auth schema changes, export the IdP runtime settings and run the
+Better Auth CLI from `apps/idp/api`. Use the CLI version matching the
+installed `better-auth` package.
+
+```sh
+pnpm dlx auth@1.7.26 generate --config ./auth.config.ts --output /tmp/iam-auth-schema.ts
+```
+
+Apply the generated fields and relations under `server/database/` using
+the existing UUID and timestamp helpers. Run `vp run db:generate` from the
+same workspace to generate the SQL migration and snapshot.
+
 ## Code conventions and tooling
 
 `AGENTS.md` defines project conventions, including dotenv quoting, TypeScript

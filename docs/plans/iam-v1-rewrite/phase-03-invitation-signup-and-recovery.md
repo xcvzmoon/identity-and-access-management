@@ -27,3 +27,17 @@ direct signup, wrong-email acceptance, expiry, replay, and concurrent
 acceptance. Reset a password and verify the old password, reset link, and
 IAM sessions can no longer be used. Check account privacy in responses
 and logs.
+
+## Results
+
+The production builds passed a Chromium run through a local HTTPS proxy
+with a disposable PostgreSQL database and SMTP inbox. A new invitee
+verified their address and joined. The same account accepted a second
+invitation. Recovery and verification requests returned matching responses
+for registered and unknown addresses. Password reset invalidated the old
+password, the reset token, and an existing session.
+
+The opt-in API suite also verified concurrent acceptance, replay, expired
+and wrong-address invitations, and revocation of two independent sessions.
+The IdP used the Drizzle adapter with Postgres.js for these checks.
+[Run the integration suite](../../validation.md#invitation-signup-and-recovery)

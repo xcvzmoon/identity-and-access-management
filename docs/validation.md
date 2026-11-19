@@ -15,7 +15,7 @@ vp run build
 ```
 
 The root suite includes workspace discovery checks. For a local startup
-check, open both web scaffold pages and request `/api/hello` from each API.
+check, open both web scaffold pages and request `/api/v1/hello` from each API.
 The APIs need a reachable database and their runtime credentials.
 [Local database setup](local.md#database-setup)
 
@@ -35,3 +35,27 @@ the database and auth flows.
 
 Run integration tests against disposable data. Record which checks ran, which
 were skipped, and which fixture and deployment each result covers.
+
+### Invitation signup and recovery
+
+Create a disposable local PostgreSQL database named `iam_phase3_test`. Apply
+the IdP migrations with its migrator credentials. Start Mailpit on loopback
+and point the IdP's SMTP settings at its SMTP port (default `1025`). Start
+the IdP API with the runtime role and the settings for that database.
+[IdP setup](local.md#idp-account-flows)
+
+From the repository root, export the same IdP runtime settings used by the
+server and run the suite. Set the URLs to the loopback endpoints for the
+running API and Mailpit's HTTP interface.
+
+```sh
+IAM_PHASE3_TESTS=1 \
+IAM_PHASE3_API=http://127.0.0.1:65430 \
+IAM_PHASE3_MAILPIT=http://127.0.0.1:8025 \
+vp test --run apps/idp/api/tests/invitations.test.ts
+```
+
+Each run seeds new organizations, invitations and email addresses. The
+tests follow links from delivered messages, check membership after concurrent
+acceptance, and use two session cookies to verify password reset revocation.
+Discard the fixture database and mailbox when finished.
