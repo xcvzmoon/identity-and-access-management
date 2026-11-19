@@ -58,10 +58,10 @@
     },
     "commit": {
       "source": "xcvzmoon/skills",
-      "commit": "ccca48bc3d4ca6302dbce545cce3eb507e3cd276",
+      "commit": "b66db781ea3097a09384693c3b5a89fda6783fba",
       "sourceType": "github",
       "skillPath": "commit/SKILL.md",
-      "computedHash": "cdb30f28a32510aff93cb9ddead0515470a68e991b67b9604039cbe96bdb415e"
+      "computedHash": "826270a8b3fa72f46e7ed8de593bc8a0fa34b50521712155519f429a2b9fbd96"
     },
     "create-adaptable-composable": {
       "source": "vuejs-ai/skills",
