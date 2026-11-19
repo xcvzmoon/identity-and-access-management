@@ -39,8 +39,7 @@ HTTPS setup below to exercise the IdP account pages.
 
 Both APIs require `OIDC_ISSUER_URL`. The console API also requires
 `CONSOLE_ORIGIN`. Use bare HTTPS origins, with no trailing slash. The
-examples reserve `https://idp.localhost` and `https://console.localhost` for
-future integration flows. Use the direct HTTP ports above for smoke checks.
+examples use `https://idp.localhost` and `https://console.localhost`. Use the direct HTTP ports above for smoke checks.
 
 Each migrator owns its application schema and journal schema. The runtime
 role can read and write tables in its application schema. Drizzle needs
@@ -50,8 +49,9 @@ schema. Runtime roles have `CONNECT` and grants on their own application data.
 ## IdP account flows
 
 Serve the IdP web and API workspaces under the HTTPS origin in
-`OIDC_ISSUER_URL`. Configure your reverse proxy to send `/api/v1/auth/*` and
-`/api/v1/invitations/*` to the IdP API and all other paths to the IdP web server. Preserve the public host. Redact the token in the
+`OIDC_ISSUER_URL`. Configure your reverse proxy to send `/.well-known/*` and
+`/api/*` to the IdP API. Send all other paths to the IdP web server.
+Preserve the public host. Redact the token in the
 `/api/v1/auth/reset-password/<token>` path.
 Keep query strings, request bodies, cookies, and authorization headers out
 of ingress and application access logs. Verification and reset URLs carry
@@ -69,6 +69,33 @@ Open `/sign-in` for an existing account. Send invitees a link to
 `/invite#token=<invitation-token>`. A new user verifies their email and
 signs in to accept. A verified existing user can sign in and accept
 directly. The invitation grants membership only to its invited address.
+
+## Sign in through the reference app
+
+Give the app its own HTTPS hostname, such as `https://reports.localhost`.
+Configure TLS for both hostnames and route the app hostname to
+`http://127.0.0.1:8080`. The browser and the app server must be able to
+reach the issuer by its public hostname.
+
+Use the installation's confidential client credentials. Its registration
+must include the exact callback URL `https://reports.localhost/callback`.
+Assign an organization member a role for that installation. The [browser
+fixture](validation.md#oidc-issuer-and-app-grants) provisions both for a test run.
+
+Export `CLIENT_ID` and `CLIENT_SECRET` in the app server's shell. If your
+TLS proxy uses a local CA, set `NODE_EXTRA_CA_CERTS` to its PEM file.
+Start the app from the repository root.
+
+```sh
+OIDC_ISSUER_URL="https://idp.localhost" \
+APP_ORIGIN="https://reports.localhost" \
+PORT="8080" \
+vp -C examples/reference-app run start
+```
+
+Open `https://reports.localhost` and choose **Sign in with IAM**. Sign in as
+the assigned member and review the app, organization, and role. On approval,
+the app validates the ID token and displays its subject.
 
 ## Containers
 

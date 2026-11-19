@@ -60,3 +60,35 @@ Each run seeds new organizations, invitations and email addresses. The
 tests follow links from delivered messages, check membership after concurrent
 acceptance, and use two session cookies to verify password reset revocation.
 Discard the fixture database and mailbox when finished.
+
+### OIDC issuer and app grants
+
+1. Create the disposable PostgreSQL database `iam_phase4_test`. Apply the
+   IdP migrations using the migrator role. Point the IdP API at this database
+   using the runtime role.
+2. Start the IdP API and web workspaces. Route the HTTPS issuer's
+   `/.well-known/*` and `/api/*` paths to the API and all other paths to
+   the web server. [Local IdP setup](local.md#idp-account-flows)
+3. Configure a separate HTTPS hostname for the reference app. For the
+   command below, route `https://reports.localhost` to
+   `http://127.0.0.1:8080`. Leave port 8080 available. The test starts
+   the app and supplies the installation's credentials.
+4. Export the IdP runtime settings in the test shell, including the same
+   `DB_DATABASE`, `OIDC_ISSUER_URL`, and `BETTER_AUTH_SECRET` as the API.
+   For local TLS, replace the CA path below with the PEM file for your
+   proxy's certificate authority. Run from the repository root.
+
+```sh
+vp -C apps/idp/api exec playwright install chromium
+
+NODE_EXTRA_CA_CERTS="/absolute/path/to/local-ca.pem" \
+IAM_PHASE4_TESTS="1" \
+IAM_PHASE4_APP_ORIGIN="https://reports.localhost" \
+IAM_PHASE4_APP_PORT="8080" \
+vp test --run apps/idp/api/tests/oidc.test.ts
+```
+
+The fixture registers two installations, signs in through the reference
+app, and checks SSO reuse and renewed consent after a role change. It also
+checks tenant isolation, callback and PKCE enforcement, code replay, and
+revocation before exchange. Discard the fixture database after the run.
