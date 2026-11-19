@@ -1,6 +1,12 @@
 import type { Page } from 'playwright';
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { chromium } from 'playwright';
 import * as valibot from 'valibot';
 import { expect, test } from 'vite-plus/test';
@@ -15,6 +21,9 @@ type Fixture = Awaited<ReturnType<typeof seedOidc>>;
 type Cluster = Awaited<ReturnType<typeof startCluster>>;
 type Client = { clientId: string; clientSecret: string };
 
+const HEALTHY = 0;
+const CRITICAL = 2;
+const PRIVATE_FILE = 0o600;
 const BAD_REQUEST = 400;
 const OK = 200;
 const UNAUTHORIZED = 401;
@@ -121,6 +130,59 @@ async function login(
   await page.waitForURL(`${callback}?**`);
 }
 
+async function probeIntrospection(endpoint: URL, netrc: string): Promise<number> {
+  const script = fileURLToPath(
+    new URL('../../../../deploy/check-introspection.sh', import.meta.url),
+  );
+  try {
+    await promisify(execFile)('sh', [script, endpoint.href, netrc], {
+      env: {
+        ...process.env,
+        CURL_CA_BUNDLE: process.env.NODE_EXTRA_CA_CERTS,
+      },
+    });
+    return HEALTHY;
+  } catch (error) {
+    if (valibot.is(valibot.object({ code: valibot.literal(CRITICAL) }), error)) {
+      return CRITICAL;
+    }
+    throw error;
+  }
+}
+
+async function checkIntrospectionRecovery(
+  page: Page,
+  cluster: Cluster,
+  client: Client,
+  resource: string,
+): Promise<void> {
+  const env = useEnv();
+  const endpoint = new URL('/api/v1/auth/oauth2/introspect', env.oidcIssuerUrl);
+  const directory = await mkdtemp(path.join(tmpdir(), 'iam-probe-'));
+  const netrc = path.join(directory, 'netrc');
+
+  try {
+    await writeFile(
+      netrc,
+      `machine ${endpoint.hostname} login ${client.clientId} password ${client.clientSecret}\n`,
+      { mode: PRIVATE_FILE },
+    );
+    expect(await probeIntrospection(endpoint, netrc)).toBe(HEALTHY);
+    cluster.setIntrospectionAvailable(false);
+    expect(await probeIntrospection(endpoint, netrc)).toBe(CRITICAL);
+    await expectStatus(page, resource, UNAVAILABLE);
+    cluster.setIntrospectionAvailable(true);
+    expect(await probeIntrospection(endpoint, netrc)).toBe(HEALTHY);
+    await expectStatus(page, resource, OK);
+  } finally {
+    cluster.setIntrospectionAvailable(true);
+    await rm(directory, {
+      recursive: true,
+      force: true,
+    });
+  }
+}
+
 async function checkAccess(
   page: Page,
   cluster: Cluster,
@@ -151,10 +213,7 @@ async function checkAccess(
   await login(page, cluster.appOrigin, callback);
   await expectStatus(page, resource, OK);
 
-  cluster.setIntrospectionAvailable(false);
-  await expectStatus(page, resource, UNAVAILABLE);
-  cluster.setIntrospectionAvailable(true);
-  await expectStatus(page, resource, OK);
+  await checkIntrospectionRecovery(page, cluster, fixture.north, resource);
 }
 
 async function checkRevocation(

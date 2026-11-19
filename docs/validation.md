@@ -29,7 +29,7 @@ Use a separate disposable database for each fixture. The test commands retain th
 Run the ten required integration cases against a release candidate before promoting its images.
 Run `vp install --frozen-lockfile` to activate the pinned Node runtime in workspace scripts. The runner checks its Node version before starting any fixture.
 Build the four workspaces, provision the databases, mailbox, certificates and services described
-in each phase below. Keep the phase 3 and 4 services available while the gate runs. Provision the phase 8 audit database as described below and install the PostgreSQL client on the runner.
+in each phase below. Keep the phase 3 and 4 services available while the gate runs. Provision the phase 8 audit database as described below and install the PostgreSQL client on the runner. Phase 5 also requires curl and jq to exercise the introspection monitor during an outage and after recovery.
 
 Create a private fixture directory outside the repository containing `phase-3.env`, `phase-4.env`,
 `phase-5.env`, `phase-6.env`, `phase-7.env` and `phase-9.env`. Each file must set
