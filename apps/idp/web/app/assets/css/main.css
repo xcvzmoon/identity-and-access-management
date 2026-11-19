@@ -5,3 +5,34 @@
   --font-sans: 'Geist', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
 }
+
+@layer components {
+  main form,
+  main fieldset {
+    @apply grid gap-4;
+  }
+
+  main label {
+    @apply grid gap-1.5 text-sm font-medium;
+  }
+
+  main input:not([type='radio']) {
+    @apply w-full border border-default bg-default px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-primary;
+  }
+
+  main label:has(input[type='radio']) {
+    @apply flex items-center gap-2;
+  }
+
+  main a {
+    @apply inline-block py-1 text-sm text-primary underline underline-offset-4;
+  }
+
+  main [role='alert'] {
+    @apply text-error;
+  }
+
+  main form + a {
+    @apply mt-4;
+  }
+}

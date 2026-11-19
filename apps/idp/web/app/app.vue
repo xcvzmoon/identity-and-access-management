@@ -1,6 +1,8 @@
 <template>
   <UApp>
     <NuxtRouteAnnouncer />
-    <NuxtWelcome />
+    <main class="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
+      <NuxtPage />
+    </main>
   </UApp>
 </template>

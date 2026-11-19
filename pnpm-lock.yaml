@@ -195,6 +195,9 @@ catalogs:
     '@better-auth/core':
       specifier: 1.7.26
       version: 1.7.26
+    '@formisch/vue':
+      specifier: ^1.2.0
+      version: 1.2.0
     '@types/node':
       specifier: 26.6.6
       version: 26.6.6
@@ -397,6 +400,9 @@ importers:
 
   apps/idp/web:
     dependencies:
+      '@formisch/vue':
+        specifier: 'catalog:'
+        version: 1.2.0(typescript@6.0.3)(valibot@1.5.0(typescript@6.0.3))(vue@3.5.45(typescript@6.0.3))
       '@iconify-json/lucide':
         specifier: catalog:web
         version: 1.2.156
@@ -409,6 +415,9 @@ importers:
       tailwindcss:
         specifier: catalog:web
         version: 4.3.5
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
       vue:
         specifier: catalog:web
         version: 3.5.45(typescript@6.0.3)
@@ -1024,6 +1033,16 @@ packages:
     resolution: {integrity: sha512-043dyEKD9TDSfz080YH2vobubgg+NIo/9Fw4RAl7sEMpD8Am1DNrrSTl/GpMBjyGHoD/FbJY2QLawY+HSQsEIA==}
     peerDependencies:
       vue: '>=3.3.0'
+
+  '@formisch/vue@1.2.0':
+    resolution: {integrity: sha512-KAdH8JHbiRbAY/Iroelo3A0sHh3nMuwiUoETx3QtG7g5Kd31fQQUkiRF7vy699CudKwW2pMvELOqDOVTqsudMw==}
+    peerDependencies:
+      typescript: '>=5 <8'
+      valibot: '>=1.4.1 <2'
+      vue: '>=3.3 <4'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@golar/darwin-arm64@0.1.11':
     resolution: {integrity: sha512-Qv+/v8cQpXeiJYqFHRjNqgj4sBbt1jDp+xpdWlvH+2KtQouX7PtLQa9QO7xxdP6zzQsdvDZ/uLxD7RwnKLvsHg==}
@@ -6133,6 +6152,13 @@ snapshots:
       '@floating-ui/dom': 1.8.0
       '@floating-ui/utils': 0.2.12
       vue: 3.5.45(typescript@6.0.3)
+
+  '@formisch/vue@1.2.0(typescript@6.0.3)(valibot@1.5.0(typescript@6.0.3))(vue@3.5.45(typescript@6.0.3))':
+    dependencies:
+      valibot: 1.5.0(typescript@6.0.3)
+      vue: 3.5.45(typescript@6.0.3)
+    optionalDependencies:
+      typescript: 6.0.3
 
   '@golar/darwin-arm64@0.1.11':
     optional: true

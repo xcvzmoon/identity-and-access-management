@@ -11,10 +11,12 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@formisch/vue": "catalog:",
     "@iconify-json/lucide": "catalog:web",
     "@nuxt/ui": "catalog:web",
     "nuxt": "catalog:web",
     "tailwindcss": "catalog:web",
+    "valibot": "catalog:",
     "vue": "catalog:web",
     "vue-router": "catalog:web"
   },
@@ -22,7 +24,7 @@
     "@golar/vue": "catalog:web",
     "@types/node": "catalog:",
     "golar": "catalog:web",
-    "vue-tsc": "catalog:web",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vue-tsc": "catalog:web"
   }
 }
