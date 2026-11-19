@@ -1,5 +1,16 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url';
+
 export default defineNuxtConfig({
+  hooks: {
+    'nitro:config': (config) => {
+      const handler = fileURLToPath(
+        new URL('../../../shared/server/fatal-error.ts', import.meta.url),
+      );
+      const handlers = config.errorHandler ?? [];
+
+      config.errorHandler = [handler, ...[handlers].flat()];
+    },
+  },
   compatibilityDate: '2026-11-16',
   routeRules: {
     '/**': {
