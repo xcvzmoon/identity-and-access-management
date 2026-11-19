@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@better-auth/core": "catalog:",
+    "@better-auth/oauth-provider": "catalog:api",
     "@xcvzlabs/env": "catalog:",
     "better-auth": "catalog:api",
     "drizzle-orm": "catalog:api",

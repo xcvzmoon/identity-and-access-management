@@ -1,4 +1,5 @@
 import type { H3Event } from 'nitro/h3';
+import { metadataResponse } from '@better-auth/oauth-provider';
 import { assertBodySize, getRequestIP } from 'nitro/h3';
 import { isIP } from 'node:net';
 import { useAuth } from '../utils/auth.ts';
@@ -112,6 +113,71 @@ export async function forwardPostRequestToBetterAuth(
     headers.delete('cookie');
     headers.delete('authorization');
   }
+
+  const url = authUrl(event);
+  const body = await event.req.text();
+  const request = new Request(url, {
+    method: 'POST',
+    headers,
+    body,
+  });
+  const auth = useAuth();
+  const response = await auth.handler(request);
+  return privateResponse(response);
+}
+
+/**
+ * @param {H3Event} event - Incoming discovery request.
+ * @returns {Promise<Response>} OpenID metadata for the mounted protocol endpoints.
+ */
+export async function getIssuerMetadata(event: H3Event): Promise<Response> {
+  const auth = useAuth();
+  const request = new Request(authUrl(event), { headers: authHeaders(event) });
+  const metadata = await auth.api.getOpenIdConfig({
+    request,
+    asResponse: false,
+  });
+
+  return metadataResponse({
+    issuer: metadata.issuer,
+    authorization_endpoint: metadata.authorization_endpoint,
+    token_endpoint: metadata.token_endpoint,
+    jwks_uri: metadata.jwks_uri,
+    userinfo_endpoint: metadata.userinfo_endpoint,
+    scopes_supported: metadata.scopes_supported,
+    subject_types_supported: metadata.subject_types_supported,
+    id_token_signing_alg_values_supported: metadata.id_token_signing_alg_values_supported,
+    grant_types_supported: metadata.grant_types_supported,
+    response_types_supported: metadata.response_types_supported,
+    response_modes_supported: metadata.response_modes_supported,
+    claims_supported: metadata.claims_supported,
+    token_endpoint_auth_methods_supported: ['client_secret_basic'],
+    code_challenge_methods_supported: metadata.code_challenge_methods_supported,
+    authorization_response_iss_parameter_supported:
+      metadata.authorization_response_iss_parameter_supported,
+  });
+}
+
+/**
+ * @param {H3Event} event - Form-encoded request from the application backend.
+ * @returns {Promise<Response>} Protocol response with caching disabled.
+ * @throws {UnsupportedMediaTypeError} When the client sends a different media type.
+ */
+export async function forwardOAuthFormRequest(event: H3Event): Promise<Response> {
+  assertBodySize(event, MAX_AUTH_BODY_BYTES);
+
+  const headers = authHeaders(event);
+  const mediaType = headers
+    .get('content-type')
+    ?.split(';')
+    .at(MEDIA_TYPE_INDEX)
+    ?.trim()
+    .toLowerCase();
+  if (mediaType !== 'application/x-www-form-urlencoded') {
+    throw new UnsupportedMediaTypeError('Expected a form-encoded OAuth request.');
+  }
+
+  headers.delete('cookie');
 
   const url = authUrl(event);
   const body = await event.req.text();
