@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseEnv } from 'node:util';
+import manifest from '../../package.json' with { type: 'json' };
 import { captureReleaseInputs } from './release-inputs.ts';
 import { releasePhases, verifyReleaseReport } from './release-report.ts';
 
@@ -44,6 +45,11 @@ function runReleaseTests(): void {
   }
 
   const directory = path.resolve(evidence);
+  assert.equal(
+    process.versions.node,
+    manifest.engines.node,
+    'Release runner must use the pinned Node version. Run vp install --frozen-lockfile.',
+  );
   const inputs = captureReleaseInputs(root);
   const startedAt = new Date().toISOString();
 
