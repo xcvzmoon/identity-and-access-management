@@ -177,7 +177,7 @@ export const rateLimits = idpSchema.table(
     count: integer('count').notNull(),
     lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
   },
-  (table) => [unique().on(table.key)],
+  (table) => [unique().on(table.key), index('rate_limits_last_request_idx').on(table.lastRequest)],
 );
 
 export const signingKeys = idpSchema.table(

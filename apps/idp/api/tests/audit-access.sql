@@ -135,4 +135,44 @@ BEGIN
 END
 $verify$;
 
+RESET ROLE;
+
+INSERT INTO iam_idp.rate_limits (key, count, last_request)
+SELECT 'retention-fixture-' || value, 1, 0 FROM generate_series(1, 1001) AS value;
+
+INSERT INTO iam_idp.rate_limits (key, count, last_request)
+VALUES ('recent-retention-fixture', 1, floor(extract(epoch FROM statement_timestamp()) * 1000)::bigint);
+
+SET LOCAL ROLE iam_audit_retention;
+
+DO $verify$
+BEGIN
+  IF has_table_privilege(current_user, 'iam_idp.rate_limits', 'SELECT, UPDATE, DELETE')
+    OR has_function_privilege('iam_idp_runtime', 'iam_idp.purge_expired_rate_limits()', 'EXECUTE')
+    OR has_function_privilege('iam_audit_reader', 'iam_idp.purge_expired_rate_limits()', 'EXECUTE')
+    OR has_function_privilege('iam_console_runtime', 'iam_idp.purge_expired_rate_limits()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Unexpected rate-limit retention privileges';
+  END IF;
+
+  IF iam_idp.purge_expired_rate_limits() <> 1000 THEN
+    RAISE EXCEPTION 'Expected a bounded first batch of expired rate limits';
+  END IF;
+
+  WHILE iam_idp.purge_expired_rate_limits() > 0 LOOP
+    NULL;
+  END LOOP;
+END
+$verify$;
+
+RESET ROLE;
+
+DO $verify$
+BEGIN
+  IF EXISTS (SELECT FROM iam_idp.rate_limits WHERE key LIKE 'retention-fixture-%')
+    OR NOT EXISTS (SELECT FROM iam_idp.rate_limits WHERE key = 'recent-retention-fixture') THEN
+    RAISE EXCEPTION 'Rate-limit retention failed to distinguish stale and active buckets';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;

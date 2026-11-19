@@ -109,6 +109,8 @@ are normally removed by the next daily run. Apply a separate expiration
 policy to backups and restored copies. After expiry, the IdP keeps only a digest
 of the organization and case reference to prevent repeat recovery for the same case.
 
+The same job removes up to 1,000 rate-limit keys per call once their last request is more than 720 hours old, including when authentication traffic stops. Run it daily to limit the time between eligibility and deletion. Keep authentication rate-limit windows below that interval. Apply the rate-limit retention migration before updating the job. For a busy existing table, first build `rate_limits_last_request_idx` concurrently on `iam_idp.rate_limits (last_request)` and verify the index is valid.
+
 Security reviewers can query the audit tables. The retention role can run
 the fixed purge functions. Schema owners and database administrators retain
 privileged access. Keep migrator credentials out of the API and scheduler.
