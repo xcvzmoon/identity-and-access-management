@@ -260,7 +260,16 @@ Have the database operator run the [session metadata retention report](../apps/i
 psql -X --no-password -v ON_ERROR_STOP=1 --csv -f apps/idp/api/scripts/report-session-metadata-retention.sql
 ```
 
-The report returns aggregate counts and the age in whole hours of the oldest expired session that still holds either field. A session with both fields contributes to both counts. An empty age means no expired session retains either field. Compare samples with the approved post-expiry retention period. The daily audit purge does not clear these fields. Review backup retention separately.
+The report returns aggregate counts and the age in whole hours of the oldest expired session that still holds either field. A session with both fields contributes to both counts. An empty age means no expired session retains either field. Compare samples with the approved post-expiry retention period. Review backup retention separately.
+
+To enable cleanup, apply the IdP session metadata retention migration and set `IAM_SESSION_METADATA_RETENTION_HOURS` in the retention service’s environment file to the approved number of whole hours after session expiry. An unset or empty value leaves cleanup disabled. Zero makes metadata eligible as soon as the session expires. Each daily run clears only the client address and user agent, in batches of up to 1,000 sessions. Locked rows can remain until a later run. Capture the report before and after the first run.
+
+On a busy sessions table, build the partial index outside a transaction before applying the migration. Verify that the index is valid and has the definition below. The migration reuses it.
+
+```sql
+CREATE INDEX CONCURRENTLY sessions_metadata_expiry_idx ON iam_idp.sessions (expires_at)
+WHERE ip_address IS NOT NULL OR user_agent IS NOT NULL;
+```
 
 ## IdP account flows
 

@@ -52,7 +52,13 @@ export const sessions = idpSchema.table(
     passkeyVerifiedAt: timestamp('passkey_verified_at', TIMESTAMP_CONFIG),
     activeOrganizationId: uuid('active_organization_id'),
   },
-  (table) => [unique().on(table.token), index('sessions_userId_idx').on(table.userId)],
+  (table) => [
+    unique().on(table.token),
+    index('sessions_userId_idx').on(table.userId),
+    index('sessions_metadata_expiry_idx')
+      .on(table.expiresAt)
+      .where(sql`${table.ipAddress} IS NOT NULL OR ${table.userAgent} IS NOT NULL`),
+  ],
 );
 
 export const passkeys = idpSchema.table(

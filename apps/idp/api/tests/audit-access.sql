@@ -363,4 +363,48 @@ BEGIN
 END
 $verify$;
 
+SET LOCAL ROLE iam_idp_runtime;
+WITH fixture AS (
+  INSERT INTO iam_idp.users (name, email) VALUES ('Retention fixture', 'metadata@example.invalid')
+  RETURNING id
+)
+INSERT INTO iam_idp.sessions (user_id, token, expires_at, ip_address, user_agent)
+SELECT fixture.id, 'metadata-fixture-' || n,
+  CASE WHEN n = 1003 THEN now() + interval '1 hour'
+       WHEN n = 1002 THEN now() - interval '1 hour'
+       ELSE now() - interval '25 hours' END,
+  'fixture-address', 'fixture-agent'
+FROM fixture CROSS JOIN generate_series(1, 1003) AS n;
+
+SET LOCAL ROLE iam_audit_retention;
+DO $verify$
+BEGIN
+  IF has_table_privilege(current_user, 'iam_idp.sessions', 'SELECT, UPDATE')
+     OR has_function_privilege('iam_idp_runtime', 'iam_idp.clear_expired_session_metadata(integer)', 'EXECUTE')
+     OR has_function_privilege('iam_audit_reader', 'iam_idp.clear_expired_session_metadata(integer)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Unexpected session metadata retention privileges';
+  END IF;
+  IF iam_idp.clear_expired_session_metadata(24) <> 1000 THEN
+    RAISE EXCEPTION 'Session metadata cleanup exceeded or missed its first batch';
+  END IF;
+  IF iam_idp.clear_expired_session_metadata(24) <> 1 THEN
+    RAISE EXCEPTION 'Expected a second session metadata batch';
+  END IF;
+  IF iam_idp.clear_expired_session_metadata(24) <> 0 THEN
+    RAISE EXCEPTION 'Session metadata cleanup was not idempotent';
+  END IF;
+END
+$verify$;
+SET LOCAL ROLE iam_idp_runtime;
+DO $verify$
+BEGIN
+  IF (SELECT count(*) FROM iam_idp.sessions WHERE token LIKE 'metadata-fixture-%'
+      AND ip_address IS NULL AND user_agent IS NULL) <> 1001 OR
+     (SELECT count(*) FROM iam_idp.sessions WHERE token IN ('metadata-fixture-1002', 'metadata-fixture-1003')
+      AND ip_address = 'fixture-address' AND user_agent = 'fixture-agent') <> 2 THEN
+    RAISE EXCEPTION 'Unexpected metadata after retention';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;
