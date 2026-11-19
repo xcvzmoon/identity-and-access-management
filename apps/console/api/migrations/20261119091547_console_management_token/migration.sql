@@ -1,0 +1,1 @@
+ALTER TABLE "iam_console"."sessions" ADD COLUMN "encrypted_access_token" text;

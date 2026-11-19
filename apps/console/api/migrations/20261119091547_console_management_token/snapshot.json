@@ -1,0 +1,239 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "6d41993c-2e15-43a9-a0d9-1ac5822602e9",
+  "prevIds": ["9fbb5a5b-1764-43c1-911b-e4d77cbfe115"],
+  "ddl": [
+    {
+      "name": "iam_console",
+      "entityType": "schemas"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "authorization_transactions",
+      "entityType": "tables",
+      "schema": "iam_console"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "sessions",
+      "entityType": "tables",
+      "schema": "iam_console"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "cookie_hash",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "authorization_transactions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "state",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "authorization_transactions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "nonce",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "authorization_transactions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verifier",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "authorization_transactions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "return_to",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "authorization_transactions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "authorization_transactions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "cookie_hash",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sub",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "encrypted_access_token",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "sessions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
+      "entityType": "columns",
+      "schema": "iam_console",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "expires_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "authorization_transactions_expires_at_index",
+      "entityType": "indexes",
+      "schema": "iam_console",
+      "table": "authorization_transactions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "expires_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sessions_expires_at_index",
+      "entityType": "indexes",
+      "schema": "iam_console",
+      "table": "sessions"
+    },
+    {
+      "columns": ["cookie_hash"],
+      "nameExplicit": false,
+      "name": "authorization_transactions_pkey",
+      "schema": "iam_console",
+      "table": "authorization_transactions",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["cookie_hash"],
+      "nameExplicit": false,
+      "name": "sessions_pkey",
+      "schema": "iam_console",
+      "table": "sessions",
+      "entityType": "pks"
+    }
+  ],
+  "renames": []
+}

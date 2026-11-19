@@ -9,6 +9,7 @@ import {
   createSession,
   createTransaction,
   deleteSession,
+  readAccessToken,
   readSession,
 } from '../repositories/session.repository.ts';
 import { useEnv } from '../utils/env.ts';
@@ -22,6 +23,8 @@ const MILLISECONDS_PER_SECOND = 1000;
 const EXPIRED = 0;
 const MEDIA_TYPE_INDEX = 0;
 const MAX_SIGN_OUT_BYTES = 128;
+const MAX_MANAGEMENT_BYTES = 16_384;
+const MANAGEMENT_TIMEOUT_MS = 15_000;
 
 const accountClaims = valibot.object({
   sub: valibot.pipe(valibot.string(), valibot.nonEmpty()),
@@ -184,7 +187,7 @@ export async function finishLogin(event: H3Event): Promise<Response> {
   const handle = oidc.randomState();
   const { sub, email, name } = account.output;
 
-  await createSession(handle, { sub, email, name, expiresAt }, previous);
+  await createSession(handle, { sub, email, name, expiresAt }, tokens.access_token, previous);
   setBrowserCookie(event, SESSION_COOKIE, handle, maxAge);
 
   return Response.redirect(transaction.returnTo, constants.HTTP_STATUS_SEE_OTHER);
@@ -253,4 +256,65 @@ export async function signOut(event: H3Event): Promise<Response> {
       : new URL('/sign-out', env.oidcIssuerUrl);
 
   return Response.redirect(destination, constants.HTTP_STATUS_SEE_OTHER);
+}
+
+/**
+ * Submits a same-origin management request under the console user's live IAM access token.
+ * @param {H3Event} event - JSON request authenticated by the console cookie.
+ * @returns {Promise<Response>} The IdP decision, or 401 if the console needs a new authorization.
+ */
+export async function manageOrganization(event: H3Event): Promise<Response> {
+  prepareResponse(event);
+
+  const env = useEnv();
+  if (event.req.headers.get('origin') !== env.consoleOrigin) {
+    return new Response(null, { status: constants.HTTP_STATUS_FORBIDDEN });
+  }
+
+  if (
+    event.req.headers.get('content-type')?.split(';').at(MEDIA_TYPE_INDEX) !== 'application/json'
+  ) {
+    return new Response(null, { status: constants.HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE });
+  }
+
+  const cookie = getCookie(event, SESSION_COOKIE);
+  const accessToken = cookie ? await readAccessToken(cookie) : null;
+  if (!accessToken) {
+    return new Response(null, { status: constants.HTTP_STATUS_UNAUTHORIZED });
+  }
+
+  assertBodySize(event, MAX_MANAGEMENT_BYTES);
+
+  const headers = new Headers({
+    'content-type': 'application/json',
+    'x-iam-access-token': accessToken,
+  });
+  const authenticate = clientSecretBasic(env.oidcClientSecret);
+
+  authenticate(
+    { issuer: env.oidcIssuerUrl },
+    { client_id: CLIENT_ID },
+    new URLSearchParams(),
+    headers,
+  );
+
+  const response = await fetch(new URL('/api/v1/management', env.oidcIssuerUrl), {
+    method: 'POST',
+    redirect: 'error',
+    signal: AbortSignal.timeout(MANAGEMENT_TIMEOUT_MS),
+    headers,
+    body: await event.req.text(),
+  }).catch(() => null);
+
+  if (!response) {
+    return new Response(null, { status: constants.HTTP_STATUS_BAD_GATEWAY });
+  }
+
+  return new Response(response.ok ? response.body : null, {
+    status: response.status,
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': 'no-store',
+    },
+  });
 }

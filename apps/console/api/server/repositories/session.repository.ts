@@ -4,11 +4,18 @@ import { useDatabase } from '../database/index.ts';
 import { authorizationTransactions, sessions } from '../database/schema.ts';
 
 type Transaction = Omit<typeof authorizationTransactions.$inferSelect, 'cookieHash'>;
-type Session = Omit<typeof sessions.$inferSelect, 'cookieHash'>;
+type Session = Omit<typeof sessions.$inferSelect, 'cookieHash' | 'encryptedAccessToken'>;
 type CallbackTransaction = Pick<Transaction, 'nonce' | 'returnTo' | 'verifier'>;
 type SessionUser = Omit<Session, 'expiresAt'>;
 
 const FIRST_RESULT = 0;
+const IV_START = 0;
+const IV_BYTES = 12;
+
+async function getTokenKey(cookie: string): Promise<CryptoKey> {
+  const digest = createHash('sha256').update('console-access-token:').update(cookie).digest();
+  return crypto.subtle.importKey('raw', digest, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
 
 function hashCookie(cookie: string): string {
   return createHash('sha256').update(cookie).digest('hex');
@@ -74,15 +81,28 @@ export async function consumeTransaction(
  *
  * @param {string} cookie - Fresh random session handle.
  * @param {Session} session - Verified identity and its expiry.
+ * @param {string} accessToken - Console access token used for management requests.
  * @param {string} [previousCookie] - Browser session to replace in the same transaction.
  */
 export async function createSession(
   cookie: string,
   session: Session,
+  accessToken: string,
   previousCookie?: string,
 ): Promise<void> {
   const database = useDatabase();
   const cookieHash = hashCookie(cookie);
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+  const key = await getTokenKey(cookie);
+  const encrypted = await crypto.subtle.encrypt(
+    {
+      name: 'AES-GCM',
+      iv,
+    },
+    key,
+    new TextEncoder().encode(accessToken),
+  );
+  const encryptedAccessToken = Buffer.concat([iv, new Uint8Array(encrypted)]).toString('base64');
 
   await database
     .transaction(async (connection) => {
@@ -93,7 +113,7 @@ export async function createSession(
       }
 
       await connection.delete(sessions).where(lte(sessions.expiresAt, sql`now()`));
-      await connection.insert(sessions).values({ ...session, cookieHash });
+      await connection.insert(sessions).values({ ...session, cookieHash, encryptedAccessToken });
     })
     .catch(throwStorageError);
 }
@@ -135,4 +155,41 @@ export async function deleteSession(cookie: string): Promise<void> {
     .delete(sessions)
     .where(eq(sessions.cookieHash, hashCookie(cookie)))
     .catch(throwStorageError);
+}
+
+/**
+ * Opens the access token for an unexpired console session.
+ * @param {string} cookie - Browser handle required to decrypt the stored token.
+ * @returns {Promise<string | null>} Null for expired sessions and sessions created before token storage.
+ */
+export async function readAccessToken(cookie: string): Promise<string | null> {
+  const database = useDatabase();
+  const records = await database
+    .select({ token: sessions.encryptedAccessToken })
+    .from(sessions)
+    .where(
+      and(
+        eq(sessions.cookieHash, hashCookie(cookie)),
+        gt(sessions.expiresAt, sql`clock_timestamp()`),
+      ),
+    )
+    .catch(throwStorageError);
+  const token = records.at(FIRST_RESULT)?.token;
+
+  if (!token) {
+    return null;
+  }
+
+  const bytes = Buffer.from(token, 'base64');
+  const key = await getTokenKey(cookie);
+  const decrypted = await crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: bytes.subarray(IV_START, IV_BYTES),
+    },
+    key,
+    bytes.subarray(IV_BYTES),
+  );
+
+  return new TextDecoder().decode(decrypted);
 }

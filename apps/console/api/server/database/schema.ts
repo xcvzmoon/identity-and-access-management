@@ -20,6 +20,7 @@ export const sessions = consoleSchema.table(
   {
     cookieHash: text('cookie_hash').primaryKey(),
     sub: text('sub').notNull(),
+    encryptedAccessToken: text('encrypted_access_token'),
     email: text('email').notNull(),
     name: text('name'),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
