@@ -8,13 +8,13 @@ import {
   invitations,
   memberships,
   organizations,
+  ownerInvitationDeliveries,
   ownerRecoveryEvents,
   users,
 } from '../database/schema.ts';
 import { useAuth } from '../utils/auth.ts';
 import { useEnv } from '../utils/env.ts';
 import { BadRequestError, ForbiddenError } from '../utils/http-errors.ts';
-import { sendAccountEmail } from '../utils/mail.ts';
 import { authHeaders, checkAuthPost, privateResponse } from './auth.service.ts';
 import { requireFreshStepUp } from './passkey.service.ts';
 
@@ -51,7 +51,7 @@ const requestSchema = valibot.variant('operation', [
 
 /** Invites the first or replacement owner after the operator completes passkey verification.
  * Recovery requires an independently verified case. The invitation and recovery audit entry
- * commit together after the mail server accepts delivery.
+ * commit together with the pending email delivery.
  * @param {H3Event} event - Same-origin request from the operator's current IAM session.
  * @returns {Promise<Response>} Organization ID after the invitation commits.
  */
@@ -136,9 +136,6 @@ export async function inviteOwner(event: H3Event): Promise<Response> {
     }
 
     const token = randomUUID();
-    const url = new URL('/invite', env.oidcIssuerUrl);
-
-    url.hash = new URLSearchParams({ token }).toString();
 
     await transaction.insert(invitations).values({
       id: token,
@@ -148,12 +145,7 @@ export async function inviteOwner(event: H3Event): Promise<Response> {
       role: 'owner',
       expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
     });
-    await sendAccountEmail(
-      input.ownerEmail,
-      'Accept organization ownership',
-      url.href,
-      'confirmed',
-    );
+    await transaction.insert(ownerInvitationDeliveries).values({ invitationId: token });
     return id;
   });
 

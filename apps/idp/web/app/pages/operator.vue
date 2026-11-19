@@ -48,7 +48,7 @@
           body,
         },
       );
-      result.value = `Owner invitation sent for organization ${response.organizationId}.`;
+      result.value = `Owner invitation queued for organization ${response.organizationId}.`;
     }, 'Invitation failed. Check the organization details, operator access, and passkey verification.');
   }
 </script>

@@ -175,6 +175,18 @@ export const invitations = idpSchema.table(
   ],
 );
 
+export const ownerInvitationDeliveries = idpSchema.table(
+  'owner_invitation_deliveries',
+  {
+    invitationId: uuid('invitation_id')
+      .primaryKey()
+      .references(() => invitations.id, { onDelete: 'cascade' }),
+    nextAttemptAt: timestamp('next_attempt_at', TIMESTAMP_CONFIG).notNull().defaultNow(),
+    attemptId: uuid('attempt_id'),
+  },
+  (table) => [index().on(table.nextAttemptAt)],
+);
+
 export const rateLimits = idpSchema.table(
   'rate_limits',
   {

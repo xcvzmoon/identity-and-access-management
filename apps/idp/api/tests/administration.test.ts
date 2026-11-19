@@ -72,6 +72,16 @@ async function acceptOwner(page: Page, issuer: string, email: string): Promise<v
   const mailbox = new URL('/view/latest.txt', process.env.IAM_PHASE7_MAILPIT);
   assert.equal(mailbox.hostname, '127.0.0.1');
   mailbox.searchParams.set('query', `to:"${email}" subject:"Accept organization ownership"`);
+  await expect
+    .poll(
+      async () => {
+        const delivery = await fetch(mailbox);
+        const body = await delivery.text();
+        return body.includes(issuer);
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
   const response = await fetch(mailbox);
   const message = await response.text();
   const link = message.split(/\s+/u).find((word) => word.startsWith(issuer));
