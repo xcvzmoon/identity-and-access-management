@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:26.13.0-bookworm-slim@sha256:add5c17c14752c54d2f3d519ec46a3815684d41c33f198bcb09fb998f7dcbf68 AS base
+FROM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS base
 WORKDIR /app
 
 FROM base AS dependencies
@@ -24,6 +24,7 @@ RUN if [ -f .env.example ]; then \
     && pnpm run build
 
 FROM base AS runtime
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 ARG WORKSPACE
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 LABEL org.opencontainers.image.source="https://github.com/xcvzmoon/identity-and-access-management"
