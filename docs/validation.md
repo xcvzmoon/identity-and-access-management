@@ -4,7 +4,8 @@
 
 ## Workspace checks
 
-Run these commands from the repository root.
+Configure both API `.env` files, then run these commands from the repository
+root. [Local setup](local.md#database-setup)
 
 ```sh
 vp check
@@ -15,7 +16,8 @@ vp run build
 
 The root suite includes workspace discovery checks. For a local startup
 check, open both web scaffold pages and request `/api/hello` from each API.
-These checks cover the scaffolds and workspace tooling.
+The APIs need a reachable database and their runtime credentials.
+[Local database setup](local.md#database-setup)
 
 ## Integration tests
 

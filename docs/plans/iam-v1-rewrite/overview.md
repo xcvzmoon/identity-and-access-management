@@ -3,9 +3,8 @@
 [Target monorepo structure](../../architecture.md#target-monorepo-structure) · [Launch scope](../../rewrite-scope.md) · [Architecture decisions](../../README.md#rewrite-decisions)
 
 Phase 1 is complete. The evidence supports Better Auth `1.7.26` for the
-rewrite. The four app workspaces build and pass local startup checks.
-The legacy application workspaces have been retired. Phase 2 resumes
-with the fresh database baseline.
+rewrite. Phase 2 established the PostgreSQL baseline and verified schema
+and migration isolation. Phase 3 builds invitation signup and recovery.
 
 ## Implementation boundaries
 
@@ -24,18 +23,18 @@ with the fresh database baseline.
 
 ## Phases
 
-| Phase                                                                                               | Status             | Evidence required to close                                                                                                                                         |
-| --------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [1. Evaluate Better Auth](phase-01-evaluate-better-auth.md)                                         | Complete           | Engine decision and recorded fixture results, including selected discovery and PKCE conformance checks.                                                            |
-| [2. Verify the workspaces and establish database ownership](phase-02-establish-apps-and-storage.md) | Scaffolds verified | Both migration sets apply to fresh PostgreSQL. Each API's runtime role is denied reads and writes in the other schema. Required settings are validated at startup. |
-| [3. Build invitation signup and recovery](phase-03-invitation-signup-and-recovery.md)               | Planned            | New and existing invitees join with the verified invited email. Password reset invalidates prior IAM sessions.                                                     |
-| [4. Build the OIDC issuer and app grants](phase-04-oidc-issuer-and-app-grants.md)                   | Planned            | A reference app signs in through the issuer. Two installations of the same app have independent clients, grants, and consent.                                      |
-| [5. Implement live checks and IAM sign-out](phase-05-live-access-and-iam-sign-out.md)               | Planned            | The next protected request is denied after revocation or IAM sign-out across two IdP processes, or when the live check is unavailable.                             |
-| [6. Build the console OIDC session](phase-06-console-oidc-session.md)                               | Planned            | A verified user with zero memberships can open their account. The console owns its session and offers both sign-out actions.                                       |
-| [7. Build administration and owner recovery](phase-07-administration-and-owner-recovery.md)         | Planned            | An operator onboards an owner. Admin actions enforce tenant scope and step-up. Locked-out owner recovery is audited.                                               |
-| [8. Verify authorization audit and retention](phase-08-authorization-audit.md)                      | Planned            | Authorization outcomes and owner recovery are traceable. Audit access, retention, and redaction pass checks.                                                       |
-| [9. Automate signing-key rotation](phase-09-signing-key-rotation.md)                                | Planned            | Two IdP processes observe staged publication, activation, overlap, and rollback.                                                                                   |
-| [10. Rehearse the external pilot](phase-10-external-pilot.md)                                       | Planned            | A packaged deployment passes the pilot checks on at least two IdP replicas, with runbooks and recorded evidence.                                                   |
+| Phase                                                                                               | Status   | Evidence required to close                                                                                                                                         |
+| --------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [1. Evaluate Better Auth](phase-01-evaluate-better-auth.md)                                         | Complete | Engine decision and recorded fixture results, including selected discovery and PKCE conformance checks.                                                            |
+| [2. Verify the workspaces and establish database ownership](phase-02-establish-apps-and-storage.md) | Complete | Both migration sets apply to fresh PostgreSQL. Each API's runtime role is denied reads and writes in the other schema. Required settings are validated at startup. |
+| [3. Build invitation signup and recovery](phase-03-invitation-signup-and-recovery.md)               | Planned  | New and existing invitees join with the verified invited email. Password reset invalidates prior IAM sessions.                                                     |
+| [4. Build the OIDC issuer and app grants](phase-04-oidc-issuer-and-app-grants.md)                   | Planned  | A reference app signs in through the issuer. Two installations of the same app have independent clients, grants, and consent.                                      |
+| [5. Implement live checks and IAM sign-out](phase-05-live-access-and-iam-sign-out.md)               | Planned  | The next protected request is denied after revocation or IAM sign-out across two IdP processes, or when the live check is unavailable.                             |
+| [6. Build the console OIDC session](phase-06-console-oidc-session.md)                               | Planned  | A verified user with zero memberships can open their account. The console owns its session and offers both sign-out actions.                                       |
+| [7. Build administration and owner recovery](phase-07-administration-and-owner-recovery.md)         | Planned  | An operator onboards an owner. Admin actions enforce tenant scope and step-up. Locked-out owner recovery is audited.                                               |
+| [8. Verify authorization audit and retention](phase-08-authorization-audit.md)                      | Planned  | Authorization outcomes and owner recovery are traceable. Audit access, retention, and redaction pass checks.                                                       |
+| [9. Automate signing-key rotation](phase-09-signing-key-rotation.md)                                | Planned  | Two IdP processes observe staged publication, activation, overlap, and rollback.                                                                                   |
+| [10. Rehearse the external pilot](phase-10-external-pilot.md)                                       | Planned  | A packaged deployment passes the pilot checks on at least two IdP replicas, with runbooks and recorded evidence.                                                   |
 
 Phase 3 uses a fixture invitation. Phase 7 adds the operator workflow that
 creates invitations for first owners. Phase 4 adds authorization events and

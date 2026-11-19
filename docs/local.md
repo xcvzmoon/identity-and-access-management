@@ -5,7 +5,9 @@
 ## Local setup
 
 Install Vite+ and run `vp install` from the repository root. Start each
-workspace you need in its own terminal.
+workspace you need in its own terminal. Set up PostgreSQL before starting
+the APIs. The web workspaces can start on their own.
+[Database setup](#database-setup)
 
 | Workspace   | Command                          | Local address                      |
 | ----------- | -------------------------------- | ---------------------------------- |
@@ -19,18 +21,35 @@ workspaces serve their scaffold pages. Both API examples return
 `{"message":"Hello from Nitro!"}`. These entry points are for checking the
 workspaces. The public issuer and sign-in flows are part of the rewrite.
 
-## Database settings
+## Database setup
 
-When working on database code, copy each API's `.env.example` to `.env` in
-that API directory if the file is missing. Fill in your local PostgreSQL
-credentials and keep dotenv values double-quoted. The scaffold pages and
-the `/api/hello` routes can run without a database. Phase 2 defines the
-fresh database, schema ownership, roles, and first migrations.
-[IdP example](../apps/idp/api/.env.example) · [Console example](../apps/console/api/.env.example) · [Phase 2](plans/iam-v1-rewrite/phase-02-establish-apps-and-storage.md)
+1. Create a fresh PostgreSQL database with `createdb iam_v1`.
+2. Apply each API's migrations in a separate shell. For each command, export
+   `DB_HOST`, `DB_DATABASE`, `DB_USER`, and `DB_PASSWORD` for its migrator.
+   Set `DB_PORT` and `DB_SSL` if your connection differs from the local defaults.
+
+   | API     | Command                                 |
+   | ------- | --------------------------------------- |
+   | IdP     | `vp -C apps/idp/api run db:migrate`     |
+   | Console | `vp -C apps/console/api run db:migrate` |
+
+3. In each API directory, copy its `.env.example` to `.env` if needed. Fill in
+   the matching runtime credentials and double-quote dotenv values. Use the
+   local setup commands in shells with the runtime environment.
+   [IdP example](../apps/idp/api/.env.example) · [Console example](../apps/console/api/.env.example)
+
+Both APIs require `OIDC_ISSUER_URL`. The console API also requires
+`CONSOLE_ORIGIN`. Use bare HTTPS origins, with no trailing slash. The
+examples reserve `https://idp.localhost` and `https://console.localhost` for
+future integration flows. Use the direct HTTP ports above for smoke checks.
+
+Each migrator owns its application schema and journal schema. The runtime
+role can read and write tables in its application schema. Drizzle needs
+database `CREATE` for each migrator to initialize or check the journal
+schema. Runtime roles have `CONNECT` and grants on their own application data.
 
 ## Containers
 
-The checked-in Dockerfile and Compose configuration target the retired POC.
-Run the four workspaces directly during scaffold development. V1 images and
-ingress are tracked in the pilot plan.
+Run the workspaces directly during development. The pilot phase adds
+container images and ingress for the four workspaces.
 [Pilot phase](plans/iam-v1-rewrite/phase-10-external-pilot.md)

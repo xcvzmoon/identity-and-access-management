@@ -18,6 +18,7 @@ workspace's existing framework configuration.
 │   │   │   ├── nuxt.config.ts
 │   │   │   └── package.json
 │   │   └── api/
+│   │       ├── migrations/
 │   │       ├── server/
 │   │       │   ├── api/
 │   │       │   └── database/
@@ -34,6 +35,7 @@ workspace's existing framework configuration.
 │       │   ├── nuxt.config.ts
 │       │   └── package.json
 │       └── api/
+│           ├── migrations/
 │           ├── server/
 │           │   ├── api/
 │           │   └── database/

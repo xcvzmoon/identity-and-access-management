@@ -16,6 +16,13 @@ dependencies shared by each workspace type. The root build script selects
 all four workspaces. Each build writes its output inside its workspace.
 [Root scripts](../package.json) · [Workspace catalog](../pnpm-workspace.yaml)
 
+Each API requires a valid `.env` in its own workspace for `dev` and `build`.
+Copy the API's `.env.example` and fill in the required values. At startup,
+the lifecycle plugin validates the runtime environment and then checks the
+PostgreSQL connection. Nitro holds requests during initialization and
+returns HTTP 500 if a startup check fails.
+[Local setup](local.md#database-setup)
+
 ## Commands
 
 Run workspace commands from the repository root.
@@ -29,14 +36,12 @@ Run workspace commands from the repository root.
 | `vp check`                        | Run the Vite+ format, lint, and type-aware checks.                                             |
 | `vp run typecheck`                | Run the root and workspace TypeScript checks.                                                  |
 | `vp test --run`                   | Run the root test suite once.                                                                  |
-| `vp -C apps/idp/api run db:check` | Check migration history in one API once the Phase 2 baseline exists.                           |
+| `vp -C apps/idp/api run db:check` | Check one API's migration history.                                                             |
 
-Both API manifests define Drizzle scripts. Phase 2 establishes the database
-roles and migration baseline. The root `create-env` helper still searches the
-old one-level workspace layout. Use the per-API examples for local settings.
-The current Dockerfile and Compose setup still target POC paths. Replacement
-packaging is part of the pilot plan.
-[Database phase](plans/iam-v1-rewrite/phase-02-establish-apps-and-storage.md) · [Pilot phase](plans/iam-v1-rewrite/phase-10-external-pilot.md)
+Each API keeps its migration history in its own `migrations/` directory.
+Export the required `DB_*` settings before running any Drizzle script.
+Use the matching migrator credentials for `db:migrate`.
+[Database setup](local.md#database-setup)
 
 ## Code conventions and tooling
 
