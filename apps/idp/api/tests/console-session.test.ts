@@ -1,6 +1,7 @@
 import type { Browser, Page } from 'playwright';
 import { eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { chromium } from 'playwright';
 import postgres from 'postgres';
 import { expect, test } from 'vite-plus/test';
@@ -58,22 +59,22 @@ function consoleDatabase(): postgres.Sql {
   });
 }
 
+async function pendingState(page: Page, origin: string, states: string[]): Promise<string> {
+  const authorization = await beginLogin(page, origin);
+  const state = authorization.searchParams.get('state');
+  assert.ok(state);
+  states.push(state);
+  return state;
+}
+
 async function checkTransactionExpiry(page: Page, origin: string): Promise<void> {
   const client = consoleDatabase();
   const states: string[] = [];
 
-  async function pendingState(): Promise<string> {
-    const authorization = await beginLogin(page, origin);
-    const state = authorization.searchParams.get('state');
-    assert.ok(state);
-    states.push(state);
-    return state;
-  }
-
   try {
-    const live = await pendingState();
-    const abandoned = await pendingState();
-    const expired = await pendingState();
+    const live = await pendingState(page, origin, states);
+    const abandoned = await pendingState(page, origin, states);
+    const expired = await pendingState(page, origin, states);
     const aged = await client`UPDATE iam_console.authorization_transactions
       SET expires_at = now() WHERE state IN (${abandoned}, ${expired})`;
     expect(aged.count).toBe(EXPIRED_TRANSACTIONS);
@@ -84,7 +85,7 @@ async function checkTransactionExpiry(page: Page, origin: string): Promise<void>
     expect(rejected.status()).toBe(BAD_REQUEST);
     expect(await rejected.text()).toBe('Invalid or expired sign-in.');
 
-    const fresh = await pendingState();
+    const fresh = await pendingState(page, origin, states);
     const [remaining] = await client`SELECT
       count(*) FILTER (WHERE state IN (${abandoned}, ${expired}))::int AS expired,
       count(*) FILTER (WHERE state IN (${live}, ${fresh}))::int AS live
@@ -96,6 +97,47 @@ async function checkTransactionExpiry(page: Page, origin: string): Promise<void>
   } finally {
     try {
       await client`DELETE FROM iam_console.authorization_transactions WHERE state = ANY(${states}::text[])`;
+    } finally {
+      await client.end();
+    }
+  }
+}
+
+async function checkConcurrentCleanup(page: Page, origin: string): Promise<void> {
+  const client = consoleDatabase();
+  const marker = randomUUID();
+  const states: string[] = [];
+  const locked = `${marker}-1`;
+
+  try {
+    await client`INSERT INTO iam_console.authorization_transactions
+      (cookie_hash, state, nonce, verifier, return_to, expires_at)
+      SELECT ${marker}::text || '-' || n, ${marker}, 'fixture', 'fixture', '/', now() - interval '1 hour'
+      FROM generate_series(1, 202) AS n`;
+    await client.begin(async (connection) => {
+      await connection`SELECT cookie_hash FROM iam_console.authorization_transactions
+        WHERE cookie_hash = ${locked} FOR UPDATE`;
+      const logins = await Promise.allSettled([
+        pendingState(page, origin, states),
+        pendingState(page, origin, states),
+      ]);
+      expect(logins.map((login) => login.status)).toEqual(['fulfilled', 'fulfilled']);
+      const [remaining] = await connection`SELECT count(*)::int AS expired,
+        bool_or(cookie_hash = ${locked}) AS contains_locked
+        FROM iam_console.authorization_transactions WHERE state = ${marker}`;
+      expect(remaining).toEqual({
+        expired: 2,
+        contains_locked: true,
+      });
+    });
+    await pendingState(page, origin, states);
+    const [remaining] = await client`SELECT count(*)::int AS expired
+      FROM iam_console.authorization_transactions WHERE state = ${marker}`;
+    expect(remaining).toEqual({ expired: 0 });
+  } finally {
+    try {
+      await client`DELETE FROM iam_console.authorization_transactions
+        WHERE state = ANY(${[marker, ...states]}::text[])`;
     } finally {
       await client.end();
     }
@@ -280,6 +322,7 @@ test.skipIf(!enabled)(
     await checkServerRenderedSignIn(browser, env.oidcIssuerUrl);
     await exerciseIngressLogs(page, env.oidcIssuerUrl);
     await checkTransactionExpiry(page, cluster.consoleOrigin);
+    await checkConcurrentCleanup(page, cluster.consoleOrigin);
     await checkRejectedLogin(page, cluster.consoleOrigin);
     await openAccount(page, cluster, account);
     await checkExpiry(page, cluster.consoleOrigin, account);

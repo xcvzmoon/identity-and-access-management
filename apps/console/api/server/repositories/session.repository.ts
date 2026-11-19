@@ -8,6 +8,7 @@ type Session = Omit<typeof sessions.$inferSelect, 'cookieHash' | 'encryptedAcces
 type CallbackTransaction = Pick<Transaction, 'nonce' | 'returnTo' | 'verifier'>;
 type SessionUser = Omit<Session, 'expiresAt'>;
 
+const TRANSACTION_CLEANUP_BATCH = 100;
 const FIRST_RESULT = 0;
 const IV_START = 0;
 const IV_BYTES = 12;
@@ -26,7 +27,7 @@ function throwStorageError(): never {
 }
 
 /**
- * Stores the browser's authorization transaction and removes abandoned, expired transactions.
+ * Stores the browser's authorization transaction and removes up to 100 unlocked expired transactions.
  *
  * @param {string} cookie - Random browser transaction handle.
  * @param {Transaction} transaction - Callback checks and their expiry.
@@ -37,9 +38,18 @@ export async function createTransaction(cookie: string, transaction: Transaction
 
   await database
     .transaction(async (connection) => {
-      await connection
-        .delete(authorizationTransactions)
-        .where(lte(authorizationTransactions.expiresAt, sql`now()`));
+      await connection.execute(sql`
+        WITH expired AS MATERIALIZED (
+          SELECT ${authorizationTransactions.cookieHash} FROM ${authorizationTransactions}
+          WHERE ${authorizationTransactions.expiresAt} <= now()
+          ORDER BY ${authorizationTransactions.expiresAt}
+          LIMIT ${TRANSACTION_CLEANUP_BATCH}
+          FOR UPDATE SKIP LOCKED
+        )
+        DELETE FROM ${authorizationTransactions}
+        USING expired
+        WHERE ${authorizationTransactions.cookieHash} = expired.cookie_hash
+      `);
       await connection.insert(authorizationTransactions).values({ ...transaction, cookieHash });
     })
     .catch(throwStorageError);
