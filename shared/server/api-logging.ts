@@ -1,4 +1,5 @@
 import type { AuditableLogger } from 'evlog';
+import type { HTTPEvent } from 'nitro/h3';
 import type { NitroApp } from 'nitro/types';
 import { createRequestLogger, initLogger, log } from 'evlog';
 import { H3Event } from 'nitro/h3';
@@ -15,7 +16,7 @@ type RequestFields = {
   status: number;
 };
 
-const requests = new WeakMap<Request, AuditableLogger<RequestFields>>();
+const requests = new WeakMap<HTTPEvent, AuditableLogger<RequestFields>>();
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']);
 
 /**
@@ -41,12 +42,12 @@ export function registerApiLogging(app: ApiApp, service: ApiService): void {
       requestId: randomUUID(),
     });
 
-    requests.set(event.req, logger);
+    requests.set(event, logger);
   });
 
   app.hooks.hook('error', (_error, { event, tags }) => {
     if (event) {
-      requests.get(event.req)?.set({ failure: 'exception' });
+      requests.get(event)?.set({ failure: 'exception' });
       return;
     }
 
@@ -57,7 +58,7 @@ export function registerApiLogging(app: ApiApp, service: ApiService): void {
   });
 
   app.hooks.hook('response', (response, event) => {
-    const logger = requests.get(event.req);
+    const logger = requests.get(event);
     if (!logger) {
       return;
     }
@@ -76,7 +77,7 @@ export function registerApiLogging(app: ApiApp, service: ApiService): void {
       path: route ?? 'unmatched',
       status,
     });
-    requests.delete(event.req);
+    requests.delete(event);
   });
 }
 
@@ -86,5 +87,5 @@ export function registerApiLogging(app: ApiApp, service: ApiService): void {
  * @param {string} action - Discriminant from the validated management command.
  */
 export function recordManagementAction(event: H3Event, action: string): void {
-  requests.get(event.req)?.set({ managementAction: action });
+  requests.get(event)?.set({ managementAction: action });
 }

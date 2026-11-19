@@ -25,4 +25,9 @@ if ! grep -F '"service":"iam-console-api"' "$log" | grep -F '"event":"api-reques
   exit 1
 fi
 
+if ! grep -F '"service":"iam-idp-api"' "$log" | grep -F '"event":"api-request"' | grep -F '"method":"POST"' | grep -F '"path":"/api/v1/web/sign-in/email"' | grep -Fq '"status":200'; then
+  echo 'The IdP did not log the successful password sign-in POST after checking its body size.' >&2
+  exit 1
+fi
+
 echo 'Console session fixture passed. API events contained route templates and no synthetic credentials.'
