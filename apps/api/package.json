@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "build": "nitro build",
-    "dev": "nitro dev --port 5173",
-    "preview": "nitro preview --port 5173",
-    "serve": "nitro serve --port 5173",
+    "dev": "nitro dev --port 3000",
+    "preview": "nitro preview --port 3000",
+    "serve": "nitro serve --port 3000",
     "fetch": "nitro fetch",
     "curl": "nitro curl",
     "typecheck": "tsc"

@@ -30,7 +30,17 @@ Run the following steps from the repository root.
 
    ```sh
    vp run packages:database migrate
-   vp run apps:api preview
+   AUTH_IDP_ORIGIN="http://localhost:5176" vp run apps:api preview
+   ```
+
+   Start IDP and web in separate terminals.
+
+   ```sh
+   vp -C apps/idp run preview
+   ```
+
+   ```sh
+   vp run apps:web preview
    ```
 
    The migration command can create a missing database when the role has
@@ -39,12 +49,12 @@ Run the following steps from the repository root.
 
 4. Set `AUTH_SMTP_URL` and `AUTH_SMTP_FROM` before testing email codes.
    Restart IAM if you change its settings after startup. Open
-   `http://localhost:5173/signup`. Use the emailed code to verify ownership
+   `http://localhost:5176/signup`. Use the emailed code to verify ownership
    and set a password before signing in. [SMTP settings](http-api.md#configuration)
 
-After editing the UI, run `vp run apps:web build` and
-`vp run apps:api build` to refresh the served assets. Run `vp run build` when
-you change a shared package. If you run `vp run create-env --force`, the command
+Rebuild the app you edited with `vp run apps:web build` or
+`vp -C apps/idp run build`.
+Run `vp run build` when you change a shared package. If you run `vp run create-env --force`, the command
 replaces the local settings and rotates the auth secret. A new secret
 invalidates existing sessions. Retain the corresponding secret version
 for any local database backup that contains encrypted issuer keys.
@@ -52,7 +62,7 @@ for any local database backup that contains encrypted issuer keys.
 ## Containers
 
 Configure the local environment files and run database migrations first.
-Then start the single IAM service.
+Then start the API, IDP, and web services.
 
 ```sh
 vp run docker up
@@ -60,8 +70,11 @@ vp run docker ps
 vp run docker logs --follow
 ```
 
-Compose publishes IAM at `http://localhost:5173` on loopback. The container uses
-`host.docker.internal` to connect to PostgreSQL on the host. Set
+Open web at `http://localhost:5173`. Web redirects auth pages to IDP at
+`http://localhost:5176`. IDP submits auth requests to `http://localhost:5173`,
+which forwards API calls and OIDC discovery to port 3000. Use `localhost`
+for both browser URLs. The API
+container uses `host.docker.internal` to reach PostgreSQL on the host. Set
 `DOCKER_DB_HOST` if your database uses a different reachable host.
 
 Use `--container docker` or `--container kiri` to select an engine. Run

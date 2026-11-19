@@ -28,7 +28,7 @@ AUTH_TEST_DB_PORT="55439" vp test --run apps/api/tests
 ```
 
 The API tests run in process. The static web and hosted OIDC tests also need
-a running IAM build against the fixture. [Web integration test setup](#hosted-web-fixtures)
+running API, IDP, and web builds against the fixture. [Web integration test setup](#hosted-web-fixtures)
 
 ## API validation
 
@@ -47,16 +47,21 @@ vp run apps:web typecheck
 vp run build
 ```
 
-Start the built IAM server with a disposable migrated PostgreSQL database.
+Start the built API against a disposable migrated PostgreSQL database, then
+start the built IDP and web services. Set `AUTH_API_TEST_URL` to the direct API URL
+to check that the API port stays separate from the page services. Set
+`AUTH_IDP_TEST_URL` to the public IDP origin for web and hosted OIDC tests.
 Set `AUTH_TEST_DB_PORT` to its database port and `AUTH_WEB_TEST_URL` to
 the IAM origin when running the static web, administrator, and machine tests.
 
 ```sh
 AUTH_TEST_DB_PORT="55439" AUTH_WEB_TEST_URL="http://localhost:5173" \
+  AUTH_API_TEST_URL="http://localhost:3000" \
+  AUTH_IDP_TEST_URL="http://localhost:5176" \
   vp test apps/web/tests/static-web.integration.test.ts
 ```
 
-The suite checks delivery of the UI and JavaScript assets, same-origin
+The suite checks delivery of the UI and JavaScript assets, auth redirects, credentialed
 signup and sign-in, and the Better Auth session lifecycle.
 
 ## Database validation

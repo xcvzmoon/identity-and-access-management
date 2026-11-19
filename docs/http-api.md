@@ -2,16 +2,18 @@
 
 [Documentation index](README.md)
 
-The Nitro service serves static pages, the HTTP API, and the OIDC issuer on
-one origin. See the [local setup](local.md) and [deployment guide](deployment.md).
+The Nitro service provides the HTTP API and the OIDC issuer. The API shares
+the web origin. IDP serves auth pages from its own origin. See the [local setup](local.md)
+and [deployment guide](deployment.md).
 The [auth package](auth-package.md) defines the credential and
 session policies.
 
 ## Configuration
 
-The local server uses `http://localhost:5173`. Set the auth and database
-variables in the process environment for staging and production. Local setup
-uses the workspace dotenv files. [Local setup](local.md#local-setup)
+Locally, the API listens on port 3000 and the public IAM origin is
+`http://localhost:5173`. Set the auth and database variables in the process
+environment for staging and production. Local setup uses the workspace dotenv
+files. [Local setup](local.md#local-setup)
 
 | Setting                   | Purpose                                                                                                                    |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -19,6 +21,7 @@ uses the workspace dotenv files. [Local setup](local.md#local-setup)
 | `AUTH_SECRET`             | Better Auth secret. Share the same value across API replicas.                                                              |
 | `AUTH_URL`                | Public issuer origin. Use an HTTPS origin in production.                                                                   |
 | `AUTH_WEB_ORIGIN`         | Browser origin. It must match `AUTH_URL`.                                                                                  |
+| `AUTH_IDP_ORIGIN`         | Public IDP origin for hosted auth pages and credentialed browser requests.                                                 |
 | `AUTH_SMTP_URL`           | Relay URL. Use `smtps://` for implicit TLS or `smtp://` for required STARTTLS. Encode relay credentials as URL components. |
 | `AUTH_SMTP_FROM`          | Sender email authorized by the relay. Set it together with `AUTH_SMTP_URL`.                                                |
 | `IAM_API_TRUSTED_PROXIES` | Comma-separated ingress peer IPs. With no trusted peers, the server uses the directly connected peer's IP.                 |
@@ -133,7 +136,7 @@ client authentication methods.
 | `GET /api/auth/jwks`                                              | Publishes the public signing keys.                                                                                           |
 | `GET /api/auth/oauth2/authorize`                                  | Browser authorization request with OAuth query parameters.                                                                   |
 | `POST /api/auth/oauth2/authorize`                                 | Form-encoded authorization request.                                                                                          |
-| `GET /oidc/login`, `GET /oidc/consent`                            | Serve the hosted interaction pages for a provider-signed request.                                                            |
+| `GET /oidc/login`, `GET /oidc/consent`                            | IDP renders these pages after validating the request through the API.                                                        |
 | `GET /api/oidc/client?request=...`                                | Returns `name` and `callbackOrigin` for a validated hosted request.                                                          |
 | `POST /api/oidc/login`                                            | Form fields `oauth_query`, `email`, and `password`. Returns a redirect on success.                                           |
 | `POST /api/oidc/consent`                                          | Form fields `oauth_query` and `intent`, with `allow` or `deny`. Uses the IAM cookie.                                         |

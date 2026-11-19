@@ -61,9 +61,11 @@ export async function getOidcClientName(event: H3Event, request: SignedRequest):
   return client.output.client_name;
 }
 
-function redirectFromProvider(upstream: Response, destination: URL, issuer: string): Response {
+async function redirectFromProvider(upstream: Response, destination: URL): Promise<Response> {
+  const context = await useAuth().$context;
   if (
-    (destination.protocol !== 'https:' && destination.origin !== issuer) ||
+    (destination.protocol !== 'https:' &&
+      !context.isTrustedOrigin(destination.origin, { allowRelativePaths: false })) ||
     destination.username ||
     destination.password
   ) {
@@ -97,12 +99,7 @@ export async function authorizeOidcResponse(upstream: Response): Promise<Respons
     throw new HTTPError('Authentication unavailable', { status: unavailable });
   }
 
-  const context = await useAuth().$context;
-  return redirectFromProvider(
-    upstream,
-    new URL(target.output.url),
-    new URL(context.baseURL).origin,
-  );
+  return redirectFromProvider(upstream, new URL(target.output.url));
 }
 
 export async function redirectOidcInteraction(
@@ -127,8 +124,9 @@ export async function redirectOidcInteraction(
 
   const destination = new URL(result.output.url);
   const context = await useAuth().$context;
-  const issuer = new URL(context.baseURL).origin;
-  const internal = destination.origin === issuer && destination.pathname === '/oidc/consent';
+  const internal =
+    context.isTrustedOrigin(destination.origin, { allowRelativePaths: false }) &&
+    destination.pathname === '/oidc/consent';
   const callback =
     destination.protocol === 'https:' &&
     destination.origin === request.callback.origin &&
@@ -140,5 +138,5 @@ export async function redirectOidcInteraction(
     throw new HTTPError('Authentication unavailable', { status: 503 });
   }
 
-  return redirectFromProvider(upstream, destination, issuer);
+  return redirectFromProvider(upstream, destination);
 }

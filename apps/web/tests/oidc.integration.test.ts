@@ -23,6 +23,7 @@ const configuredIssuer = process.env.AUTH_OIDC_TEST_URL;
 const replicaOrigin = process.env.AUTH_OIDC_REPLICA_TEST_URL;
 const unavailableOrigin = process.env.AUTH_OIDC_UNAVAILABLE_TEST_URL;
 const issuer = configuredIssuer ?? 'http://127.0.0.1:5173';
+const idpOrigin = process.env.AUTH_IDP_TEST_URL ?? issuer;
 const databasePort = Number(process.env.AUTH_TEST_DB_PORT);
 const callback = 'https://reference.example.test/callback';
 const password = 'oidc-integration-test-password';
@@ -201,7 +202,7 @@ async function submitInteraction(
   page: URL,
   cookie: string,
   fields: Record<string, string>,
-  origin = issuer,
+  origin = idpOrigin,
 ): Promise<Response> {
   return fetch(new URL(`/api${page.pathname}`, issuer), {
     method: 'POST',
@@ -215,11 +216,10 @@ async function submitInteraction(
 }
 
 function expectSessionCookieSecurity(headers: Headers): void {
-  const session = headers
-    .getSetCookie()
-    .find((value) => value.includes('better-auth.session_token='));
+  const session = headers.getSetCookie().find((cookie) => cookie.includes('.session_token='));
   expect(session).toMatch(/;\s*HttpOnly(?:;|$)/iu);
   expect(session).toMatch(/;\s*SameSite=Lax(?:;|$)/iu);
+  expect(session).not.toMatch(/;\s*Domain=/iu);
 
   if (new URL(issuer).protocol === 'https:') {
     expect(session).toMatch(/^__Secure-better-auth\.session_token=/u);
@@ -232,11 +232,11 @@ async function completeSignIn(
   email: string,
 ): Promise<{ callbackUrl: URL; cookie: string }> {
   const login = redirectLocation(await fetch(request.authorizationUrl, { redirect: 'manual' }));
-  expect(login.origin + login.pathname).toBe(`${issuer}/oidc/login`);
+  expect(login.origin + login.pathname).toBe(`${idpOrigin}/oidc/login`);
   const loginPage = await fetch(login);
   expect(loginPage.status).toBe(success);
-  expect(loginPage.headers.get('referrer-policy')).toBe('same-origin');
-  const formPolicy = `frame-ancestors 'none'; base-uri 'none'; form-action 'self' ${new URL(callback).origin}`;
+  expect(loginPage.headers.get('referrer-policy')).toBe('strict-origin');
+  const formPolicy = `frame-ancestors 'none'; base-uri 'none'; form-action 'self' ${issuer === idpOrigin ? '' : `${issuer} `}${new URL(callback).origin}`;
   expect(loginPage.headers.get('content-security-policy')).toBe(formPolicy);
   const application = await fetch(
     `${issuer}/api/oidc/client?${new URLSearchParams({ request: login.searchParams.toString() })}`,
@@ -253,10 +253,10 @@ async function completeSignIn(
   expect(cookie).toContain('better-auth.session_token=');
 
   const consent = redirectLocation(signedIn);
-  expect(consent.origin + consent.pathname).toBe(`${issuer}/oidc/consent`);
+  expect(consent.origin + consent.pathname).toBe(`${idpOrigin}/oidc/consent`);
   const consentPage = await fetch(consent, { headers: { cookie } });
   expect(consentPage.status).toBe(success);
-  expect(consentPage.headers.get('referrer-policy')).toBe('same-origin');
+  expect(consentPage.headers.get('referrer-policy')).toBe('strict-origin');
   expect(consentPage.headers.get('content-security-policy')).toBe(formPolicy);
   const accepted = await submitInteraction(consent, cookie, { intent: 'allow' });
   expect(accepted.status).toBe(seeOther);
@@ -334,7 +334,7 @@ async function startWarmSignIn(
   );
   const callbackUrl =
     interaction === 'renew' &&
-    destination.origin === issuer &&
+    destination.origin === idpOrigin &&
     destination.pathname === '/oidc/consent'
       ? redirectLocation(await submitInteraction(destination, cookie, { intent: 'allow' }))
       : destination;
@@ -371,7 +371,7 @@ async function verifyReauthentication(config: oidc.Configuration, cookie: string
     redirect: 'manual',
   });
   const destination = redirectLocation(response);
-  expect(destination.origin + destination.pathname).toBe(`${issuer}/oidc/login`);
+  expect(destination.origin + destination.pathname).toBe(`${idpOrigin}/oidc/login`);
 }
 
 type AuthenticatedClient = {

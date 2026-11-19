@@ -8,6 +8,8 @@
   definePageMeta({ key: (route) => route.fullPath });
 
   const route = useRoute();
+  const { webOrigin } = useRuntimeConfig().public;
+  const webApi = useWebApi();
   if (route.path !== '/oidc/login' && route.path !== '/oidc/consent') {
     throw createError({
       status: 404,
@@ -19,7 +21,7 @@
   const { data: client, status } = await useAsyncData(
     `oidc-client-${signedRequest}`,
     async () => {
-      const response = await $fetch<unknown>('/api/oidc/client', {
+      const response = await webApi<unknown>('/api/oidc/client', {
         query: { request: signedRequest },
         retry: 0,
       });
@@ -31,6 +33,7 @@
 
   const signingIn = route.path === '/oidc/login';
   const step = signingIn ? 'login' : 'consent';
+  const formAction = new URL(`/api/oidc/${step}`, webOrigin).href;
   useHead({ title: signingIn ? 'Sign in' : 'Confirm application access' });
 </script>
 
@@ -52,7 +55,7 @@
     </header>
 
     <form
-      :action="`/api/oidc/${step}`"
+      :action="formAction"
       method="post"
       class="space-y-5"
     >

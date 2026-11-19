@@ -16,6 +16,7 @@
   useHead({ title: 'Set or reset your password' });
 
   const userSession = useUserSession();
+  const webApi = useWebApi();
   const step = shallowRef<Step>('request');
   const email = shallowRef<string>('');
   const code = shallowRef<string>('');
@@ -51,7 +52,7 @@
               code: code.value,
               password: password.value,
             };
-      await $fetch(endpoint, {
+      await webApi(endpoint, {
         method: 'POST',
         retry: 0,
         body,

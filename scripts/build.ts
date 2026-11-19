@@ -16,10 +16,7 @@ try {
       (workspace) =>
         workspace.startsWith('packages/') && workspace !== database && workspace !== shared,
     ),
-    'apps/web',
-    ...workspaces.filter(
-      (workspace) => workspace !== 'apps/web' && !workspace.startsWith('packages/'),
-    ),
+    ...workspaces.filter((workspace) => !workspace.startsWith('packages/')),
   ];
 
   execFileSync('vp', ['-C', shared, 'run', 'build:utils'], {

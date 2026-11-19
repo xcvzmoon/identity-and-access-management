@@ -124,8 +124,10 @@ export function passwordRecovery(
         },
         async (context) => {
           const headers = context.headers;
+          const origin = headers?.get('origin');
           if (
-            headers?.get('origin') !== options.webOrigin ||
+            !headers ||
+            (origin !== options.webOrigin && origin !== options.idpOrigin) ||
             headers.has('authorization') ||
             headers.has('x-api-key')
           ) {

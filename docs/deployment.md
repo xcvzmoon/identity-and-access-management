@@ -4,9 +4,12 @@
 
 ## Deployment
 
-Build with `vp run build` and ship the full `apps/api/.output` directory.
-Start `apps/api/.output/server/index.mjs`, or use the image from the
-[Dockerfile](../Dockerfile). Set `APP_ENV="production"`.
+Build with `vp run build` and deploy the `.output` directories from
+`apps/api`, `apps/idp`, and `apps/web` to separate services. Each starts with
+`node .output/server/index.mjs` from its own app directory. The
+[Dockerfile](../Dockerfile) also provides `api`, `idp`, and `web` targets.
+Set `APP_ENV="production"` on the API.
+Set `NUXT_API_URL` on IDP to the API's private HTTP or HTTPS origin.
 
 1. Configure the migration role and a separate runtime login. Require TLS for
    both database connections. [Deployment roles](database-operations.md#deployment-roles) ·
@@ -14,12 +17,24 @@ Start `apps/api/.output/server/index.mjs`, or use the image from the
 2. Drain older replicas before running the migration that revokes unverified
    sessions. Apply pending migrations as the migration owner.
    [Session migration](http-api.md#authentication-routes)
-3. Set `AUTH_URL` and `AUTH_WEB_ORIGIN` to the same public HTTPS origin.
+3. Set `AUTH_URL` and `AUTH_WEB_ORIGIN` to the existing public web and issuer
+   origin, for example `https://iam.example.com`. Set `AUTH_IDP_ORIGIN` on
+   the API and `NUXT_IDP_ORIGIN` on web to the same IDP origin, for example
+   `https://login.example.com`. Set `NUXT_PUBLIC_WEB_ORIGIN` on IDP to the
+   web origin. Use HTTPS hostnames on the same site so browsers can send the
+   API session cookie with IDP requests. The cookie is scoped to the API host.
    Share `AUTH_SECRET` across replicas. Configure the SMTP relay.
    [API configuration](http-api.md#configuration)
-4. Route HTTPS traffic to Nitro. Keep the service port private. Set
-   `IAM_API_TRUSTED_PROXIES` to the ingress peer IPs and configure ingress to
-   replace incoming forwarding headers. [Ingress and TLS](#tls-at-ingress)
+4. On the web hostname, route `/api`, `/api/*`, and
+   `/.well-known/openid-configuration` to the API and other paths to web.
+   Route the IDP hostname to the IDP service. Web redirects requests for auth
+   pages to IDP. IDP calls the API on the web hostname.
+
+   Configure ingress to replace incoming forwarding headers. Set
+   `IAM_IDP_TRUSTED_PROXIES` to the ingress peer IPs and
+   `IAM_API_TRUSTED_PROXIES` to the ingress and IDP peer IPs so the API
+   can rate-limit OIDC page validation by client address. [Ingress and TLS](#tls-at-ingress)
+
 5. Configure restricted audit collection and retention. Verify that ingress
    logs exclude credential and token values. [Ingress logging](#ingress-logging) ·
    [Authentication monitoring](http-api.md#monitor-authentication-outcomes) ·
@@ -49,10 +64,10 @@ check the following behavior.
 
 ## TLS at ingress
 
-Set `IAM_API_TRUSTED_PROXIES` to the proxy IP addresses that the Nitro
-process sees at the socket. Keep the HTTP upstream private and have ingress
-overwrite client-supplied forwarding headers with the public scheme, public
-host, and verified client IP.
+Both trusted-proxy settings accept comma-separated peer IPs as seen at the
+socket. Have ingress overwrite client-supplied forwarding headers with the
+public scheme, public host, and verified client IP. IDP forwards
+the resolved client IP when it validates an OIDC page request with the API.
 [srvx proxy settings](https://srvx.h3.dev/guide/options#trustproxy)
 
 Set `AUTH_URL` and `AUTH_WEB_ORIGIN` to the exact public HTTPS origin. Check

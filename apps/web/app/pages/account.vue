@@ -15,7 +15,7 @@
         body: {},
       });
       userSession.clear();
-      await navigateTo('/signin');
+      await navigateTo('/signin', { external: true });
     } catch {
       error.value = 'Sign out failed.';
     } finally {
@@ -46,6 +46,7 @@
     <NuxtLink
       v-else
       to="/recover-password"
+      external
       class="text-primary underline underline-offset-4"
     >
       Verify your email and set your password

@@ -1,8 +1,9 @@
 # Identity and Access Management
 
-IAM signs users in and controls who can use registered applications. A Nitro
-server serves the static Nuxt UI, the API, and the OpenID Connect (OIDC) issuer
-on one origin. PostgreSQL stores identities, sessions, organization membership,
+IAM signs users in and controls who can use registered applications. Web
+serves account and admin pages. The Identity Provider (IDP) serves
+authentication pages. The Nitro API handles authentication and publishes the
+OpenID Connect (OIDC) issuer. IDP has its own public URL. Web and the API share the issuer origin. PostgreSQL stores identities, sessions, organization membership,
 application grants, and audit events.
 
 Start with the [documentation index](docs/README.md). It links to the

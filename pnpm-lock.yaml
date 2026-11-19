@@ -315,6 +315,9 @@ catalogs:
     tailwindcss:
       specifier: 4.3.5
       version: 4.3.5
+    undici:
+      specifier: 8.12.4
+      version: 8.12.4
     vue:
       specifier: 3.5.45
       version: 3.5.45
@@ -376,6 +379,106 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+
+  apps/idp:
+    dependencies:
+      '@formisch/vue':
+        specifier: 'catalog:'
+        version: 1.2.0(typescript@6.0.3)(valibot@1.5.0(typescript@6.0.3))(vue@3.5.45(typescript@6.0.3))
+      '@iconify-json/lucide':
+        specifier: catalog:web
+        version: 1.2.156
+      '@nuxt/ui':
+        specifier: catalog:web
+        version: 4.12.0(e3e8e41bcc6091f9aca34f6995ce7189)
+      '@simplewebauthn/browser':
+        specifier: catalog:web
+        version: 13.3.0
+      '@tiptap/core':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/pm@3.34.0)
+      '@tiptap/extension-bubble-menu':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)
+      '@tiptap/extension-code':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))
+      '@tiptap/extension-collaboration':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)(@tiptap/y-tiptap@3.3.0(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(yjs@13.6.33)
+      '@tiptap/extension-drag-handle':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/extension-collaboration@3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)(@tiptap/y-tiptap@3.3.0(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(yjs@13.6.33))(@tiptap/extension-node-range@3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)(@tiptap/y-tiptap@3.3.0(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))
+      '@tiptap/extension-drag-handle-vue-3':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/extension-drag-handle@3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/extension-collaboration@3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)(@tiptap/y-tiptap@3.3.0(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))(yjs@13.6.33))(@tiptap/extension-node-range@3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)(@tiptap/y-tiptap@3.3.0(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)))(@tiptap/pm@3.34.0)(@tiptap/vue-3@3.34.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)(vue@3.5.45(typescript@6.0.3)))(vue@3.5.45(typescript@6.0.3))
+      '@tiptap/extension-floating-menu':
+        specifier: catalog:web
+        version: 3.34.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)
+      '@tiptap/extension-horizontal-rule':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)
+      '@tiptap/extension-image':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))
+      '@tiptap/extension-mention':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)(@tiptap/suggestion@3.34.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0))
+      '@tiptap/extension-node-range':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)
+      '@tiptap/extension-placeholder':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/extensions@3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0))
+      '@tiptap/markdown':
+        specifier: catalog:web
+        version: 3.34.0(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)
+      '@tiptap/pm':
+        specifier: catalog:web
+        version: 3.34.0
+      '@tiptap/starter-kit':
+        specifier: catalog:web
+        version: 3.34.0
+      '@tiptap/suggestion':
+        specifier: catalog:web
+        version: 3.34.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)
+      '@tiptap/vue-3':
+        specifier: catalog:web
+        version: 3.34.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.34.0(@tiptap/pm@3.34.0))(@tiptap/pm@3.34.0)(vue@3.5.45(typescript@6.0.3))
+      '@vueuse/nuxt':
+        specifier: catalog:web
+        version: 15.0.0(@nuxt/schema-nightly@5.0.0-2611150147-d897f4c)(confbox@0.3.2)(jiti@2.7.0)(magic-string@1.4.5)(mlly@1.8.2)(nuxt-nightly@5.0.0-2611150147-d897f4c(09a43ffe49d7e19fb53655a3c598c056))(rolldown@1.2.19)(unplugin@3.7.0(@voidzero-dev/vite-plus-core@1.6.0(@types/node@26.6.6)(@volar/typescript@2.4.30(typescript@6.0.3))(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(typescript@6.0.3)(vue-tsc@3.3.14(typescript@6.0.3)))(esbuild@0.28.2)(rolldown@1.2.19))(vue@3.5.45(typescript@6.0.3))
+      nuxt:
+        specifier: catalog:web
+        version: nuxt-nightly@5.0.0-2611150147-d897f4c(09a43ffe49d7e19fb53655a3c598c056)
+      tailwindcss:
+        specifier: catalog:web
+        version: 4.3.5
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
+      vue:
+        specifier: catalog:web
+        version: 3.5.45(typescript@6.0.3)
+      vue-router:
+        specifier: catalog:web
+        version: 5.5.1(@voidzero-dev/vite-plus-core@1.6.0(@types/node@26.6.6)(@volar/typescript@2.4.30(typescript@6.0.3))(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(typescript@6.0.3)(vue-tsc@3.3.14(typescript@6.0.3)))(@vue/compiler-sfc@3.5.45)(esbuild@0.28.2)(rolldown@1.2.19)(vue@3.5.45(typescript@6.0.3))
+    devDependencies:
+      '@golar/vue':
+        specifier: catalog:web
+        version: 0.1.11
+      golar:
+        specifier: catalog:web
+        version: 0.1.11
+      openid-client:
+        specifier: catalog:web
+        version: 6.9.0
+      vue-tsc:
+        specifier: catalog:web
+        version: 3.3.14(typescript@6.0.3)
 
   apps/web:
     dependencies:
@@ -454,6 +557,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      undici:
+        specifier: catalog:web
+        version: 8.12.4
       valibot:
         specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)

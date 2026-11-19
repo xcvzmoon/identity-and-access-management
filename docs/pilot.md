@@ -8,12 +8,18 @@ Run this check against local builds and the disposable database described in
 the [integration test setup](validation.md#integration-tests). Set
 `APP_ENV="testing"` and give both Nitro processes the same database variables,
 `AUTH_SECRET`, and canonical issuer `http://127.0.0.1:5173` for both
-`AUTH_URL` and `AUTH_WEB_ORIGIN`. Run the replicas on different ports.
+`AUTH_URL` and `AUTH_WEB_ORIGIN`. Set `AUTH_IDP_ORIGIN="http://127.0.0.1:5176"`
+on both API replicas. Run the API replicas on ports 3000 and 5174. Start IDP on 5176 and web on
+5173 with the first API replica as their API upstream.
 Configure a local ingress on port 5175 to return HTTP 503 for the outage check.
 
 ```sh
-HOST="127.0.0.1" PORT="5173" node apps/api/.output/server/index.mjs
+HOST="127.0.0.1" PORT="3000" node apps/api/.output/server/index.mjs
 HOST="127.0.0.1" PORT="5174" node apps/api/.output/server/index.mjs
+HOST="127.0.0.1" PORT="5176" NUXT_API_URL="http://127.0.0.1:3000" \
+  NUXT_PUBLIC_WEB_ORIGIN="http://127.0.0.1:5173" node apps/idp/.output/server/index.mjs
+HOST="127.0.0.1" PORT="5173" NUXT_API_URL="http://127.0.0.1:3000" \
+  NUXT_IDP_ORIGIN="http://127.0.0.1:5176" node apps/web/.output/server/index.mjs
 ```
 
 Export the shared test `AUTH_SECRET` before running the replica test. Run it
@@ -23,6 +29,7 @@ consume the same database-backed rate limits.
 ```sh
 AUTH_TEST_DB_PORT="55439" \
 AUTH_OIDC_TEST_URL="http://127.0.0.1:5173" \
+AUTH_IDP_TEST_URL="http://127.0.0.1:5176" \
 AUTH_OIDC_REPLICA_TEST_URL="http://127.0.0.1:5174" \
 AUTH_OIDC_UNAVAILABLE_TEST_URL="http://127.0.0.1:5175" \
 vp test apps/web/tests/oidc.integration.test.ts -t "contain pilot rollback"

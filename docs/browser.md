@@ -2,8 +2,9 @@
 
 [Documentation index](README.md)
 
-Nuxt builds the static browser UI. The Nitro IAM server serves the UI,
-processes same-origin requests, and publishes the OIDC issuer.
+Web serves account and admin pages. IDP serves authentication pages
+and calls the IAM API with credentials. The API and OIDC issuer use the web
+origin. IDP uses a separate, same-site origin.
 [HTTP API reference](http-api.md)
 
 ## Pages and navigation
@@ -11,7 +12,7 @@ processes same-origin requests, and publishes the OIDC issuer.
 | Page                                                                                            | Access                                                                |
 | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | [`/`](../apps/web/app/pages/index.vue)                                                          | Redirects to `/account`.                                              |
-| [`/signin`](../apps/web/app/pages/signin.vue) and [`/signup`](../apps/web/app/pages/signup.vue) | Guest pages. A signed-in user is redirected to `/account`.            |
+| [`/signin`](../apps/idp/app/pages/signin.vue) and [`/signup`](../apps/idp/app/pages/signup.vue) | Guest pages. A signed-in user is redirected to `/account`.            |
 | [`/account`](../apps/web/app/pages/account.vue)                                                 | Requires a logged-in web session. Guests are redirected to `/signin`. |
 
 The [global route middleware](../apps/web/app/middleware/auth.global.ts) reads the page's
@@ -47,17 +48,17 @@ enforces authentication and tenant permissions for every protected operation.
 
 ### Cookies and origins
 
-Use one canonical origin for the UI, the API, and OIDC discovery. The
-browser sends the Better Auth cookie to that origin. Use HTTPS in deployments
-so Better Auth applies Secure cookies.
+The API sets a host-only Better Auth cookie on the web hostname. The browser
+sends it to that host during IDP sign-in and when opening web pages. Use
+HTTPS and same-site web and IDP hostnames in production.
 
 ## Administration and OIDC pages
 
 | Page                                                                           | Behavior                                                                                                                                      |
 | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`/admin`](../apps/web/app/pages/admin.vue)                                    | Requires a session. Loads organization context, runs WebAuthn step-up, and opens administration panels for the selected organization and app. |
-| [`/recover-password`](../apps/web/app/pages/recover-password.vue)              | Requests or redeems an account code. It shows a generic request confirmation.                                                                 |
-| [`/oidc/login` and `/oidc/consent`](../apps/web/app/pages/oidc/%5Bstep%5D.vue) | Require signed interaction state. They show the registered app name and callback origin and submit forms to Nitro.                            |
+| [`/recover-password`](../apps/idp/app/pages/recover-password.vue)              | Requests or redeems an account code. It shows a generic request confirmation.                                                                 |
+| [`/oidc/login` and `/oidc/consent`](../apps/idp/app/pages/oidc/%5Bstep%5D.vue) | Require signed interaction state. They show the registered app name and callback origin and submit forms to Nitro.                            |
 
 The page route guard improves navigation. The Nitro API and Better Auth
 plugins make the security decisions.

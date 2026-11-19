@@ -63,6 +63,7 @@ catalogs:
     openid-client: 6.9.0
     nuxt: npm:nuxt-nightly@5.0.0-2611150147-d897f4c
     tailwindcss: 4.3.5
+    undici: 8.12.4
     vue: 3.5.45
     vue-router: 5.5.1
     vue-tsc: 3.3.14

@@ -15,6 +15,7 @@ test('validates auth configuration', () => {
     secret: source.AUTH_SECRET,
     url: source.AUTH_URL,
     webOrigin: source.AUTH_WEB_ORIGIN,
+    idpOrigin: source.AUTH_WEB_ORIGIN,
     smtpUrl: '',
     smtpFrom: '',
   });
@@ -39,7 +40,7 @@ test.each(['https://iam.example.test', 'http://localhost:5173'])(
   },
 );
 
-test('rejects a second trusted browser origin', () => {
+test('rejects a web origin that differs from the issuer', () => {
   expect(() =>
     useAuthEnv({
       source: {
@@ -52,7 +53,22 @@ test('rejects a second trusted browser origin', () => {
   ).toThrow('AUTH_WEB_ORIGIN must match AUTH_URL.');
 });
 
-test.each(['AUTH_URL', 'AUTH_WEB_ORIGIN'])(
+test('accepts a dedicated IDP origin while keeping the issuer at the web origin', () => {
+  expect(
+    useAuthEnv({
+      source: {
+        ...source,
+        AUTH_IDP_ORIGIN: 'http://localhost:5176',
+      },
+    }),
+  ).toMatchObject({
+    url: source.AUTH_URL,
+    webOrigin: source.AUTH_WEB_ORIGIN,
+    idpOrigin: 'http://localhost:5176',
+  });
+});
+
+test.each(['AUTH_URL', 'AUTH_WEB_ORIGIN', 'AUTH_IDP_ORIGIN'])(
   'requires HTTPS for a public %s in production',
   (field) => {
     expect(() =>
@@ -63,7 +79,7 @@ test.each(['AUTH_URL', 'AUTH_WEB_ORIGIN'])(
           [field]: 'http://iam.example.test',
         },
       }),
-    ).toThrow('AUTH_URL and AUTH_WEB_ORIGIN must use HTTPS outside loopback.');
+    ).toThrow('AUTH_URL, AUTH_WEB_ORIGIN, and AUTH_IDP_ORIGIN must use HTTPS outside loopback.');
   },
 );
 

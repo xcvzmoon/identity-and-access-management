@@ -48,6 +48,7 @@ on shutdown. [HTTP routes and authorization](http-api.md#request-authorization)
 | `AUTH_SECRET`                        | Better Auth secret of at least 32 characters. All replicas use the same value.                                           |
 | `AUTH_URL`                           | Public IAM origin. Use `http://localhost:5173` for local development.                                                    |
 | `AUTH_WEB_ORIGIN`                    | Browser origin. It must equal `AUTH_URL`.                                                                                |
+| `AUTH_IDP_ORIGIN`                    | Public IDP origin. Use `http://localhost:5176` locally.                                                                  |
 | `AUTH_SMTP_URL` and `AUTH_SMTP_FROM` | Relay URL and sender for email verification, password recovery, and invitation notices. Supply both values to send mail. |
 
 Origins contain a scheme and host, with a port when needed. Omit paths and

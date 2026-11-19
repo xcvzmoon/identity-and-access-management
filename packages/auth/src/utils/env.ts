@@ -46,13 +46,16 @@ function isSecureOrLoopbackOrigin(origin: string): boolean {
   return url.protocol === 'https:' || loopbackHosts.has(url.hostname);
 }
 
-export function useAuthEnv(options: AuthEnvOptions = {}): {
+type AuthEnv = {
   secret: string;
   url: string;
   webOrigin: string;
+  idpOrigin: string;
   smtpUrl: string;
   smtpFrom: string;
-} {
+};
+
+export function useAuthEnv(options: AuthEnvOptions = {}): AuthEnv {
   const workspacePath =
     !process.env.APP_ENV || process.env.APP_ENV === 'local'
       ? path.dirname(fileURLToPath(import.meta.resolve('@iam/auth/package.json')))
@@ -66,19 +69,25 @@ export function useAuthEnv(options: AuthEnvOptions = {}): {
         secret: valibot.pipe(valibot.string(), valibot.minLength(minimumSecretLength)),
         url: originSchema,
         webOrigin: originSchema,
+        idpOrigin: valibot.optional(originSchema),
         smtpUrl: valibot.optional(smtpUrlSchema, ''),
         smtpFrom: valibot.optional(smtpFromSchema, ''),
       },
     },
   });
 
+  const idpOrigin = env.auth.idpOrigin ?? env.auth.webOrigin;
   const appEnvironment = (options.source ?? process.env).APP_ENV;
   if (
     appEnvironment !== 'local' &&
     appEnvironment !== 'testing' &&
-    (!isSecureOrLoopbackOrigin(env.auth.url) || !isSecureOrLoopbackOrigin(env.auth.webOrigin))
+    ![env.auth.url, env.auth.webOrigin, idpOrigin].every((origin) =>
+      isSecureOrLoopbackOrigin(origin),
+    )
   ) {
-    throw new Error('AUTH_URL and AUTH_WEB_ORIGIN must use HTTPS outside loopback.');
+    throw new Error(
+      'AUTH_URL, AUTH_WEB_ORIGIN, and AUTH_IDP_ORIGIN must use HTTPS outside loopback.',
+    );
   }
 
   if (env.auth.url !== env.auth.webOrigin) {
@@ -89,5 +98,5 @@ export function useAuthEnv(options: AuthEnvOptions = {}): {
     throw new Error('Configure AUTH_SMTP_URL and AUTH_SMTP_FROM together.');
   }
 
-  return env.auth;
+  return { ...env.auth, idpOrigin };
 }

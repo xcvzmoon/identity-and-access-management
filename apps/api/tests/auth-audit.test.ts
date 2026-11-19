@@ -6,7 +6,11 @@ const { handler } = vi.hoisted(() => ({ handler: vi.fn() }));
 vi.mock('@iam/auth', () => ({
   useAuth: vi.fn().mockReturnValue({
     handler,
-    $context: Promise.resolve({ baseURL: 'http://localhost:3000/api/auth' }),
+    $context: Promise.resolve({
+      baseURL: 'http://localhost:3000/api/auth',
+      isTrustedOrigin: (origin: string) =>
+        origin === 'http://localhost:3000' || origin === 'http://localhost:5176',
+    }),
   }),
 }));
 

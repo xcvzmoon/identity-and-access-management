@@ -49,7 +49,7 @@ export async function requireBrowserOrigin(event: H3Event): Promise<string> {
   const origin = event.req.headers.get('origin');
   const context = await useAuth().$context;
 
-  if (!origin || origin !== new URL(context.baseURL).origin) {
+  if (!origin || !context.isTrustedOrigin(origin, { allowRelativePaths: false })) {
     throw new HTTPError('Untrusted request origin', { status: 403 });
   }
 

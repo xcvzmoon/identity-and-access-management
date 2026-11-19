@@ -59,6 +59,7 @@ export type AuthOptions = {
   secret: string;
   url: string;
   webOrigin: string;
+  idpOrigin?: string;
   registration?: ManagedRegistration;
   sendPasswordRecoveryEmail?: AccountCodeMailer;
   sendOrganizationInvitation?: OrganizationInvitationMailer;
@@ -127,12 +128,13 @@ async function persistSigningKey(database: AuthDatabase, candidate: Omit<Jwk, 'i
 export function createAuth(database: AuthDatabase, options: AuthOptions): Auth {
   const readTokenAccess: AccessLookup = async (clientId, userId, sessionId) =>
     readApplicationTokenAccess(database, clientId, userId, sessionId);
+  const idpOrigin = options.idpOrigin ?? options.webOrigin;
   const auth: Auth = betterAuth<AuthConfiguration>({
     appName: 'Identity and Access Management',
     logger: { log: logAuthEvent },
     secret: options.secret,
     baseURL: options.url,
-    trustedOrigins: [options.webOrigin],
+    trustedOrigins: [...new Set([options.webOrigin, idpOrigin])],
     database: drizzleAdapter(database, {
       provider: 'pg',
       schemaName: 'iam',
@@ -157,8 +159,8 @@ export function createAuth(database: AuthDatabase, options: AuthOptions): Auth {
         schema: { jwks: { modelName: 'jwk' } },
       }),
       createApplicationOidcProvider(
-        new URL('/oidc/login', options.webOrigin).href,
-        new URL('/oidc/consent', options.webOrigin).href,
+        new URL('/oidc/login', idpOrigin).href,
+        new URL('/oidc/consent', idpOrigin).href,
         {
           resolveAccess: async (clientId, userId, redirectUri) =>
             resolveApplicationGrant(database, clientId, userId, redirectUri),

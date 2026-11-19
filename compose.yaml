@@ -10,9 +10,32 @@ services:
         required: false
     environment:
       APP_ENV: production
+      AUTH_IDP_ORIGIN: ${AUTH_IDP_ORIGIN:-http://localhost:5176}
       DB_HOST: ${DOCKER_DB_HOST:-host.docker.internal}
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     ports:
-      - '127.0.0.1:5173:3000'
+      - '127.0.0.1:3000:3000'
+    init: true
+
+  web:
+    build:
+      context: .
+      target: web
+    environment:
+      NUXT_API_URL: http://api:3000
+      NUXT_IDP_ORIGIN: ${AUTH_IDP_ORIGIN:-http://localhost:5176}
+    ports:
+      - '127.0.0.1:5173:5173'
+    init: true
+
+  idp:
+    build:
+      context: .
+      target: idp
+    environment:
+      NUXT_API_URL: http://api:3000
+      NUXT_PUBLIC_WEB_ORIGIN: ${AUTH_WEB_ORIGIN:-http://localhost:5173}
+    ports:
+      - '127.0.0.1:5176:5176'
     init: true

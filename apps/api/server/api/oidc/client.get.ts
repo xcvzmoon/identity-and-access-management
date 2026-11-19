@@ -6,14 +6,12 @@ export default defineHandler(async (event) => {
   setOidcHeaders(event);
 
   const request = readOidcRequest(event.url.searchParams.get('request'));
-  const name = await getOidcClientName(event, request);
-
   if (request.callback.protocol !== 'https:' || request.callback.hostname.includes('*')) {
     throw new HTTPError('Restart sign-in from the application', { status: 400 });
   }
 
   return {
-    name,
+    name: await getOidcClientName(event, request),
     callbackOrigin: request.callback.origin,
   };
 });
