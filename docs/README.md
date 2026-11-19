@@ -2,6 +2,7 @@
 
 ## Develop and integrate
 
+- [Fresh-install evidence](evidence.md). Follow the captured setup, account, organization, application, and recovery workflows.
 - [Run IAM locally](local.md). Set up Portless and Docker, start individual workspaces, and exercise the hosted flows.
 - [Workspace commands and builds](development.md). Find package names, runtime settings, migration commands, and build output.
 - [Validate changes](validation.md). Run workspace checks and opt-in PostgreSQL, browser, and replica fixtures.
