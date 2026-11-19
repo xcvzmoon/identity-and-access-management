@@ -15,6 +15,7 @@ import { registerAndAssign } from './fixtures/console-administration.ts';
 import { startCluster } from './fixtures/live-processes.ts';
 import { checkManagementIsolation } from './fixtures/management-isolation.ts';
 import { seedAccount } from './fixtures/oidc.ts';
+import { recordOrganizationCapacity } from './fixtures/organization-capacity.ts';
 
 type Recovery = { operatorId: string; organizationId: string; replacement: Account };
 
@@ -135,6 +136,18 @@ async function administer(
   const denied = await post(ownerPage, issuer, OWNER_PATH, {});
   expect(denied.status()).toBe(constants.HTTP_STATUS_FORBIDDEN);
   await registerAndAssign(ownerPage, consoleOrigin, owner.email);
+  const report = process.env.IAM_PHASE7_ORGANIZATION_REPORT;
+  if (report) {
+    await recordOrganizationCapacity(
+      ownerPage,
+      consoleOrigin,
+      {
+        organizationId,
+        ownerId: owner.userId,
+      },
+      report,
+    );
+  }
   await checkManagementIsolation(ownerPage, consoleOrigin, owner.userId, organizationId);
 
   await loseOwnerKey();

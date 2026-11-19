@@ -86,6 +86,9 @@ function runReleaseTests(): void {
         ...(verifyIngress && {
           IAM_PHASE6_LOGIN_REPORT: path.join(directory, 'console-login-capacity.json'),
         }),
+        ...(name === 'phase-7' && {
+          IAM_PHASE7_ORGANIZATION_REPORT: path.join(directory, 'organization-capacity.json'),
+        }),
         [`IAM_${fixture.toUpperCase()}_TESTS`]: '1',
       },
       stdio: 'inherit',

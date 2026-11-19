@@ -201,6 +201,8 @@ assignment, tenant and session denials, and replacement-owner recovery.
 The second test checks challenge binding across two IAM sessions for the
 same user. Discard the fixture database and mailbox after verification.
 
+The release gate writes `organization-capacity.json` after an owner has registered an installation and assigned a role. The fixture adds 249 members to the owner’s organization, then sends 24 authenticated organization detail requests through the console with up to four in flight. A successful response must contain all 250 expected members exactly once. The report records failures, successful reads per second and nearest-rank p95 and p99 latency through response-body parsing. Seeding and cleanup run outside the timed sample. Set `IAM_PHASE7_ORGANIZATION_REPORT` to a new file path to collect it during a standalone phase 7 run.
+
 ### Audit access and retention
 
 Create a disposable `iam_phase8_test` database and apply the IdP migrations.
