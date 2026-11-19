@@ -24,6 +24,33 @@ The APIs need a reachable database and their runtime credentials.
 
 Use a separate disposable database for each fixture. The test commands retain their original phase numbers in environment variable names. Record the revision, settings, checks that ran, and checks that were skipped.
 
+### Release integration gate
+
+Run the nine required integration cases against a release candidate before promoting its images.
+Build the four workspaces, provision the databases, mailbox, certificates and services described
+in each phase below. Keep the phase 3 and 4 services available while the gate runs. Provision the phase 8 audit database as described below and install the PostgreSQL client on the runner.
+
+Create a private fixture directory outside the repository containing `phase-3.env`, `phase-4.env`,
+`phase-5.env`, `phase-6.env`, `phase-7.env` and `phase-9.env`. Each file must set
+`DB_DATABASE` to its corresponding disposable database, for example
+`DB_DATABASE="iam_phase3_test"`. Put the other phase-specific settings shown below in that
+file using double-quoted literal values. The runner overlays the file on the calling environment
+and enables the phase's tests. Add a separate `phase-8.env` with the libpq settings for the
+disposable audit fixture, including `PGDATABASE="iam_phase8_test"`. Use a new evidence directory
+under an existing parent.
+
+```sh
+vp run --no-cache test:release /private/path/fixture-env /private/path/release-evidence
+```
+
+Each phase writes its own Vitest JSON report. The gate checks the exit status, suite and case
+outcomes, case count and required test titles. It exits on the first failure. A successful run
+checks the phase 6 ingress logs, runs the audit-access SQL assertions and writes `passed.json`
+with those results, the checkout revision, initial dirty state, timestamps and phases.
+Use a clean checkout with matching images for release evidence. Restrict access to failed
+reports because test diagnostics can include fixture data. For a retry, provide a new evidence
+directory. Record image digests alongside the receipt and run the packaged-deployment checks below.
+
 ### Invitation signup and recovery
 
 Create a disposable local PostgreSQL database named `iam_phase3_test`. Apply

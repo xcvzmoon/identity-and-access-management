@@ -15,6 +15,7 @@
     "release": "genbumppush",
     "prepare": "vp config --no-agent",
     "test": "vp test",
+    "test:release": "vpx scripts/tests/run-release.ts",
     "test:watch": "vp test --watch",
     "test:verbose": "vp test --reporter=verbose",
     "docker": "vpx scripts/docker.ts",
