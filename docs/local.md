@@ -252,6 +252,16 @@ The sign-in and invitation forms disclose collection. Before production, documen
 the deployment's lawful basis, investigation access, privacy contact, and retention
 in its privacy notice. The windows here are operational defaults.
 
+### Inspect expired IdP session metadata
+
+Have the database operator run the [session metadata retention report](../apps/idp/api/scripts/report-session-metadata-retention.sql) when reviewing the deployment’s retention policy. Use an existing restricted operations environment. The query reads the expiry, client address and user agent columns in one scan of `iam_idp.sessions`. On large installations, schedule it outside peak traffic.
+
+```sh
+psql -X --no-password -v ON_ERROR_STOP=1 --csv -f apps/idp/api/scripts/report-session-metadata-retention.sql
+```
+
+The report returns aggregate counts and the age in whole hours of the oldest expired session that still holds either field. A session with both fields contributes to both counts. An empty age means no expired session retains either field. Compare samples with the approved post-expiry retention period. The daily audit purge does not clear these fields. Review backup retention separately.
+
 ## IdP account flows
 
 Serve the IdP web and API workspaces under the HTTPS origin in
