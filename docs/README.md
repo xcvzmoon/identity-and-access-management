@@ -7,6 +7,7 @@
 - [Workspace commands and builds](development.md). Find package names, runtime settings, migration commands, and build output.
 - [Validate changes](validation.md). Run workspace checks and opt-in PostgreSQL, browser, and replica fixtures.
 - [Connect a server-backed app](client-integration.md). Register a client, sign in, and authorize each protected request.
+- [IAM integration MCP server](../tools/iam-mcp/README.md). Give a local MCP client access to the integration guides and public issuer metadata.
 
 ## Operate IAM
 

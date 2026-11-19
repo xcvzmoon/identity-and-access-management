@@ -19,6 +19,7 @@ catalog:
   vite: npm:@voidzero-dev/vite-plus-core@8.3.8000
   vite-plus: 1.7.0
   portless: 0.18.1
+  '@modelcontextprotocol/sdk': 1.32.2
 
 catalogs:
   api:

@@ -22,10 +22,11 @@
     "docker:portless": "sh scripts/portless-compose.sh"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "catalog:",
     "@types/node": "catalog:",
     "consola": "catalog:",
-    "genbumppush": "catalog:",
     "evlog": "catalog:api",
+    "genbumppush": "catalog:",
     "nitro": "catalog:api",
     "portless": "catalog:",
     "typescript": "catalog:",
