@@ -35,6 +35,7 @@
     "@types/nodemailer": "catalog:api",
     "drizzle-kit": "catalog:api",
     "rolldown": "catalog:api",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "playwright": "catalog:api"
   }
 }
