@@ -232,6 +232,39 @@ async function openAccount(page: Page, cluster: Cluster, account: Account): Prom
   expect(duplicate.status()).toBe(BAD_REQUEST);
 }
 
+async function checkSessionCleanup(page: Page, cluster: Cluster, account: Account): Promise<void> {
+  const client = consoleDatabase();
+  const marker = randomUUID();
+  const locked = `${marker}-1`;
+
+  try {
+    await client`INSERT INTO iam_console.sessions (cookie_hash, sub, email, expires_at)
+      SELECT ${marker}::text || '-' || n, ${marker}, 'fixture@example.test',
+        CASE WHEN n = 103 THEN now() + interval '1 hour' ELSE now() - interval '1 day' END
+      FROM generate_series(1, 103) AS n`;
+    await client.begin(async (connection) => {
+      await connection`SELECT cookie_hash FROM iam_console.sessions WHERE cookie_hash = ${locked} FOR UPDATE`;
+      await openAccount(page, cluster, account);
+      const [remaining] = await connection`SELECT
+        count(*) FILTER (WHERE expires_at <= now())::int AS expired,
+        count(*) FILTER (WHERE expires_at > now())::int AS live,
+        bool_or(cookie_hash = ${locked}) AS contains_locked
+        FROM iam_console.sessions WHERE sub = ${marker}`;
+      expect(remaining).toEqual({
+        expired: 2,
+        live: 1,
+        contains_locked: true,
+      });
+    });
+  } finally {
+    try {
+      await client`DELETE FROM iam_console.sessions WHERE sub = ${marker}`;
+    } finally {
+      await client.end();
+    }
+  }
+}
+
 async function verifyReports(page: Page, cluster: Cluster, account: Account): Promise<void> {
   const callback = new URL('/callback', cluster.appOrigin);
   const installation = await installReports(account.headers, account.userId, callback.href);
@@ -342,7 +375,7 @@ test.skipIf(!enabled)(
       }
     }
     await checkRejectedLogin(page, cluster.consoleOrigin);
-    await openAccount(page, cluster, account);
+    await checkSessionCleanup(page, cluster, account);
     await checkExpiry(page, cluster.consoleOrigin, account);
     await checkSignOut(page, cluster, account);
   },

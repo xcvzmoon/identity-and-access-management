@@ -1,4 +1,4 @@
-import { and, eq, gt, lte, sql } from 'drizzle-orm';
+import { type SQL, and, eq, gt, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { useDatabase } from '../database/index.ts';
 import { authorizationTransactions, sessions } from '../database/schema.ts';
@@ -8,7 +8,7 @@ type Session = Omit<typeof sessions.$inferSelect, 'cookieHash' | 'encryptedAcces
 type CallbackTransaction = Pick<Transaction, 'nonce' | 'returnTo' | 'verifier'>;
 type SessionUser = Omit<Session, 'expiresAt'>;
 
-const TRANSACTION_CLEANUP_BATCH = 100;
+const EXPIRY_CLEANUP_BATCH = 100;
 const FIRST_RESULT = 0;
 const IV_START = 0;
 const IV_BYTES = 12;
@@ -26,6 +26,21 @@ function throwStorageError(): never {
   throw new Error('Console session storage operation failed.');
 }
 
+function deleteExpiredBatch(table: typeof authorizationTransactions | typeof sessions): SQL {
+  return sql`
+    WITH expired AS MATERIALIZED (
+      SELECT ${table.cookieHash} FROM ${table}
+      WHERE ${table.expiresAt} <= now()
+      ORDER BY ${table.expiresAt}
+      LIMIT ${EXPIRY_CLEANUP_BATCH}
+      FOR UPDATE SKIP LOCKED
+    )
+    DELETE FROM ${table}
+    USING expired
+    WHERE ${table.cookieHash} = expired.cookie_hash
+  `;
+}
+
 /**
  * Stores the browser's authorization transaction and removes up to 100 unlocked expired transactions.
  *
@@ -38,18 +53,7 @@ export async function createTransaction(cookie: string, transaction: Transaction
 
   await database
     .transaction(async (connection) => {
-      await connection.execute(sql`
-        WITH expired AS MATERIALIZED (
-          SELECT ${authorizationTransactions.cookieHash} FROM ${authorizationTransactions}
-          WHERE ${authorizationTransactions.expiresAt} <= now()
-          ORDER BY ${authorizationTransactions.expiresAt}
-          LIMIT ${TRANSACTION_CLEANUP_BATCH}
-          FOR UPDATE SKIP LOCKED
-        )
-        DELETE FROM ${authorizationTransactions}
-        USING expired
-        WHERE ${authorizationTransactions.cookieHash} = expired.cookie_hash
-      `);
+      await connection.execute(deleteExpiredBatch(authorizationTransactions));
       await connection.insert(authorizationTransactions).values({ ...transaction, cookieHash });
     })
     .catch(throwStorageError);
@@ -87,7 +91,7 @@ export async function consumeTransaction(
 }
 
 /**
- * Stores a validated identity until its token deadline and removes expired sessions.
+ * Stores a validated identity until its token deadline and removes up to 100 unlocked expired sessions.
  *
  * @param {string} cookie - Fresh random session handle.
  * @param {Session} session - Verified identity and its expiry.
@@ -122,7 +126,7 @@ export async function createSession(
           .where(eq(sessions.cookieHash, hashCookie(previousCookie)));
       }
 
-      await connection.delete(sessions).where(lte(sessions.expiresAt, sql`now()`));
+      await connection.execute(deleteExpiredBatch(sessions));
       await connection.insert(sessions).values({ ...session, cookieHash, encryptedAccessToken });
     })
     .catch(throwStorageError);
