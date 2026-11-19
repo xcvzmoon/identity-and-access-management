@@ -258,6 +258,8 @@ The sign-in and invitation forms disclose collection. Before production, documen
 the deployment's lawful basis, investigation access, privacy contact, and retention
 in its privacy notice. The windows here are operational defaults.
 
+Run [check-sign-in-retention.sh](../deploy/check-sign-in-retention.sh) against the writable primary from the monitoring host. Configure libpq with a login granted schema USAGE and SELECT on only `sign_in_events.created_at` and `sign_in_counts.day`. The check allows one daily purge interval after each cutoff. It reports exit 2 for events older than 744 hours or counts dated earlier than 90 days before the current UTC date. Its output identifies the affected collection. Exit 0 means both checks passed. Exit 3 means the monitor could not verify retention.
+
 ### Inspect expired IdP session metadata
 
 Have the database operator run the [session metadata retention report](../apps/idp/api/scripts/report-session-metadata-retention.sql) when reviewing the deployment’s retention policy. Use an existing restricted operations environment. The query reads the expiry, client address and user agent columns in one scan of `iam_idp.sessions`. On large installations, schedule it outside peak traffic.
