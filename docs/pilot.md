@@ -184,3 +184,13 @@ sh scripts/verify-release-compose.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifes
 ```
 
 The override assigns the verified IdP API digest to both replicas. It removes local build instructions for all application services. The ingress image comes from the base Compose configuration.
+
+### Review access and offboard a customer
+
+1. Identify the organization, installation and scope of the request through the customer's established support contact. Have the organization owner review current owners, administrators, members, assignments and pending invitations. Record the review date and unresolved exceptions in the access review case.
+2. For one person's app access, use **Revoke an assignment**. For organization departure, use **Remove a member** and review outstanding invitations for that person. Keep the case open while a usable invitation could restore access. If the departing person is the last owner, complete ownership transfer or verified owner recovery first. For a retired customer app, use **Disable an installation** and have its operator retire the stored client secret and application sessions.
+3. Use a previously authorized customer session to check that the protected resource now denies access. Have the audit reader locate the committed changes by organization, actor and time. Record the outcome, including any customer-managed sessions or data that still need action.
+4. For a deletion request, verify the requester's identity, identify the responsible organization and determine whether the account has other memberships. Give the privacy owner the inventory of affected account records, customer-held records, audit history and backup copies. That owner determines authorized deletion, required retention and backup expiry under the deployment policy. Record who carried out each approved action, the verification result and any remaining expiry date. Removing a membership alone leaves the IAM account in place.
+5. Escalate loss of every owner credential through the verified recovery procedure. Escalate unexpected access after revocation to the identity on-call and customer app owner. Keep passwords, tokens, links and database extracts out of support cases.
+
+Before onboarding, the service owner records the actual support and privacy contacts, their backups, hours of coverage and access review interval. Have the customer's own operator run the onboarding and offboarding steps and record any intervention that required a developer.
