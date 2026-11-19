@@ -31,8 +31,10 @@ expected=$(jq -ers --arg commit "$4" --arg workspace "$5" '
   select(length == 1) | .[0] |
   select(.revision == $commit and .dirty == false and .auditAccess == "passed" and
     .ingressLogs == "passed" and .passedCases == 10 and
-    (.bundleSha256 | keys) == ["console/api", "console/web", "idp/api", "idp/web"]) |
-  .bundleSha256[$workspace] | select(type == "string" and test("^[0-9a-f]{64}\\z"))
+    (.phases | sort) == ["3", "4", "5", "6", "7", "9", "rotation"] and
+    (.bundleSha256 | keys) == ["console/api", "console/web", "idp/api", "idp/web"] and
+    all(.bundleSha256[]; type == "string" and test("^[0-9a-f]{64}\\z"))) |
+  .bundleSha256[$workspace]
 ' "$scratch/receipt")
 
 reference="$6@$digest"
