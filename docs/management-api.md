@@ -1,11 +1,13 @@
 # Administration and account API
 
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
 These JSON endpoints are on the IAM origin. Send a same-origin `Origin`
 header and `Content-Type: application/json`. Session-bound actions use the IAM
 session cookie. IDs for organizations, members, installations, keys, and
 invitations are UUIDs. OAuth client IDs are a separate identifier.
 
-[Documentation index](README.md) · [HTTP request rules](http-api.md#request-authorization)
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md) · [HTTP request rules](http-api.md#request-authorization)
 
 ## Account actions
 
@@ -94,6 +96,6 @@ actions require recent passkey verification and organization authority.
 | `invite`       | `organizationId`, `email`           | Returns `invitationId` and `notified` for the email notice result.   |
 | `cancel`       | `organizationId`, `invitationId`    | `{ canceled: true }` on success.                                     |
 
-[Admin interaction source](../packages/auth/src/utils/admin-interaction.ts) ·
-[Collection source](../packages/auth/src/utils/admin-access.ts) ·
-[Invitation source](../packages/auth/src/utils/organization-invitations.ts)
+[Admin interaction source](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/auth/src/utils/admin-interaction.ts) ·
+[Collection source](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/auth/src/utils/admin-access.ts) ·
+[Invitation source](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/auth/src/utils/organization-invitations.ts)

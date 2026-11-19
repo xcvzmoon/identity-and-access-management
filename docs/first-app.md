@@ -1,9 +1,11 @@
 # Connect your first private application
 
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
 In this tutorial, you will register the local reference app, sign in through
 IAM, and change the permission that protects its **Read reports** action.
 
-Start [local IAM](local.md#local-setup) with a working SMTP relay and a
+Start [local IAM](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/local.md#local-setup) with a working SMTP relay and a
 disposable organization. Use an existing verified organization owner as
 the administrator. An initial organization and owner are provisioning
 prerequisites. The public product has no organization creation screen or
@@ -34,5 +36,5 @@ route. Use a second verified IAM account as the app user.
 8. Revoke the assignment in IAM. Retry **Read reports**. The app returns
    `401` because the grant is inactive.
 
-[Documentation index](README.md) · [Authorization flow](application-access.md) ·
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md) · [Authorization flow](application-access.md) ·
 [Administration guide](administer.md)

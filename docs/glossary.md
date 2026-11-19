@@ -7,8 +7,8 @@
 | Identity                 | The user account and its stable IAM user ID.                                                                            |
 | Identity provider (IdP)  | The IAM service responsible for authenticating users and issuing tokens to registered apps.                             |
 | Console                  | The IAM web app for managing accounts, organizations, app registrations, and access grants.                             |
-| Verified email           | An email address whose ownership the user proved with the account code flow.                                            |
-| Session                  | A PostgreSQL record for an authenticated IAM browser. An HTTP-only cookie identifies the session.                       |
+| Verified email           | An email address whose ownership the user proved during account verification.                                           |
+| Session                  | Server-side state for an authenticated user. The IdP and console manage their own session state and cookies.            |
 | SSO session              | The user's session with the IdP that registered apps can reuse during sign-in.                                          |
 | Application session      | A user's session with a specific app, established after sign-in.                                                        |
 | App sign-out             | Ending the user's session in one app.                                                                                   |
@@ -23,11 +23,11 @@
 | Permission catalog       | The set of product permission keys defined for an application.                                                          |
 | Installation role        | A named set of app permissions that can be assigned within one installation.                                            |
 | RBAC                     | Role-based access control. IAM checks organization roles for management and installation roles for product permissions. |
-| Grant version            | A binding derived from the assignment and OAuth client credential versions. An earlier binding can become stale.        |
+| Grant version            | The state of an app grant when IAM approves access. A grant change can invalidate that approval.                        |
 | Issuer                   | The canonical IAM origin advertised by discovery and used in tokens.                                                    |
 | OIDC                     | OpenID Connect, the identity protocol apps use for hosted IAM sign-in.                                                  |
 | Confidential client      | A server-side OAuth client that can protect its client secret.                                                          |
-| Authorization code       | A short-lived value the SDK exchanges at the token endpoint with a PKCE verifier and client authentication.             |
+| Authorization code       | A short-lived value the app backend exchanges at the token endpoint with a PKCE verifier and client authentication.     |
 | Callback or redirect URI | The exact pre-registered HTTPS URL that receives the authorization response.                                            |
 | PKCE                     | Proof Key for Code Exchange. The client sends an S256 challenge and then proves possession of the verifier.             |
 | State                    | A client value used to bind an authorization response to its initiating request.                                        |
@@ -39,7 +39,7 @@
 | UserInfo                 | The OIDC endpoint that returns the subject `sub` for a current IAM access token.                                        |
 | JWKS and `kid`           | The JSON Web Key Set publishes public signing keys. A key ID identifies an individual key.                              |
 | Passkey and step-up      | A WebAuthn credential and the extra verification required before sensitive administration.                              |
-| Machine principal        | An installation-scoped identity for an app backend. A machine key authenticates this principal.                         |
+| Machine principal        | An installation-scoped identity for an app backend without a signed-in user. Machine lookup is deferred in v1.          |
 | Runtime role             | The restricted PostgreSQL login the API uses to connect.                                                                |
 | Migration owner          | The PostgreSQL role that owns schema changes and grants runtime privileges.                                             |
 

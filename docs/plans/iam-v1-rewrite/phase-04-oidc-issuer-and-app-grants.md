@@ -1,13 +1,29 @@
-# Phase 4. Move the OIDC issuer and app grants
+# Phase 4. Build the OIDC issuer and app grants
 
 [Implementation plan](overview.md)
 
 ## Changes
 
-- Mount Better Auth's OAuth Provider and JWT handlers on the IdP origin. Expose provider discovery and JWKS, and connect the IAM login and consent screens to the provider's flow. Route the reference app through the new issuer.
-- Give each customer installation a confidential OAuth client, exact registered callbacks, and its own tenant-scoped assignments and roles. Keep the grant checks at authorization and code exchange.
-- Prompt for customer app consent on first authorization and when approved access changes. Scope the first-party consent policy to the reserved console client.
+- Mount Better Auth's OAuth Provider and JWT handlers in `apps/idp/api`.
+  Publish discovery and JWKS at the configured issuer. Connect the
+  sign-in and consent pages in `apps/idp/web` to the provider flow.
+- Store signing keys in IdP-owned persistent storage. Use the evaluated
+  RS256 signing and JWKS path. Phase 9 adds automated rotation.
+- Give each installation a confidential OAuth client, exact callback
+  URLs, and tenant-scoped assignments and roles. Check grants at
+  authorization and code exchange.
+- Ask for customer app consent on first authorization and when approved
+  access changes. Identify the application on the consent page. Reserve
+  the first-party consent exemption for the console registration.
+- Record authorization outcomes in the IdP API, including when SSO is
+  reused. Add a reference server-backed app to exercise the issuer.
 
 ## Verification
 
-Complete Authorization Code with PKCE for the reference app. Verify the issuer, signed ID token, registered callback, and denial for invalid or replayed codes. Register the same app in two organizations and try each tenant's client against the other's grant. Verify first consent, SSO reuse with current consent, and renewed consent after approved access changes.
+Complete Authorization Code with S256 PKCE through the reference app.
+Validate the discovery issuer, ID token, and signing key. Reject an
+unregistered callback, missing PKCE, and invalid or replayed codes.
+Register the same app in two organizations and verify a client cannot
+use the other installation's grant. Revoke a grant between code issuance
+and exchange and verify the exchange fails. Check first consent, SSO
+reuse with current consent, and renewed consent after access changes.

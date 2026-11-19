@@ -4,10 +4,24 @@
 
 ## Changes
 
-- Register the console as a confidential client. Bind the authorization request and callback to a one-time browser transaction with PKCE, state, and nonce. Validate the ID token server-side before creating a session and allow return destinations on the console origin.
-- Store session and token state on the console server and issue a Secure, HTTP-only, host-only console cookie in deployed environments. Move account and admin pages to the console's own session interface. When an access token expires, reauthorize through the existing IdP SSO session or use renewal that was verified against the live revocation rules in phase 1.
-- Offer app sign-out and IAM sign-out. App sign-out clears console session state. IAM sign-out also ends the current IdP SSO session through the IdP flow.
+- Use the first-party registration from Phase 4 in `apps/console/api`.
+  Bind the authorization request and callback to a one-time browser
+  transaction with S256 PKCE, state, and nonce. Validate issuer, audience,
+  nonce, signature, and expiry before creating a session. Allow return
+  destinations on the console origin.
+- Store console session and token state server-side. In deployed
+  environments issue a Secure, HTTP-only, host-only console cookie.
+  Reauthorize through the IdP when a token expires, or verify any renewal
+  path against the live revocation rules before enabling it.
+- Add the signed-in account experience in `apps/console/web`. Allow
+  verified users with zero memberships to manage their own accounts.
+- Offer app sign-out and IAM sign-out. App sign-out clears the console
+  session. IAM sign-out also ends the current SSO session through the IdP.
 
 ## Verification
 
-Use a browser to open a protected console page, sign in on the IdP origin, and return to the requested page. Exercise a verified user with zero memberships, then open a reference app to check SSO reuse. Test unsafe return targets and failed or repeated callbacks. Confirm distinct cookies and exercise expiry and both sign-out actions.
+Open a protected console page and complete the hosted IdP sign-in.
+Verify the browser returns to the requested console page with a separate
+session cookie. Sign in as a verified user with zero memberships and use
+the same SSO session in the reference app. Test unsafe return targets,
+failed and replayed callbacks, expiry, and both sign-out actions.

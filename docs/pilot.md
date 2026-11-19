@@ -1,11 +1,13 @@
 # Validate and contain a pilot
 
-[Documentation index](README.md)
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md)
 
 ## Pilot replica check
 
 Run this check against local builds and the disposable database described in
-the [integration test setup](validation.md#integration-tests). Set
+the [integration test setup](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/validation.md#integration-tests). Set
 `APP_ENV="testing"` and give both Nitro processes the same database variables,
 `AUTH_SECRET`, and canonical issuer `http://127.0.0.1:5173` for both
 `AUTH_URL` and `AUTH_WEB_ORIGIN`. Set `AUTH_IDP_ORIGIN="http://127.0.0.1:5176"`

@@ -2,10 +2,11 @@
 
 ## Deployments
 
-The IdP and console are standalone Nuxt apps. The IdP serves hosted sign-in
-and OIDC endpoints on the issuer origin. It owns the app grants used for
-authorization. The console starts sign-in through OIDC and owns its own
-application session. Both apps can import shared UI components and styles.
+The IdP and console each have a Nuxt web workspace and a Nitro API. The IdP
+serves hosted sign-in and OIDC endpoints on one issuer origin per deployment.
+Its API owns identity and app grants. The console has its own origin, starts
+sign-in through OIDC, and keeps its own application session.
+[Target monorepo structure](architecture.md#target-monorepo-structure)
 
 ## Sign-in
 
@@ -20,7 +21,8 @@ verified account for that address can accept it with their existing account.
 ## Application integrations
 
 The console and customer apps with server backends register as confidential
-OIDC clients. They use Authorization Code with PKCE for interactive sign-in.
+OIDC clients. Each customer app installation has its own registration.
+Clients use Authorization Code with S256 PKCE for interactive sign-in.
 Machine installation lookup is a separate contract. It enters v1 scope only
 if a launch app requires it.
 
@@ -47,13 +49,15 @@ recovery request and records the recovery action in the audit trail.
 
 App sign-out ends the session in that app. IAM sign-out ends the current SSO
 session. The next live access check denies tokens tied to the ended SSO
-session.
+session. Customer app backends make a live check on every protected request
+and deny access when the check is unavailable.
 
 ## Rewrite data
 
 Build and validate the rewrite in a separate database with fresh fixtures.
-The first build has no dependency on POC users, organizations, app grants, or
-client registrations.
+Keep the IdP and console schemas, migrations, and runtime credentials
+separate. The rewrite starts with new users, organizations, grants, and
+registrations.
 
 ## Signing-key operations
 
@@ -75,6 +79,7 @@ Complete sign-in through the console and a reference customer app. Verify
 tenant isolation, next-request revocation, audited owner recovery, and
 signing-key rollover and rollback.
 
-The Better Auth evaluation determines the engine choice. Set the production
-issuer hostname before registering external clients. Define the operator
-recovery procedure and audit retention before the pilot.
+Better Auth passed the engine evaluation. Set the production issuer hostname
+before registering external clients. Define the operator recovery procedure
+and audit retention before the pilot.
+[Evaluation evidence](plans/iam-v1-rewrite/better-auth-evaluation.md)

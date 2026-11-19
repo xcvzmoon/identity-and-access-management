@@ -1,13 +1,15 @@
 # Deploy IAM
 
-[Documentation index](README.md)
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md)
 
 ## Deployment
 
 Build with `vp run build` and deploy the `.output` directories from
 `apps/api`, `apps/idp`, and `apps/web` to separate services. Each starts with
 `node .output/server/index.mjs` from its own app directory. The
-[Dockerfile](../Dockerfile) also provides `api`, `idp`, and `web` targets.
+[Dockerfile](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/Dockerfile) also provides `api`, `idp`, and `web` targets.
 Set `APP_ENV="production"` on the API.
 Set `NUXT_API_URL` on IDP to the API's private HTTP or HTTPS origin.
 
@@ -77,7 +79,7 @@ that origin for the issuer and protocol endpoints. Use that public URL for
 fixture with its own CA, set `NODE_EXTRA_CA_CERTS` to the CA certificate so
 the SDK can verify TLS.
 
-Include the [HTTPS response headers](../apps/web/ops/nginx/iam-https-headers.conf) in the
+Include the [HTTPS response headers](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/apps/web/ops/nginx/iam-https-headers.conf) in the
 IAM TLS `server { … }` block. The pilot policy sets HSTS for one day on the
 IAM hostname and sends `X-Content-Type-Options: nosniff`. Nginx adds both
 headers to redirects and error responses. Keep any plain HTTP listener
@@ -91,7 +93,7 @@ sign-in redirect, and an upstream error.
 ### Ingress logging
 
 Use a dedicated Nginx instance for the IAM ingress. Include the
-[IAM logging configuration](../apps/web/ops/nginx/iam-http-logging.conf) inside
+[IAM logging configuration](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/apps/web/ops/nginx/iam-http-logging.conf) inside
 `http { … }`. Enable its access log for the IAM `server { … }` block.
 
 ```nginx

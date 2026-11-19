@@ -1,6 +1,8 @@
 # Troubleshoot IAM
 
-[Documentation index](README.md)
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md)
 
 ## Common setup failures
 

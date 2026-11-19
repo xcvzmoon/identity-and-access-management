@@ -1,12 +1,14 @@
 # Application access
 
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
 An organization registers an application and receives a private installation
 and a confidential OAuth client. The installation is the scope for member
 assignments, app roles, credentials, and audit activity. Registration creates
 no member assignments. An organization role gives a member administrative
 powers for that organization. App access requires an explicit assignment.
 
-[Documentation index](README.md) · [Application administration](administer.md)
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md) · [Application administration](administer.md)
 
 ## Tenant and role boundaries
 

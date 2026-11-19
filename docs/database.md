@@ -1,6 +1,8 @@
 # Database reference
 
-[Documentation index](README.md)
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md)
 
 `@iam/database` owns the PostgreSQL pool, schema, relations, and migrations.
 The workspace catalog pins the `postgres` driver, Drizzle ORM, and Drizzle Kit.
@@ -9,7 +11,7 @@ See the [database operations guide](database-operations.md) for deployment and r
 ## Configuration
 
 Run `vp run create-env` from the repository root and fill in the PostgreSQL
-connection details for your existing server. The [database example](../packages/database/.env.example)
+connection details for your existing server. The [database example](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/.env.example)
 shows the values written to `packages/database/.env`.
 
 | Variable                 | Use                                                                                                                                                                      |
@@ -25,7 +27,7 @@ shows the values written to `packages/database/.env`.
 The migration and application commands use the same validated settings.
 The API container can reach the host through `host.docker.internal`, with
 `DOCKER_DB_HOST` available as a Compose override. See the
-[container setup](local.md#containers).
+[container setup](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/local.md#containers).
 
 ### PostgreSQL TLS in deployment
 
@@ -60,8 +62,8 @@ shutdown. Keep database operations in server code.
 
 ## Authentication tables
 
-The definitions are in [the auth schema](../packages/database/src/schema/auth.ts). The Drizzle
-Relations v2 mappings are in [relations.ts](../packages/database/src/relations.ts).
+The definitions are in [the auth schema](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/schema/auth.ts). The Drizzle
+Relations v2 mappings are in [relations.ts](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/relations.ts).
 
 | Table               | Stored data                                                                             |
 | ------------------- | --------------------------------------------------------------------------------------- |
@@ -86,12 +88,12 @@ Raw SQL inserts must supply their own IDs. `generateTimestamps()` adds
 creation, update, and nullable deletion columns. Drizzle updates `updatedAt`
 on writes through its runtime hook. Timestamps use millisecond precision
 and time zones. The audit variant adds actor IDs for callers that supply
-them. See the [column helpers](../packages/database/src/helpers/index.ts).
+them. See the [column helpers](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/helpers/index.ts).
 
 Organization, application, role, OAuth, and machine-key tables live in the
 same schema. Installation and role relations preserve app and organization
 boundaries. The application grant joins a member to an installation.
-[Schema exports](../packages/database/src/schema/index.ts) · [App assignments](administer.md#application-permissions-and-assignments)
+[Schema exports](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/schema/index.ts) · [App assignments](administer.md#application-permissions-and-assignments)
 
 ## Organizations and application access
 
@@ -136,9 +138,9 @@ installation and membership. Role permission links include the app ID.
 Assignment role links include the installation ID. These constraints back
 the tenant checks in the service.
 
-[Organization schema](../packages/database/src/schema/organizations.ts) ·
-[Applications schema](../packages/database/src/schema/applications.ts) ·
-[Roles schema](../packages/database/src/schema/application-roles.ts)
+[Organization schema](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/schema/organizations.ts) ·
+[Applications schema](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/schema/applications.ts) ·
+[Roles schema](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/schema/application-roles.ts)
 
 ## Provider and credential tables
 
@@ -153,9 +155,9 @@ the tenant checks in the service.
 | `api_keys`                                                             | Better Auth machine key hashes, configuration and ownership references, quotas, and lifecycle fields.                                                      |
 | `app_machine_principals`, `app_machine_keys`                           | Installation principals and the link between each principal and its current key.                                                                           |
 
-[OAuth schema](../packages/database/src/schema/oauth.ts) ·
-[Passkey schema](../packages/database/src/schema/passkeys.ts) ·
-[Machine key schema](../packages/database/src/schema/application-machine-keys.ts)
+[OAuth schema](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/schema/oauth.ts) ·
+[Passkey schema](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/schema/passkeys.ts) ·
+[Machine key schema](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/schema/application-machine-keys.ts)
 
 ## Access functions
 
@@ -180,8 +182,8 @@ installation, membership, and catalog relationships inside the transaction.
 An app access event records the change. Auth entry points check the administrator
 session and recent passkey verification before invoking the writes.
 
-[Access function source](../packages/database/src/utils/application-access.ts) ·
-[Management function source](../packages/database/src/utils/manage-application-access.ts)
+[Access function source](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/utils/application-access.ts) ·
+[Management function source](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/src/utils/manage-application-access.ts)
 
 ## Migration history
 
@@ -189,15 +191,15 @@ Migration directories contain the SQL and its corresponding Drizzle snapshot.
 Apply them in timestamp order. The history table is in the separate `drizzle`
 schema. Use the [migration procedure](database-operations.md#schema-and-migrations).
 
-| Migration                                                                                                                                  | Main change                                                                          |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| [`iam_auth`](../packages/database/drizzle/20261117105447_iam_auth/migration.sql)                                                           | Creates `iam` and the core auth tables.                                              |
-| [`app_registration`](../packages/database/drizzle/20261118000430_app_registration/migration.sql)                                           | Adds organizations, membership, invitations, private apps, clients, and assignments. |
-| [`oauth_provider_storage`](../packages/database/drizzle/20261118000906_oauth_provider_storage/migration.sql)                               | Adds provider tables, the OAuth client foreign key, and JWKS.                        |
-| [`application_rbac`](../packages/database/drizzle/20261118001252_application_rbac/migration.sql)                                           | Adds app permission catalogs, installation roles, links, and audit events.           |
-| [`application_grant_version`](../packages/database/drizzle/20261118003050_application_grant_version/migration.sql)                         | Adds an assignment grant version.                                                    |
-| [`application_client_credential_version`](../packages/database/drizzle/20261118003558_application_client_credential_version/migration.sql) | Adds an OAuth credential version for each client binding.                            |
-| [`application_machine_keys`](../packages/database/drizzle/20261118004219_application_machine_keys/migration.sql)                           | Adds API key records and installation principal bindings.                            |
-| [`admin_passkeys`](../packages/database/drizzle/20261118005604_admin_passkeys/migration.sql)                                               | Adds passkey storage and session step-up fields.                                     |
-| [`retire_eddsa_signing_keys`](../packages/database/drizzle/20261118050454_retire_eddsa_signing_keys/migration.sql)                         | Retires EdDSA signing keys during the switch to RS256.                               |
-| [`revoke_unverified_sessions`](../packages/database/drizzle/20261118090330_revoke_unverified_sessions/migration.sql)                       | Removes sessions for accounts with unverified email.                                 |
+| Migration                                                                                                                                                                                                                                        | Main change                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| [`iam_auth`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261117105447_iam_auth/migration.sql)                                                           | Creates `iam` and the core auth tables.                                              |
+| [`app_registration`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118000430_app_registration/migration.sql)                                           | Adds organizations, membership, invitations, private apps, clients, and assignments. |
+| [`oauth_provider_storage`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118000906_oauth_provider_storage/migration.sql)                               | Adds provider tables, the OAuth client foreign key, and JWKS.                        |
+| [`application_rbac`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118001252_application_rbac/migration.sql)                                           | Adds app permission catalogs, installation roles, links, and audit events.           |
+| [`application_grant_version`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118003050_application_grant_version/migration.sql)                         | Adds an assignment grant version.                                                    |
+| [`application_client_credential_version`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118003558_application_client_credential_version/migration.sql) | Adds an OAuth credential version for each client binding.                            |
+| [`application_machine_keys`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118004219_application_machine_keys/migration.sql)                           | Adds API key records and installation principal bindings.                            |
+| [`admin_passkeys`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118005604_admin_passkeys/migration.sql)                                               | Adds passkey storage and session step-up fields.                                     |
+| [`retire_eddsa_signing_keys`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118050454_retire_eddsa_signing_keys/migration.sql)                         | Retires EdDSA signing keys during the switch to RS256.                               |
+| [`revoke_unverified_sessions`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/database/drizzle/20261118090330_revoke_unverified_sessions/migration.sql)                       | Removes sessions for accounts with unverified email.                                 |

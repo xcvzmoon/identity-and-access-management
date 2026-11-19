@@ -1,9 +1,11 @@
 # HTTP API reference
 
-[Documentation index](README.md)
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md)
 
 The Nitro service provides the HTTP API and the OIDC issuer. The API shares
-the web origin. IDP serves auth pages from its own origin. See the [local setup](local.md)
+the web origin. IDP serves auth pages from its own origin. See the [local setup](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/local.md)
 and [deployment guide](deployment.md).
 The [auth package](auth-package.md) defines the credential and
 session policies.
@@ -13,7 +15,7 @@ session policies.
 Locally, the API listens on port 3000 and the public IAM origin is
 `http://localhost:5173`. Set the auth and database variables in the process
 environment for staging and production. Local setup uses the workspace dotenv
-files. [Local setup](local.md#local-setup)
+files. [Local setup](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/local.md#local-setup)
 
 | Setting                   | Purpose                                                                                                                    |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -32,12 +34,12 @@ production require HTTPS. Keep relay credentials in the API's secret store.
 Configure trusted proxies to replace incoming forwarding headers.
 [Ingress and TLS](deployment.md#tls-at-ingress)
 
-The [lifecycle plugin](../apps/api/server/plugins/lifecycle.ts) initializes auth at startup.
+The [lifecycle plugin](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/apps/api/server/plugins/lifecycle.ts) initializes auth at startup.
 The shared PostgreSQL pool opens connections on demand and closes at shutdown.
 
 ## Authentication routes
 
-The [auth handler](../apps/api/server/api/auth/%5B...all%5D.ts) exposes an explicit
+The [auth handler](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/apps/api/server/api/auth/%5B...all%5D.ts) exposes an explicit
 method and path allowlist under `/api/auth`. Use the hosted OIDC flow for
 registered applications. [OIDC integration](integrate-app.md#registered-application-sign-in)
 
@@ -81,7 +83,7 @@ sessions. Users with unverified accounts can set a password through the
 The middleware exception matches `/api/auth` and its child paths, plus
 explicit hosted endpoints. A path such as `/api/authentication` requires a
 session. Browser preflights may request `Content-Type` and `Authorization`.
-[Middleware implementation](../apps/api/server/middleware/auth.ts)
+[Middleware implementation](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/apps/api/server/middleware/auth.ts)
 
 ### Authentication responses
 
@@ -177,7 +179,7 @@ Hosted interaction responses use `Cache-Control: no-store` and
 
 See [account and management contracts](management-api.md) for the
 administrator routes and their inputs. The complete auth gateway allowlist
-is in the [auth handler](../apps/api/server/api/auth/%5B...all%5D.ts).
+is in the [auth handler](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/apps/api/server/api/auth/%5B...all%5D.ts).
 
 ## Machine installation lookup
 

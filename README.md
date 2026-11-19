@@ -1,20 +1,19 @@
 # Identity and Access Management
 
-IAM signs users in and controls who can use registered applications. Web
-serves account and admin pages. The Identity Provider (IDP) serves
-authentication pages. The Nitro API handles authentication and publishes the
-OpenID Connect (OIDC) issuer. IDP has its own public URL. Web and the API share the issuer origin. PostgreSQL stores identities, sessions, organization membership,
-application grants, and audit events.
+IAM v1 is an OpenID Connect (OIDC) issuer for organization-owned applications.
+The IdP will host sign-in, issue tokens, and enforce app grants. The console
+will use the IdP for sign-in and manage accounts, organizations, and app access.
 
-Start with the [documentation index](docs/README.md). It links to the
-architecture, request flows, references, and operations guides.
+The repository contains the IdP and console scaffolds. Each has a Nuxt web
+workspace and a Nitro API workspace. Better Auth passed the engine evaluation.
+The implementation plan tracks what remains before the external pilot.
 
-| Goal                                         | Where to start                                                                     |
-| -------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Run IAM on your machine                      | [Local setup](docs/local.md#local-setup) or [containers](docs/local.md#containers) |
-| Review the implementation                    | [Reviewer guide](docs/review.md)                                                   |
-| Register an app and assign access            | [Administration guide](docs/administer.md)                                         |
-| Try a complete sign-in and permission change | [First app tutorial](docs/first-app.md)                                            |
-| Connect an app                               | [OIDC and machine access](docs/integrate-app.md)                                   |
-| Deploy or operate IAM                        | [Deployment](docs/deployment.md) and [pilot checks](docs/pilot.md)                 |
-| Find a route, setting, table, or function    | [Reference index](docs/README.md#reference)                                        |
+| Goal                                       | Where to start                                                              |
+| ------------------------------------------ | --------------------------------------------------------------------------- |
+| Find a workspace or see who owns a feature | [Target monorepo structure](docs/architecture.md#target-monorepo-structure) |
+| Run the four workspaces locally            | [Local setup](docs/local.md)                                                |
+| See what ships in v1                       | [Launch scope](docs/rewrite-scope.md)                                       |
+| Follow the rewrite                         | [Implementation plan](docs/plans/iam-v1-rewrite/overview.md)                |
+| Reproduce the Better Auth evaluation       | [Evaluation evidence](docs/plans/iam-v1-rewrite/better-auth-evaluation.md)  |
+
+[Documentation index](docs/README.md)

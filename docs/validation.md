@@ -1,8 +1,10 @@
 # Validate changes
 
-[Documentation index](README.md)
+[Documentation index](README.md) · [Local setup](local.md)
 
-## Validation
+## Workspace checks
+
+Run these commands from the repository root.
 
 ```sh
 vp check
@@ -11,89 +13,23 @@ vp run typecheck
 vp run build
 ```
 
-### Integration tests
+The root suite includes workspace discovery checks. For a local startup
+check, open both web scaffold pages and request `/api/hello` from each API.
+These checks cover the scaffolds and workspace tooling.
 
-Use a disposable PostgreSQL database named `iam` on `127.0.0.1`. Give the
-`iam` role ownership. The tests use password `disposable` or local trust
-authentication. They create and delete test records.
+## Integration tests
 
-The following commands use a fixture on port 55439.
+The [Better Auth evaluation](plans/iam-v1-rewrite/better-auth-evaluation.md#run-the-fixture)
+has its own dependencies and disposable database. Its results support the
+engine choice. The v1 workspaces need their own verification as they gain
+the database and auth flows.
 
-```sh
-APP_ENV="testing" DB_HOST="127.0.0.1" DB_PORT="55439" DB_USER="iam" \
-	DB_PASSWORD="disposable" DB_DATABASE="iam" DB_SSL="false" \
-	vp run packages:database migrate
+| Fixture                   | Required checks                                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Fresh PostgreSQL database | Apply each API's migrations with its own credentials. Check runtime access within each schema and denied reads and writes across schemas. [Phase 2](plans/iam-v1-rewrite/phase-02-establish-apps-and-storage.md)         |
+| Browser and reference app | Verify invitation acceptance, recovery, OIDC, consent, tenant isolation, and console sessions. [Phases 3 to 6](plans/iam-v1-rewrite/overview.md#phases)                                                                  |
+| Two IdP processes         | Use one test issuer and database. Revoke an app grant or end SSO through one process, then verify the next protected request through the other. [Phase 5](plans/iam-v1-rewrite/phase-05-live-access-and-iam-sign-out.md) |
+| Packaged pilot deployment | Test two IdP replicas, owner recovery, rotation and rollback, and backup and restore. [Phase 10](plans/iam-v1-rewrite/phase-10-external-pilot.md)                                                                        |
 
-AUTH_TEST_DB_PORT="55439" vp test --run apps/api/tests
-```
-
-The API tests run in process. The static web and hosted OIDC tests also need
-running API, IDP, and web builds against the fixture. [Web integration test setup](#hosted-web-fixtures)
-
-## API validation
-
-```sh
-vp run apps:api typecheck
-vp test --run apps/api/tests
-```
-
-Set `AUTH_TEST_DB_PORT` to run tests against a disposable PostgreSQL fixture.
-[Integration test setup](#integration-tests)
-
-## Hosted web fixtures
-
-```sh
-vp run apps:web typecheck
-vp run build
-```
-
-Start the built API against a disposable migrated PostgreSQL database, then
-start the built IDP and web services. Set `AUTH_API_TEST_URL` to the direct API URL
-to check that the API port stays separate from the page services. Set
-`AUTH_IDP_TEST_URL` to the public IDP origin for web and hosted OIDC tests.
-Set `AUTH_TEST_DB_PORT` to its database port and `AUTH_WEB_TEST_URL` to
-the IAM origin when running the static web, administrator, and machine tests.
-
-```sh
-AUTH_TEST_DB_PORT="55439" AUTH_WEB_TEST_URL="http://localhost:5173" \
-  AUTH_API_TEST_URL="http://localhost:3000" \
-  AUTH_IDP_TEST_URL="http://localhost:5176" \
-  vp test apps/web/tests/static-web.integration.test.ts
-```
-
-The suite checks delivery of the UI and JavaScript assets, auth redirects, credentialed
-signup and sign-in, and the Better Auth session lifecycle.
-
-## Database validation
-
-```sh
-vp run packages:database build
-vp run packages:database typecheck
-vp run packages:database check
-vp run test packages/database/tests
-```
-
-Use `vp run build` first on a fresh checkout to build the shared utility
-entry point that this package consumes. Unit tests cover configuration,
-runtime defaults, and lazy pool reuse. The [API integration
-suite](#api-validation) covers real auth queries against
-a disposable PostgreSQL database.
-
-## Select the fixture for the change
-
-| Fixture                      | Cases and setup                                                                                                                                                                                                       |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Default `vp test --run`      | Unit and in-memory provider tests, workspace discovery, environment validation, auth surface checks, and client validation. Fixture-dependent cases skip when their settings are missing.                             |
-| Disposable PostgreSQL        | Set `AUTH_TEST_DB_PORT` for real database access and middleware tests, recovery, invitations, ownership, and private app access.                                                                                      |
-| Built IAM and browser assets | Set `AUTH_WEB_TEST_URL` to the running IAM origin and `AUTH_TEST_DB_PORT` to its database port. Cover UI delivery, browser sessions, and machine keys. Export the fixture's `AUTH_SECRET` for the admin passkey test. |
-| Hosted OIDC                  | Set `AUTH_OIDC_TEST_URL` and `AUTH_TEST_DB_PORT`. Some cases require the fixture's `AUTH_SECRET` to arrange database or provider state.                                                                               |
-| Replica and outage rehearsal | Add `AUTH_OIDC_REPLICA_TEST_URL` and `AUTH_OIDC_UNAVAILABLE_TEST_URL` for the second replica and outage fixture.                                                                                                      |
-| Issuer key rotation          | Use a fresh migrated database. Set `AUTH_SIGNING_KEY_ROTATION_TEST="true"` and `AUTH_TEST_DB_PORT`.                                                                                                                   |
-
-For a local-only run, record the skipped tests as skips. Hosted and replica
-checks require an actual running build. Run the replica rehearsal against a
-fresh database to avoid consuming the shared rate limits with a different
-suite. Keep fixture secrets and the test database separate from deployed
-environments.
-
-[Review coverage matrix](review.md#review-matrix) · [Replica setup](pilot.md#pilot-replica-check)
+Run integration tests against disposable data. Record which checks ran, which
+were skipped, and which fixture and deployment each result covers.

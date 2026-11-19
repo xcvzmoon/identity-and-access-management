@@ -1,12 +1,20 @@
-# Phase 8. Record app authorization outcomes
+# Phase 8. Verify authorization audit and retention
 
 [Implementation plan](overview.md)
 
 ## Changes
 
-- Record an outcome at the IdP's app authorization decision. Include the app registration, organization, timestamp, outcome, and the user ID when known. Record reuse of SSO through the same event path as interactive login.
-- Use a restricted audit store or sink. Define who can read it and how long to retain events before the pilot. Keep credentials, authorization codes, cookies, and token values out of events and ingress logs.
+- Review the IdP authorization events added in Phase 4 and the recovery
+  events added in Phase 7. Each authorization outcome records the app
+  registration, organization, timestamp, outcome, and user ID when known.
+- Restrict access to the audit store or sink. Define who can read events
+  and how long they are retained. Exclude credentials, authorization
+  codes, cookies, and token values from events and ingress logs.
 
 ## Verification
 
-Compare records for interactive login, SSO reuse, and denied authorization. Confirm that app and organization IDs come from the resolved registration. Inspect the event payload and logs for redaction. Verify that runtime and operator access to audit data matches the deployment roles.
+Compare records for authorization after password entry, SSO reuse, and
+denied authorization. Verify the app and organization come from the
+resolved registration. Check the recovery trail and exercise audit
+access and retention under the intended roles. Inspect event payloads
+and logs for secret and token redaction.

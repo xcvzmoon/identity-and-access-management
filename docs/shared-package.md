@@ -1,6 +1,8 @@
 # Shared package reference
 
-[Documentation index](README.md)
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md)
 
 `@iam/shared` provides Valibot contracts and environment validation.
 The package exposes data schemas and server configuration through separate
@@ -13,7 +15,7 @@ import paths.
 
 ## Auth data contracts
 
-The [type modules](../packages/shared/src/types/index.ts) derive their Valibot schemas from the
+The [type modules](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/shared/src/types/index.ts) derive their Valibot schemas from the
 [database schema](database.md#authentication-tables). Each group
 exports `select…Schema`, `input…Schema`, and `update…Schema`, along with the
 inferred select, insert, and update types.
@@ -38,11 +40,11 @@ const sessionUserSchema = v.pick(selectUserSchema, ['id', 'email', 'name', 'emai
 type SessionUser = v.InferOutput<typeof sessionUserSchema>;
 ```
 
-[HTTP session response](../apps/api/server/utils/auth-http.ts)
+[HTTP session response](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/apps/api/server/utils/auth-http.ts)
 
 ## Environment validation
 
-[`useEnv()`](../packages/shared/src/utils/env.ts) validates configuration against a schema and
+[`useEnv()`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/shared/src/utils/env.ts) validates configuration against a schema and
 returns inferred types. The helper reads files and process variables without
 mutating `process.env`. Call it from server initialization so callers receive
 validated values.
@@ -59,7 +61,7 @@ invalid settings throw validation errors. Relative workspace paths resolve
 from the working directory, and absolute paths work regardless of it. File
 lookup stays within the explicit workspace path.
 
-[`booleanSchema`](../packages/shared/src/utils/schema.ts) accepts the strings `"true"` and
+[`booleanSchema`](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/shared/src/utils/schema.ts) accepts the strings `"true"` and
 `"false"` and returns a boolean. A missing value defaults to `false`.
 
 ### Example configuration
@@ -117,5 +119,5 @@ vp run packages:shared typecheck
 vp run packages:shared test
 ```
 
-The [environment tests](../packages/shared/tests/env.test.ts) cover file lookup, process
+The [environment tests](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/packages/shared/tests/env.test.ts) cover file lookup, process
 precedence, explicit sources, environment inference, and validation errors.

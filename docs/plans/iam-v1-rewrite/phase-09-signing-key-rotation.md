@@ -1,13 +1,24 @@
 # Phase 9. Automate signing-key rotation
 
-[Implementation plan](overview.md) · [Current rotation runbook](../../pilot.md#rotate-the-issuer-signing-key)
+[Implementation plan](overview.md)
 
 ## Changes
 
-- Carry forward serialized key publication and activation in the shared key store. Define the schedule and overlap using client JWKS cache behavior and token lifetimes.
-- Automate staged publication, activation, and status reporting. Rehearse rollback to a trusted, published key and document the separate emergency procedure for a compromised key.
-- Keep signing-key material in the IdP's security boundary. Give the scheduler or operator task the privileges needed for rotation and record key IDs and outcomes in operational logs.
+- Use the persistent IdP key store from Phase 4. Keep private keys
+  encrypted inside the IdP boundary. Serialize publication and
+  activation so issuer processes observe the same active key.
+- Automate routine publication, activation, overlap, and status reporting.
+  Define the wait before activation using client JWKS cache behavior.
+  Retain previous public keys for the lifetime of tokens they signed.
+- Document rollback to a trusted published key and the emergency
+  procedure for a compromised key. Record key IDs and outcomes in
+  operational logs.
 
 ## Verification
 
-With at least two replicas, stage a replacement and compare JWKS from both. Check that issuers keep using the current key while caches refresh, then verify that new tokens carry the new key ID and still-valid old tokens verify. Repeat with scheduler retries and rehearse rollback. Check the operator alert for a failed or stalled rotation.
+Stage a replacement and compare JWKS from two IdP processes. Verify
+signing stays on the current key during the publication window, then
+verify new tokens use the new key ID and unexpired old tokens still
+validate. Exercise scheduler retries, failed-rotation alerts, and rollback.
+Automated routine rotation and a rollback rehearsal are required before
+the first external customer.

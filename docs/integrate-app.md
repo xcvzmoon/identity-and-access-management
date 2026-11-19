@@ -1,6 +1,8 @@
 # Integrate an application
 
-[Documentation index](README.md)
+> **POC reference.** This guide documents the retired implementation. For the v1 rewrite, see the [current docs](README.md#v1-rewrite).
+
+[Documentation index](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/docs/README.md)
 
 ## Registered application sign-in
 
@@ -25,7 +27,7 @@ the public host and scheme at the trusted reverse proxy. Keep the token exchange
 
 ## Run the reference client
 
-The [reference client](../apps/web/examples/oidc-client.ts) runs a separate Node HTTPS
+The [reference client](https://github.com/xcvzmoon/identity-and-access-management/blob/31d96060a63a7613d10e7634a49c1822687c5381/apps/web/examples/oidc-client.ts) runs a separate Node HTTPS
 server and uses `openid-client` for discovery, sign-in, introspection, and
 revocation. To try it with local IAM, run IAM at `http://localhost:5173` and
 register a private app with the callback `https://reports.localhost:8443/callback`.

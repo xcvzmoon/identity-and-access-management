@@ -1,81 +1,36 @@
-# Run IAM locally
+# Run the IAM workspaces locally
 
-[Documentation index](README.md)
+[Documentation index](README.md) · [Workspace reference](development.md)
 
 ## Local setup
 
-Install Vite+ and OpenSSL. Make a PostgreSQL server reachable from your machine.
-Run the following steps from the repository root.
+Install Vite+ and run `vp install` from the repository root. Start each
+workspace you need in its own terminal.
 
-1. Install the pinned dependencies and build the workspace.
+| Workspace   | Command                          | Local address                      |
+| ----------- | -------------------------------- | ---------------------------------- |
+| IdP web     | `vp -C apps/idp/web run dev`     | `http://localhost:3000` by default |
+| IdP API     | `vp -C apps/idp/api run dev`     | `http://localhost:65430/api/hello` |
+| Console web | `vp -C apps/console/web run dev` | `http://localhost:3001`            |
+| Console API | `vp -C apps/console/api run dev` | `http://localhost:65431/api/hello` |
 
-   ```sh
-   vp install
-   vp run build
-   ```
+Use the port printed by the dev server if the default is busy. The web
+workspaces serve their scaffold pages. Both API examples return
+`{"message":"Hello from Nitro!"}`. These entry points are for checking the
+workspaces. The public issuer and sign-in flows are part of the rewrite.
 
-2. Create the local environment files.
+## Database settings
 
-   ```sh
-   vp run create-env
-   ```
-
-   Fill in the database settings when prompted. Review the generated settings
-   before running migrations. The command writes a Better Auth secret and
-   preserves configured files by default. Keep secrets local and use double
-   quotes for dotenv values. [Auth example](../packages/auth/.env.example) ·
-   [Database example](../packages/database/.env.example)
-
-3. Apply the pending migrations and start IAM.
-
-   ```sh
-   vp run packages:database migrate
-   AUTH_IDP_ORIGIN="http://localhost:5176" vp run apps:api preview
-   ```
-
-   Start IDP and web in separate terminals.
-
-   ```sh
-   vp -C apps/idp run preview
-   ```
-
-   ```sh
-   vp run apps:web preview
-   ```
-
-   The migration command can create a missing database when the role has
-   `CREATEDB` and access to the `postgres` maintenance database.
-   [Migration requirements](database-operations.md#schema-and-migrations)
-
-4. Set `AUTH_SMTP_URL` and `AUTH_SMTP_FROM` before testing email codes.
-   Restart IAM if you change its settings after startup. Open
-   `http://localhost:5176/signup`. Use the emailed code to verify ownership
-   and set a password before signing in. [SMTP settings](http-api.md#configuration)
-
-Rebuild the app you edited with `vp run apps:web build` or
-`vp -C apps/idp run build`.
-Run `vp run build` when you change a shared package. If you run `vp run create-env --force`, the command
-replaces the local settings and rotates the auth secret. A new secret
-invalidates existing sessions. Retain the corresponding secret version
-for any local database backup that contains encrypted issuer keys.
+When working on database code, copy each API's `.env.example` to `.env` in
+that API directory if the file is missing. Fill in your local PostgreSQL
+credentials and keep dotenv values double-quoted. The scaffold pages and
+the `/api/hello` routes can run without a database. Phase 2 defines the
+fresh database, schema ownership, roles, and first migrations.
+[IdP example](../apps/idp/api/.env.example) · [Console example](../apps/console/api/.env.example) · [Phase 2](plans/iam-v1-rewrite/phase-02-establish-apps-and-storage.md)
 
 ## Containers
 
-Configure the local environment files and run database migrations first.
-Then start the API, IDP, and web services.
-
-```sh
-vp run docker up
-vp run docker ps
-vp run docker logs --follow
-```
-
-Open web at `http://localhost:5173`. Web redirects auth pages to IDP at
-`http://localhost:5176`. IDP submits auth requests to `http://localhost:5173`,
-which forwards API calls and OIDC discovery to port 3000. Use `localhost`
-for both browser URLs. The API
-container uses `host.docker.internal` to reach PostgreSQL on the host. Set
-`DOCKER_DB_HOST` if your database uses a different reachable host.
-
-Use `--container docker` or `--container kiri` to select an engine. Run
-`vp run docker --help` for the available commands.
+The checked-in Dockerfile and Compose configuration target the retired POC.
+Run the four workspaces directly during scaffold development. V1 images and
+ingress are tracked in the pilot plan.
+[Pilot phase](plans/iam-v1-rewrite/phase-10-external-pilot.md)

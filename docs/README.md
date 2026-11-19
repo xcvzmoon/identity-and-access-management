@@ -1,22 +1,19 @@
 # IAM documentation
 
-IAM is an identity provider for organization-owned applications. An application
-can send users to the IAM sign-in page over OpenID Connect (OIDC). Organization
-admins decide who can use each app and which app permissions each member gets.
+## V1 rewrite
 
-## Understand the system
-
-| Document                                      | What you can learn                                                               |
-| --------------------------------------------- | -------------------------------------------------------------------------------- |
-| [Reviewer guide](review.md)                   | Review order, security invariants, and where tests cover them                    |
-| [Architecture](architecture.md)               | Deployment topology, trust boundaries, and request dispatch                      |
-| [Identity and account lifecycle](identity.md) | Signup, email codes, sign-in, sessions, and admin passkeys                       |
-| [Application access](application-access.md)   | Tenant isolation, app roles, the OIDC exchange, credential types, and revocation |
-| [Glossary](glossary.md)                       | IAM, database, and protocol terms used in the docs                               |
+| Document                                                                 | What it covers                                                    |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| [Architecture and target monorepo structure](architecture.md)            | The four workspaces, deployment boundaries, and feature ownership |
+| [Launch scope](rewrite-scope.md)                                         | Account, app integration, sign-out, and pilot requirements        |
+| [Implementation plan](plans/iam-v1-rewrite/overview.md)                  | Phase status, dependencies, and acceptance checks                 |
+| [Better Auth evaluation](plans/iam-v1-rewrite/better-auth-evaluation.md) | Engine decision, observed results, and reproduction commands      |
+| [Local setup](local.md)                                                  | Start the Nuxt and Nitro workspaces                               |
+| [Workspace reference](development.md)                                    | Package names, scripts, and build outputs                         |
+| [Validation](validation.md)                                              | Current workspace checks and planned integration coverage         |
+| [Glossary](glossary.md)                                                  | Terms used in the rewrite                                         |
 
 ### Rewrite decisions
-
-[Launch scope](rewrite-scope.md) · [Implementation plan](plans/iam-v1-rewrite/overview.md)
 
 - [IAM owns the OIDC issuer](adr/0001-iam-owns-the-oidc-issuer.md)
 - [Operate the OIDC engine](adr/0002-operate-the-oidc-engine.md)
@@ -24,33 +21,15 @@ admins decide who can use each app and which app permissions each member gets.
 - [Check app grants live](adr/0004-check-app-grants-live.md)
 - [Register one OAuth client per app installation](adr/0005-register-one-client-per-installation.md)
 
-## Learn by doing
+## POC reference
 
-[Connect your first private application](first-app.md) with the reference
-client. Grant a role and see how a permission change takes effect.
+These guides describe the implementation retired before the rewrite scaffolds
+were added. Use the POC revision to look up its routes, examples, and source.
+[Last POC revision](https://github.com/xcvzmoon/identity-and-access-management/tree/31d96060a63a7613d10e7634a49c1822687c5381)
 
-## Use and operate IAM
-
-| Task                                                          | Guide                                                               |
-| ------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Start a local service or container                            | [Run IAM locally](local.md)                                         |
-| Verify an email or reset a password                           | [Recover an account](account.md)                                    |
-| Invite members, register an app, or change permissions        | [Manage organizations and apps](administer.md)                      |
-| Connect an OIDC client or a machine                           | [Integrate an application](integrate-app.md)                        |
-| Configure the issuer, ingress, and logging                    | [Deploy IAM](deployment.md)                                         |
-| Check a pilot, contain a client, or rotate a signing key      | [Pilot and signing key operations](pilot.md)                        |
-| Apply migrations, grant runtime access, or restore a database | [PostgreSQL operations](database-operations.md)                     |
-| Monitor activity, expire records, or delete an account        | [Audit and deletion](privacy-operations.md)                         |
-| Build, test, or diagnose the service                          | [Validation](validation.md) · [Troubleshooting](troubleshooting.md) |
-
-## Reference
-
-| Document                                            | What you can look up                                                            |
-| --------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [HTTP API](http-api.md)                             | Route and method allowlist, request controls, response status, and audit fields |
-| [Administration and account API](management-api.md) | JSON actions, input fields, response shapes, and actor requirements             |
-| [Browser UI](browser.md)                            | Pages, route guards, component and composable responsibilities                  |
-| [Auth package](auth-package.md)                     | Exports, policy modules, key settings, and credential rules                     |
-| [Database](database.md)                             | Connection settings, schema, access functions, and migration history            |
-| [Shared package](shared-package.md)                 | Auth row schemas, environment validation, and import paths                      |
-| [Workspace](development.md)                         | Build order, scripts, tests, lint rules, and release configuration              |
+| Area                     | Historical guides                                                                                                                                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System and request flows | [Review](review.md), [Identity](identity.md), [Application access](application-access.md), [HTTP API](http-api.md), [Browser UI](browser.md)                                      |
+| Product workflows        | [Account recovery](account.md), [Administration](administer.md), [Management API](management-api.md), [First app tutorial](first-app.md), [App integration](integrate-app.md)     |
+| Operations               | [Deployment](deployment.md), [Pilot](pilot.md), [Database operations](database-operations.md), [Privacy operations](privacy-operations.md), [Troubleshooting](troubleshooting.md) |
+| Packages                 | [Auth](auth-package.md), [Database](database.md), [Shared](shared-package.md)                                                                                                     |

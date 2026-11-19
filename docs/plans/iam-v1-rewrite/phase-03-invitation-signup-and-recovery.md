@@ -4,10 +4,26 @@
 
 ## Changes
 
-- Bind new account creation to an eligible organization invitation for the invited email. Let a matching verified user accept with their existing account.
-- Move verified-email sign-in, password setup, and recovery to the IdP. Use protected email delivery and keep public responses generic where they could reveal whether an account exists.
-- Add coverage for account and membership state transitions. Treat invite acceptance and the resulting membership as one operation so a retry cannot create a duplicate or consume an invitation without joining.
+- Add hosted sign-in, email verification, invitation signup, and password
+  recovery in `apps/idp/web`. Handle account operations and email delivery
+  with Better Auth and IAM invitation policy in `apps/idp/api`.
+- Verify the Better Auth adapter with the API's selected PostgreSQL driver
+  and pinned Drizzle RC. The Phase 1 Drizzle proof used the `pg` driver.
+- Bind signup to an eligible organization invitation and its email address.
+  Allow a matching verified account to accept the invitation. Commit
+  acceptance and membership creation together so retries preserve both.
+- Seed an organization and a redeemable invitation in a disposable
+  fixture. Use test email delivery to exercise the real flows. Production
+  first-owner provisioning is part of Phase 7.
+- Use generic responses where password recovery or verification requests
+  could reveal whether an account exists. Revoke existing IAM sessions
+  when a password reset succeeds.
 
 ## Verification
 
-Test new signup, existing-account acceptance, and password reset over the hosted flows. Try a wrong email, expired and replayed invitations, and direct signup routes without a valid invitation. Verify that the reset revokes the prior IAM sessions and that responses and logs preserve account privacy.
+Use a browser to accept an invitation as a new user and as a matching
+verified user. Check membership, email verification, and sign-in. Exercise
+direct signup, wrong-email acceptance, expiry, replay, and concurrent
+acceptance. Reset a password and verify the old password, reset link, and
+IAM sessions can no longer be used. Check account privacy in responses
+and logs.

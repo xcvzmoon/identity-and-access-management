@@ -4,7 +4,7 @@
 
 ## Evaluation setup
 
-The fixture pins Better Auth, OAuth Provider, Passkey, and the Drizzle adapter to `1.7.26`. That was the latest stable release on 19 November 2026. The fixture has its own lockfile. The POC dependency versions stay pinned in the root workspace. [Better Auth 1.7.26 release](https://github.com/better-auth/better-auth/releases/tag/v1.7.26)
+The fixture pins Better Auth, OAuth Provider, Passkey, and the Drizzle adapter to `1.7.26`. That was the latest stable release on 19 November 2026. The fixture has its own lockfile. The product app workspaces have their own dependency catalog. [Better Auth 1.7.26 release](https://github.com/better-auth/better-auth/releases/tag/v1.7.26)
 
 Keep one resolved instance of `@better-auth/core` across the IdP and its plugins. An initial pnpm install resolved separate copies through different `jose` peer versions. Aligning the fixture with Better Auth's `jose` `6.2.17` pin resolved the type and module mismatch.
 

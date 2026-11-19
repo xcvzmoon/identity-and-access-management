@@ -4,10 +4,21 @@
 
 ## Changes
 
-- Use Better Auth's authenticated introspection endpoint. Apply IAM's live grant check and return only current permissions for the registered client, subject, session, and installation.
-- Adapt the reference app's protected routes to use the live check and enforce their own permission and resource ownership rules. Deny the request when the check fails or is unavailable.
-- End the current IdP SSO session during IAM sign-out. Live checks must deny tokens issued against that session once sign-out commits.
+- Expose Better Auth's authenticated introspection endpoint in
+  `apps/idp/api` with IAM's live grant check. Evaluate current access for
+  the registered client, user, installation, and IAM session.
+- Check live access on every protected request in the reference app's
+  backend. Enforce the returned permissions and local resource rules.
+  Deny access if the check fails or is unavailable.
+- Provide IAM sign-out in the IdP flow. End the current SSO session so
+  subsequent checks deny tokens tied to that session.
 
 ## Verification
 
-Use two IdP replicas against a disposable database. On one replica, revoke an assignment or end the user's SSO session. Route the next protected request through the other replica and expect a denial even though the access token has time left. Test an unavailable introspection endpoint and a lookup authenticated as a different client. Confirm an unrelated installation continues to work.
+Start two separate IdP API processes behind one test issuer with shared
+disposable PostgreSQL storage. Revoke an app grant or end an IAM session
+through one process. Verify the next protected request is denied when
+introspection reaches the other process and the token is still within its
+lifetime. Test permission changes, an unavailable endpoint, credentials
+for a different client, and continued access to an unrelated installation.
+Phase 10 repeats the checks on the packaged deployment.

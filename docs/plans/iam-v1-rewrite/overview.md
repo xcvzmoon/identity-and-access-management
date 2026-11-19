@@ -1,36 +1,51 @@
 # IAM v1 rewrite implementation plan
 
-[Launch scope](../../rewrite-scope.md) · [Architecture decisions](../../README.md#rewrite-decisions)
+[Target monorepo structure](../../architecture.md#target-monorepo-structure) · [Launch scope](../../rewrite-scope.md) · [Architecture decisions](../../README.md#rewrite-decisions)
 
-IAM will operate one OIDC issuer per deployment. The rewrite moves hosted sign-in and token issuance to the IdP origin. The console becomes a confidential OIDC client with its own session. Customer apps receive an independent registration and grant for each installation.
+Phase 1 is complete. The evidence supports Better Auth `1.7.26` for the
+rewrite. The four app workspaces build and pass local startup checks.
+The legacy application workspaces have been retired. Phase 2 resumes
+with the fresh database baseline.
 
-## Constraints
+## Implementation boundaries
 
-- Use the latest stable Better Auth release and matching `@better-auth` packages at the start of phase 1. Pin the exact versions for the evaluation. Keep the engine decision open until the [evaluation](phase-01-evaluate-better-auth.md) passes. If a required behavior depends on a protocol fork or a weaker security guarantee, record the gap and evaluate another self-hostable engine against the same tests.
-- Build two standalone Nuxt apps, `apps/idp` and `apps/console`. Share components and styles through explicit imports. Keep the issuer, session handling, and management rules with the apps that own them.
-- Use a separate PostgreSQL database with fresh fixtures. Each app owns its schema, migrations, and runtime database role. The IdP owns credentials, SSO, customer app registrations, and app grants. The console owns console sessions.
-- Use live checks on protected customer app requests. This accepts a runtime dependency on the IdP to meet the agreed next-request revocation guarantee. A local token check or cached introspection response would lengthen the revocation window. See the [live access decision](../../adr/0004-check-app-grants-live.md).
-- Start with IAM-managed accounts and server-backed web clients. Customer federation and machine installation lookup enter scope when a launch app requires them. Public client types can be evaluated for a later release.
+- Build on the existing Nuxt setups in `apps/idp/web` and `apps/console/web`
+  and the existing Nitro setups in `apps/idp/api` and `apps/console/api`.
+  Keep framework configuration local to each workspace.
+- Keep schema and migration ownership in each API's `server/database/`.
+  The IdP owns identity, SSO, authorization, and signing keys. The console
+  owns its application sessions.
+- Use Better Auth's OAuth Provider and JWT handlers. Keep IAM policy in
+  the IdP API. Start from the [evaluation evidence](better-auth-evaluation.md),
+  which covers the fixture and selected conformance modules.
+- Start with IAM-managed accounts and confidential server-backed clients.
+  Customer app backends check live access on every protected request.
+  [Live access decision](../../adr/0004-check-app-grants-live.md)
 
 ## Phases
 
-| Phase                                                                                 | Evidence required to move on                                                                                                     |
-| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| [1. Evaluate Better Auth](phase-01-evaluate-better-auth.md)                           | A recorded engine decision supported by a working proof of the accepted v1 requirements.                                         |
-| [2. Establish apps and database ownership](phase-02-establish-apps-and-storage.md)    | Both apps start from fresh fixtures and their runtime roles stay within their schemas.                                           |
-| [3. Build invitation signup and recovery](phase-03-invitation-signup-and-recovery.md) | New and existing users can accept invitations for the correct email. Recovery preserves the verified-email and session rules.    |
-| [4. Move the OIDC issuer and app grants](phase-04-oidc-issuer-and-app-grants.md)      | A reference app signs in through the new issuer. Two organizations can use separate installations of the same app.               |
-| [5. Implement live checks and IAM sign-out](phase-05-live-access-and-iam-sign-out.md) | A revoked grant or ended SSO session denies the next protected request across replicas.                                          |
-| [6. Build the console OIDC session](phase-06-console-oidc-session.md)                 | A verified user can open their account through OIDC, including when they have no membership.                                     |
-| [7. Move administrative workflows](phase-07-administration-and-owner-recovery.md)     | Operators can onboard an owner, admins can manage their own organization, and an operator can recover a locked-out organization. |
-| [8. Record app authorization outcomes](phase-08-authorization-audit.md)               | Authorization events cover both password and SSO paths without exposing secrets.                                                 |
-| [9. Automate signing-key rotation](phase-09-signing-key-rotation.md)                  | Two replicas publish, activate, and roll back the same key across a staged rotation.                                             |
-| [10. Rehearse the external pilot](phase-10-external-pilot.md)                         | The full workflow passes on at least two IdP replicas, with an operator runbook and evidence.                                    |
+| Phase                                                                                               | Status             | Evidence required to close                                                                                                                                         |
+| --------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [1. Evaluate Better Auth](phase-01-evaluate-better-auth.md)                                         | Complete           | Engine decision and recorded fixture results, including selected discovery and PKCE conformance checks.                                                            |
+| [2. Verify the workspaces and establish database ownership](phase-02-establish-apps-and-storage.md) | Scaffolds verified | Both migration sets apply to fresh PostgreSQL. Each API's runtime role is denied reads and writes in the other schema. Required settings are validated at startup. |
+| [3. Build invitation signup and recovery](phase-03-invitation-signup-and-recovery.md)               | Planned            | New and existing invitees join with the verified invited email. Password reset invalidates prior IAM sessions.                                                     |
+| [4. Build the OIDC issuer and app grants](phase-04-oidc-issuer-and-app-grants.md)                   | Planned            | A reference app signs in through the issuer. Two installations of the same app have independent clients, grants, and consent.                                      |
+| [5. Implement live checks and IAM sign-out](phase-05-live-access-and-iam-sign-out.md)               | Planned            | The next protected request is denied after revocation or IAM sign-out across two IdP processes, or when the live check is unavailable.                             |
+| [6. Build the console OIDC session](phase-06-console-oidc-session.md)                               | Planned            | A verified user with zero memberships can open their account. The console owns its session and offers both sign-out actions.                                       |
+| [7. Build administration and owner recovery](phase-07-administration-and-owner-recovery.md)         | Planned            | An operator onboards an owner. Admin actions enforce tenant scope and step-up. Locked-out owner recovery is audited.                                               |
+| [8. Verify authorization audit and retention](phase-08-authorization-audit.md)                      | Planned            | Authorization outcomes and owner recovery are traceable. Audit access, retention, and redaction pass checks.                                                       |
+| [9. Automate signing-key rotation](phase-09-signing-key-rotation.md)                                | Planned            | Two IdP processes observe staged publication, activation, overlap, and rollback.                                                                                   |
+| [10. Rehearse the external pilot](phase-10-external-pilot.md)                                       | Planned            | A packaged deployment passes the pilot checks on at least two IdP replicas, with runbooks and recorded evidence.                                                   |
 
-Phases 3 through 9 may reuse proven POC modules where they satisfy the new interfaces. Keep each change independently testable. Switch ingress, documentation, and workspace entry points to the new apps at the pilot cutover.
+Phase 3 uses a fixture invitation. Phase 7 adds the operator workflow that
+creates invitations for first owners. Phase 4 adds authorization events and
+the shared signing-key store. Phase 8 verifies the audit trail built in
+Phases 4 and 7. Phase 9 automates rotation of the keys used by the issuer.
+Phase 10 checks the integrated deployment with its final ingress and
+operating procedures.
 
 ## Verification
 
-Run `vp check`, `vp test --run`, `vp run typecheck`, and `vp run build` against the implementation. Run the designated PostgreSQL, browser, and two-replica suites with fixture variables set. Record results separately from skipped tests. Use the [current fixture guide](../../validation.md#integration-tests) to locate POC coverage and adapt it to the new origins.
-
-Use the `better-auth-best-practices`, `better-auth-security-best-practices`, and `security-audit` skills for engine and session work. Apply `nuxt`, `nitro`, and `vue-best-practices` to app work, and `drizzle-migrations` and `drizzle-orm-rc` to schema changes. Use `docker-build-strategies` and `docker-compose-patterns` for deployment. Apply the repository's `ts-best-practices`, `xcvzmoon-code-conventions`, and `testing` skills throughout.
+Run the workspace checks and the relevant PostgreSQL, browser, and replica
+fixtures for each phase. Record fixture results and skips separately.
+[Validation guide](../../validation.md)
