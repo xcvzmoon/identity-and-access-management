@@ -11,6 +11,8 @@
 | [Local setup](local.md)                                                  | Start the Nuxt and Nitro workspaces                               |
 | [Workspace reference](development.md)                                    | Package names, scripts, and build outputs                         |
 | [Validation](validation.md)                                              | Current workspace checks and planned integration coverage         |
+| [Pilot deployment](pilot.md)                                             | Configure ingress, deploy the replicas, and rehearse recovery     |
+| [Client integration](client-integration.md)                              | Register a confidential client and authorize protected requests   |
 | [Glossary](glossary.md)                                                  | Terms used in the rewrite                                         |
 
 ### Rewrite decisions

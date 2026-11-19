@@ -159,9 +159,7 @@ will be denied, even if the access token has time left.
 
 ## Containers
 
-Run the workspaces directly during development. The pilot phase adds
-container images and ingress for the four workspaces.
-[Pilot phase](plans/iam-v1-rewrite/phase-10-external-pilot.md)
+Run the workspaces directly during development. For the four-workspace deployment with TLS ingress and two IdP API replicas, follow the [pilot deployment guide](pilot.md).
 
 ## Organization administration
 

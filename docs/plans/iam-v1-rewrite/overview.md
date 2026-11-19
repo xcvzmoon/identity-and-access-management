@@ -36,7 +36,7 @@ Phase 6 verified the console session and both sign-out actions through hosted si
 | [7. Build administration and owner recovery](phase-07-administration-and-owner-recovery.md)         | Complete | An operator onboards an owner. Admin actions enforce tenant scope and step-up. Locked-out owner recovery is audited.                                               |
 | [8. Verify authorization audit and retention](phase-08-authorization-audit.md)                      | Complete | Authorization outcomes and owner recovery are traceable. Audit access, retention, and redaction pass checks.                                                       |
 | [9. Automate signing-key rotation](phase-09-signing-key-rotation.md)                                | Complete | Two IdP processes observe staged publication, activation, overlap, and rollback.                                                                                   |
-| [10. Rehearse the external pilot](phase-10-external-pilot.md)                                       | Planned  | A packaged deployment passes the pilot checks on at least two IdP replicas, with runbooks and recorded evidence.                                                   |
+| [10. Rehearse the external pilot](phase-10-external-pilot.md)                                       | Complete | A packaged deployment passes the pilot checks on at least two IdP replicas, with runbooks and recorded evidence.                                                   |
 
 Phase 3 uses a fixture invitation. Phase 7 adds the operator workflow that
 creates invitations for first owners. Phase 4 adds authorization events and

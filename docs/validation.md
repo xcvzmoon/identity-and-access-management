@@ -181,3 +181,7 @@ With the console session fixture environment configured, run
 `sh scripts/tests/verify-ingress-logs.sh` from the repository root. It checks
 the fixture proxy and upstream process output for synthetic credentials.
 Repeat the checks against the deployed proxy and its log sinks during the pilot.
+
+## Packaged deployment
+
+Rehearse against a fresh rewrite database with the two IdP API containers behind the same HTTPS issuer. Record the issuer and release for every run. [Deployment and recovery runbook](pilot.md) · [Phase 10 rehearsal evidence](plans/iam-v1-rewrite/phase-10-external-pilot.md) · [Application fixture results](pilot-fixtures.md)
