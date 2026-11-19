@@ -9,7 +9,14 @@ import { CONSOLE_CLIENT_ID } from './authorization.service.ts';
 export type ClientRegistration = {
   name: string;
   redirectUris: readonly string[];
-} & ({ kind: 'console' } | { kind: 'installation'; organizationId: string });
+} & (
+  | { kind: 'console' }
+  | {
+      kind: 'installation';
+      organizationId: string;
+      rolePermissions?: Readonly<Record<string, readonly string[]>>;
+    }
+);
 
 type Assignment = { organizationId: string; clientId: string; userId: string };
 
@@ -72,6 +79,9 @@ export async function provisionClient(
       body: {
         redirect_uris: redirectUris,
         scope: 'openid',
+        ...(registration.kind === 'installation' && {
+          metadata: { rolePermissions: registration.rolePermissions ?? {} },
+        }),
         client_name: name,
         application_type: 'web',
         token_endpoint_auth_method: 'client_secret_basic',

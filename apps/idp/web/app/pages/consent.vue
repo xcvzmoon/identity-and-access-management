@@ -6,6 +6,7 @@
     name: nameSchema,
     organization: valibot.nullable(nameSchema),
     role: valibot.nullable(nameSchema),
+    permissions: valibot.array(valibot.string()),
     reference: nameSchema,
   });
 
@@ -75,7 +76,9 @@
         You will sign in to {{ details.organization }} with the role {{ details.role }}.
       </p>
 
-      <p v-if="scopes.length">Requested permissions: {{ scopes.join(', ') }}</p>
+      <p v-if="scopes.length">Requested scopes: {{ scopes.join(', ') }}</p>
+
+      <p v-if="details.permissions.length">App permissions: {{ details.permissions.join(', ') }}</p>
 
       <div class="flex gap-3">
         <UButton

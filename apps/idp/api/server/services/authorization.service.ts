@@ -2,7 +2,7 @@ import type { OAuthOptions, Scope } from '@better-auth/oauth-provider';
 import { getCurrentAuthEndpointContext } from '@better-auth/core/context';
 import { getOAuthProviderState } from '@better-auth/oauth-provider';
 import { APIError } from 'better-auth/api';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, exists, gt, isNotNull } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import * as valibot from 'valibot';
 import { useDatabase } from '../database/index.ts';
@@ -12,6 +12,8 @@ import {
   authorizationEvents,
   oauthClients,
   organizations,
+  sessions,
+  users,
 } from '../database/schema.ts';
 
 type Access = {
@@ -20,12 +22,19 @@ type Access = {
   organizationId: string | null;
   role: string | null;
   reference: string | null;
+  permissions: string[];
 };
+
+type AccessBinding = { callback: string } | { sessionId: string };
 
 type AuthorizationEvent = typeof authorizationEvents.$inferInsert;
 
 const FIRST_ROW = 0;
 export const CONSOLE_CLIENT_ID = 'iam-console';
+
+const clientMetadataSchema = valibot.object({
+  rolePermissions: valibot.record(valibot.string(), valibot.array(valibot.string())),
+});
 
 export const authorizationQuerySchema = valibot.object({
   client_id: valibot.string(),
@@ -33,22 +42,41 @@ export const authorizationQuerySchema = valibot.object({
 });
 
 /**
- * Reads the current assignment for a registered callback and user.
+ * Reads the current assignment for an authorization callback or an introspected session.
  *
  * @param {string} clientId - OAuth client identifier.
  * @param {string} userId - Verified IAM user identifier.
- * @param {string} callback - Exact redirect URI from the authorization request.
+ * @param {AccessBinding} binding - Exact authorization callback or session that issued the access token.
  * @returns {Promise<Access | null>} Registration details and the current consent reference, if granted.
  */
 export async function readAppAccess(
   clientId: string,
   userId: string,
-  callback: string,
+  binding: AccessBinding,
 ): Promise<Access | null> {
   const database = useDatabase();
+  const now = new Date();
+  const sessionFilter =
+    'sessionId' in binding
+      ? [
+          exists(
+            database
+              .select({ id: sessions.id })
+              .from(sessions)
+              .where(
+                and(
+                  eq(sessions.id, binding.sessionId),
+                  eq(sessions.userId, userId),
+                  gt(sessions.expiresAt, now),
+                ),
+              ),
+          ),
+        ]
+      : [];
   const rows = await database
     .select({
       name: oauthClients.name,
+      metadata: oauthClients.metadata,
       organization: organizations.name,
       organizationId: appInstallations.organizationId,
       role: appGrants.role,
@@ -58,6 +86,7 @@ export async function readAppAccess(
       redirectUris: oauthClients.redirectUris,
     })
     .from(oauthClients)
+    .innerJoin(users, and(eq(users.id, userId), eq(users.emailVerified, true)))
     .leftJoin(appInstallations, eq(appInstallations.clientId, oauthClients.clientId))
     .leftJoin(organizations, eq(organizations.id, appInstallations.organizationId))
     .leftJoin(
@@ -67,6 +96,7 @@ export async function readAppAccess(
     .where(
       and(
         eq(oauthClients.clientId, clientId),
+        ...sessionFilter,
         eq(oauthClients.disabled, false),
         eq(oauthClients.requirePKCE, true),
         eq(oauthClients.applicationType, 'web'),
@@ -76,9 +106,15 @@ export async function readAppAccess(
     );
 
   const row = rows.at(FIRST_ROW);
-  if (!row?.name || !row.redirectUris.includes(callback)) {
+  if (!row?.name || ('callback' in binding && !row.redirectUris.includes(binding.callback))) {
     return null;
   }
+
+  const catalog = valibot.safeParse(clientMetadataSchema, row.metadata);
+  const permissions =
+    row.role && catalog.success && Object.hasOwn(catalog.output.rolePermissions, row.role)
+      ? [...new Set(catalog.output.rolePermissions[row.role])].toSorted()
+      : [];
 
   let reference: string | null = null;
 
@@ -86,12 +122,13 @@ export async function readAppAccess(
     reference = clientId;
   } else if (row.organizationId && !row.skipConsent && row.revision && row.grantId && row.role) {
     reference = createHash('sha256')
-      .update(JSON.stringify([row.grantId, row.revision, row.role]))
+      .update(JSON.stringify([row.grantId, row.revision, row.role, ...permissions]))
       .digest('base64url');
   }
 
   return {
     name: row.name,
+    permissions,
     role: row.role,
     organization: row.organization,
     organizationId: row.organizationId,
@@ -126,7 +163,7 @@ export const authorizationPolicy: Pick<
         authorizationQuerySchema,
         query,
       );
-      const access = await readAppAccess(clientId, user.id, callback);
+      const access = await readAppAccess(clientId, user.id, { callback });
       const consent = context.path === '/oauth2/consent';
 
       if (
@@ -155,7 +192,7 @@ export const authorizationPolicy: Pick<
     }
 
     const { client_id: clientId, redirect_uri: callback } = query.output;
-    const access = await readAppAccess(clientId, user.id, callback);
+    const access = await readAppAccess(clientId, user.id, { callback });
     const approved =
       user.emailVerified &&
       Boolean(access?.reference) &&

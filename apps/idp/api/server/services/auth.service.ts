@@ -1,7 +1,9 @@
 import type { H3Event } from 'nitro/h3';
+import { decodeBasicCredentials } from '@better-auth/core/oauth2';
 import { metadataResponse } from '@better-auth/oauth-provider';
 import { assertBodySize, getRequestIP } from 'nitro/h3';
 import { isIP } from 'node:net';
+import * as valibot from 'valibot';
 import { useAuth } from '../utils/auth.ts';
 import { useEnv } from '../utils/env.ts';
 import {
@@ -9,9 +11,22 @@ import {
   InternalServerError,
   UnsupportedMediaTypeError,
 } from '../utils/http-errors.ts';
+import { readAppAccess } from './authorization.service.ts';
 
 const MEDIA_TYPE_INDEX = 0;
 const MAX_AUTH_BODY_BYTES = 16_384;
+
+const activeTokenSchema = valibot.object({
+  active: valibot.literal(true),
+  client_id: valibot.string(),
+  sub: valibot.pipe(valibot.string(), valibot.uuid()),
+  sid: valibot.pipe(valibot.string(), valibot.uuid()),
+  exp: valibot.number(),
+  iss: valibot.string(),
+  token_type: valibot.string(),
+  scope: valibot.string(),
+  iam_grant_version: valibot.string(),
+});
 
 /**
  * Applies the 16 KiB body limit and checks the origin and media type before body parsing.
@@ -176,6 +191,8 @@ export async function getIssuerMetadata(event: H3Event): Promise<Response> {
     issuer: metadata.issuer,
     authorization_endpoint: metadata.authorization_endpoint,
     token_endpoint: metadata.token_endpoint,
+    introspection_endpoint: metadata.introspection_endpoint,
+    introspection_endpoint_auth_methods_supported: ['client_secret_basic'],
     jwks_uri: metadata.jwks_uri,
     userinfo_endpoint: metadata.userinfo_endpoint,
     scopes_supported: metadata.scopes_supported,
@@ -223,4 +240,47 @@ export async function forwardOAuthFormRequest(event: H3Event): Promise<Response>
   const auth = useAuth();
   const response = await auth.handler(request);
   return privateResponse(response);
+}
+
+/**
+ * Authenticates the client through Better Auth and checks the token's assignment
+ * and issuing session against the current IdP database.
+ *
+ * @param {H3Event} event - Form-encoded token introspection request with HTTP Basic credentials.
+ * @returns {Promise<Response>} An inactive result, current access permissions, or a protocol error.
+ */
+export async function introspectAppAccess(event: H3Event): Promise<Response> {
+  const response = await forwardOAuthFormRequest(event);
+
+  if (!response.ok) {
+    return response;
+  }
+
+  const result = valibot.safeParse(activeTokenSchema, await response.json());
+  const authorization = event.req.headers.get('authorization');
+
+  if (!result.success || !authorization) {
+    return privateResponse(Response.json({ active: false }));
+  }
+
+  const { clientId } = decodeBasicCredentials(authorization);
+  const { iam_grant_version: version, ...token } = result.output;
+
+  if (token.client_id !== clientId) {
+    return privateResponse(Response.json({ active: false }));
+  }
+
+  const access = await readAppAccess(clientId, token.sub, { sessionId: token.sid });
+
+  if (!access?.reference || access.reference !== version) {
+    return privateResponse(Response.json({ active: false }));
+  }
+
+  return privateResponse(
+    Response.json({
+      ...token,
+      organization_id: access.organizationId,
+      permissions: access.permissions,
+    }),
+  );
 }

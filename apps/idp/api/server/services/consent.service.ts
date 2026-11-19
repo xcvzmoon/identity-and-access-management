@@ -66,11 +66,11 @@ async function readConsentRequest(event: H3Event): Promise<ConsentRequest> {
  * Returns the app and current grant that this signed-in user is being asked to approve.
  *
  * @param {H3Event} event - Same-origin request carrying the signed OAuth query.
- * @returns {Promise<Response>} App name, organization, role, and consent reference.
+ * @returns {Promise<Response>} App name, organization, role, permissions, and consent reference.
  */
 export async function consentDetails(event: H3Event): Promise<Response> {
   const { clientId, callback, userId } = await readConsentRequest(event);
-  const access = await readAppAccess(clientId, userId, callback);
+  const access = await readAppAccess(clientId, userId, { callback });
 
   if (!access?.reference) {
     throw new ForbiddenError('App access is unavailable.');
@@ -81,6 +81,7 @@ export async function consentDetails(event: H3Event): Promise<Response> {
       name: access.name,
       organization: access.organization,
       role: access.role,
+      permissions: access.permissions,
       reference: access.reference,
     }),
   );
@@ -97,7 +98,7 @@ export async function forwardConsent(event: H3Event): Promise<Response> {
   const response = await forwardPostRequestToBetterAuth(event, 'include');
 
   if (decline && response.ok) {
-    const access = await readAppAccess(clientId, userId, callback);
+    const access = await readAppAccess(clientId, userId, { callback });
 
     await recordAuthorizationEvent({
       clientId,
