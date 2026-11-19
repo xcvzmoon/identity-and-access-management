@@ -61,7 +61,7 @@ the IdP API with the runtime role and the settings for that database.
 
 From the repository root, export the same IdP runtime settings used by the
 server and run the suite. Set the URLs to the loopback endpoints for the
-running API and Mailpit's HTTP interface.
+running API and Mailpit's HTTP interface. In the test shell, set `IAM_AUDIT_READER_USER` and `IAM_AUDIT_READER_PASSWORD` to a fixture login with the `iam_audit_reader` role so the suite can verify the invitee recorded on each membership event.
 
 ```sh
 IAM_PHASE3_TESTS=1 \

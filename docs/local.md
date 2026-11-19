@@ -135,7 +135,7 @@ A null previous role marks the initial assignment. A null new role marks revocat
 
 #### Investigate organization membership changes
 
-After the membership audit migration, the audit reader can inspect joins, role changes and removals in `iam_idp.membership_events`. The organization and user IDs remain available after a deletion. Console management changes record the authenticated actor. Other writers, including invitation acceptance, can leave `actor_user_id` empty. Existing memberships receive their first event when they change.
+After the membership audit migration, the audit reader can inspect joins, role changes and removals in `iam_idp.membership_events`. The organization and user IDs remain available after a deletion. Console management changes record the authenticated actor. Invitation acceptance records the authenticated invitee as the actor. Other writers can leave `actor_user_id` empty. Earlier events retain their original attribution. Existing memberships receive their first event when they change.
 
 ```sql
 SELECT created_at, actor_user_id, previous_role, new_role

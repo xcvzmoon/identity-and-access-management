@@ -76,7 +76,7 @@ export async function provisionClient(
   }
 
   return database.transaction(async (transaction) => {
-    const auth = createAuth(transaction, registration);
+    const auth = createAuth(transaction, { registration });
     const client = await auth.api.adminCreateOAuthClient({
       headers,
       body: {

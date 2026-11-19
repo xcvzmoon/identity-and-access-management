@@ -1,8 +1,9 @@
 import type { InvitationSignup } from '../schemas/invitation.ts';
-import { runWithTransaction } from '@better-auth/core/context';
 import { isAPIError } from 'better-auth/api';
+import { sql } from 'drizzle-orm';
+import { useDatabase } from '../database/index.ts';
 import { hasEligibleInvitation } from '../repositories/invitation.repository.ts';
-import { useAuth } from '../utils/auth.ts';
+import { createAuth, useAuth } from '../utils/auth.ts';
 import { useEnv } from '../utils/env.ts';
 import { BadRequestError, InternalServerError, UnauthorizedError } from '../utils/http-errors.ts';
 
@@ -18,11 +19,18 @@ const unavailableMessage = 'This invitation is unavailable.';
  * @throws {BadRequestError} When the invitation cannot be accepted by this user.
  */
 export async function acceptInvitation(token: string, headers: Headers): Promise<void> {
-  const auth = useAuth();
-  const context = await auth.$context;
+  const database = useDatabase();
 
   try {
-    await runWithTransaction(context.adapter, async () => {
+    await database.transaction(async (transaction) => {
+      const auth = createAuth(transaction, {
+        beforeAcceptInvitation: async (userId) => {
+          await transaction.execute(
+            sql`SELECT set_config('iam.management_actor_id', ${userId}, true)`,
+          );
+        },
+      });
+
       await auth.api.acceptInvitation({
         headers,
         body: { invitationId: token },

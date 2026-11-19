@@ -1,13 +1,14 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test';
 import { useDatabase } from '../server/database/index.ts';
-import { memberships, users } from '../server/database/schema.ts';
+import { membershipEvents, memberships, users } from '../server/database/schema.ts';
 import { useAuth } from '../server/utils/auth.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { finishAccountEmail } from '../server/utils/mail.ts';
+import { openAuditReader } from './fixtures/audit-reader.ts';
 import { seedInvitation } from './fixtures/invitation.ts';
 
 const OK = 200;
@@ -224,16 +225,40 @@ async function acceptVerifiedInvitations(): Promise<void> {
 
   const session = await auth.api.getSession({ headers });
 
-  expect(session?.session.activeOrganizationId).toBe(existing.organizationId);
+  assert.ok(session);
+  expect(session.session.activeOrganizationId).toBe(existing.organizationId);
 
   const matching = await database
-    .select({ role: memberships.role })
+    .select({
+      role: memberships.role,
+      organizationId: memberships.organizationId,
+    })
     .from(memberships)
     .innerJoin(users, eq(memberships.userId, users.id))
     .where(eq(users.email, email));
 
-  expect(matching.filter((membership) => membership.role === 'member')).toHaveLength(
-    EXPECTED_MEMBERSHIPS,
+  const joined = matching.filter((membership) => membership.role === 'member');
+  const reader = openAuditReader();
+  const events = await reader
+    .select({
+      organizationId: membershipEvents.organizationId,
+      actor: membershipEvents.actorUserId,
+    })
+    .from(membershipEvents)
+    .where(
+      and(eq(membershipEvents.userId, session.user.id), eq(membershipEvents.newRole, 'member')),
+    )
+    .orderBy(membershipEvents.organizationId);
+
+  expect(joined).toHaveLength(EXPECTED_MEMBERSHIPS);
+  expect(events).toEqual(
+    joined
+      .map(({ organizationId }) => organizationId)
+      .toSorted()
+      .map((organizationId) => ({
+        organizationId,
+        actor: session.user.id,
+      })),
   );
 }
 

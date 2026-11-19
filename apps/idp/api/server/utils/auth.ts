@@ -17,6 +17,10 @@ import { useEnv } from './env.ts';
 import { sendAccountEmail } from './mail.ts';
 
 type AuthDatabase = Omit<ReturnType<typeof useDatabase>, '$client'>;
+type AuthOptions = {
+  registration?: ClientRegistration;
+  beforeAcceptInvitation?: (userId: string) => Promise<void>;
+};
 type Auth = ReturnType<typeof configureAuth>;
 
 export const MIN_PASSWORD_LENGTH = 15;
@@ -32,7 +36,7 @@ async function sendInvitation(email: string, id: string): Promise<void> {
 
 // Better Auth infers the organization endpoints from the configured plugins.
 // oxlint-disable-next-line typescript/explicit-function-return-type
-function configureAuth(database: AuthDatabase, registration?: ClientRegistration) {
+function configureAuth(database: AuthDatabase, options: AuthOptions) {
   const env = useEnv();
 
   return betterAuth({
@@ -73,11 +77,14 @@ function configureAuth(database: AuthDatabase, registration?: ClientRegistration
         grantTypes: ['authorization_code'],
         allowDynamicClientRegistration: false,
         ...authorizationPolicy,
-        ...createRegistrationPolicy(registration),
+        ...createRegistrationPolicy(options.registration),
       }),
       organization({
         allowUserToCreateOrganization: false,
         requireEmailVerificationOnInvitation: true,
+        organizationHooks: {
+          beforeAcceptInvitation: async ({ user }) => options.beforeAcceptInvitation?.(user.id),
+        },
         schema: { member: { modelName: 'membership' } },
         sendInvitationEmail: async ({ email, id }) => sendInvitation(email, id),
       }),
@@ -115,11 +122,11 @@ function configureAuth(database: AuthDatabase, registration?: ClientRegistration
 
 /**
  * @param {AuthDatabase} database - IdP connection or transaction that owns the operation.
- * @param {ClientRegistration} [registration] - Enables one trusted client provisioning operation.
+ * @param {AuthOptions} [options] - Scoped client registration or invitation acceptance hooks.
  * @returns {Auth} An issuer whose Better Auth writes use the supplied connection.
  */
-export function createAuth(database: AuthDatabase, registration?: ClientRegistration): Auth {
-  return configureAuth(database, registration);
+export function createAuth(database: AuthDatabase, options: AuthOptions = {}): Auth {
+  return configureAuth(database, options);
 }
 
 let auth: Auth | null = null;
