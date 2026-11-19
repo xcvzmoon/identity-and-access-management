@@ -294,6 +294,43 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
+  apps/console/web:
+    dependencies:
+      '@iconify-json/lucide':
+        specifier: catalog:web
+        version: 1.2.156
+      '@nuxt/ui':
+        specifier: catalog:web
+        version: 4.12.2(32ab190704ea9674ff637b09098ffb77)
+      nuxt:
+        specifier: catalog:web
+        version: 4.6.4(d003ab73169669bc144c0f35c5d84dbe)
+      tailwindcss:
+        specifier: catalog:web
+        version: 4.3.5
+      vue:
+        specifier: catalog:web
+        version: 3.5.45(typescript@6.0.3)
+      vue-router:
+        specifier: catalog:web
+        version: 5.4.0(@voidzero-dev/vite-plus-core@1.6.0(@types/node@26.6.6)(@volar/typescript@2.4.30(typescript@6.0.3))(@vue/language-core@3.3.14)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(typescript@6.0.3)(vue-tsc@3.3.14(typescript@6.0.3)))(@vue/compiler-sfc@3.5.45)(esbuild@0.28.2)(rolldown@1.2.19)(rollup@4.68.5)(vue@3.5.45(typescript@6.0.3))
+    devDependencies:
+      '@golar/vue':
+        specifier: catalog:web
+        version: 0.1.11
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      golar:
+        specifier: catalog:web
+        version: 0.1.11
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vue-tsc:
+        specifier: catalog:web
+        version: 3.3.14(typescript@6.0.3)
+
   apps/idp/api:
     dependencies:
       '@xcvzlabs/env':

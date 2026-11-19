@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "vp run --filter './apps/idp/*' --filter './apps/console/api' build",
+    "build": "vp run --filter './apps/idp/*' --filter './apps/console/*' build",
     "fmt": "vp fmt",
     "lint": "vp lint",
     "check": "vp check",
