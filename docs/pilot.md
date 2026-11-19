@@ -173,3 +173,14 @@ reference=$(sh scripts/verify-release-image.sh "$TRUSTED_PUBLIC_KEY" manifest.js
 ```
 
 The verifier pulls the Linux arm64 image by its signed digest, extracts `/app/.output` from a stopped container, and compares it with the workspace digest in the signed receipt binding. Deploy the returned repository and digest. Keep the signing key separate from the deployment host.
+
+For the Compose pilot, set `IDP_API_REPOSITORY`, `IDP_WEB_REPOSITORY`, `CONSOLE_API_REPOSITORY` and `CONSOLE_WEB_REPOSITORY` from deployment configuration. Generate a fresh override in the release directory. Keep the manifest, signature, receipt, and override with that release.
+
+```sh
+sh scripts/verify-release-compose.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifest.sig \
+  "$APPROVED_COMMIT" "$PASSING_RECEIPT" > verified-images.yaml &&
+  docker compose -f compose.yaml -f verified-images.yaml config --quiet &&
+  docker compose -f compose.yaml -f verified-images.yaml up -d --no-build
+```
+
+The override assigns the verified IdP API digest to both replicas. It removes local build instructions for all application services. The ingress image comes from the base Compose configuration.
