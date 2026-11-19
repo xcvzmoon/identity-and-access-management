@@ -145,6 +145,8 @@ The fixture routes sign-in and sign-out to one API process and introspection
 to a second process using the same issuer and database. Reserve ports 56451
 through 56455 for the fixture. Discard the database after the run.
 
+The release gate writes `introspection-capacity.json` for 32 authenticated introspections of one active token on the second IdP process, with up to four requests in flight. Each success requires HTTP 200, the expected subject and client ID, and the reader permission. The sample reports failures, successful responses per second, and nearest-rank p95 and p99 for successful requests. Set `IAM_PHASE5_INTROSPECTION_REPORT` to a new file path to collect it during a standalone phase 5 run. Use a representative mix of clients and tenants for deployment sizing.
+
 ### Console session
 
 Build all four workspaces. Apply both APIs' migrations to a disposable

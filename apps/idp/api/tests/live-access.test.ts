@@ -16,11 +16,14 @@ import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { startCluster } from './fixtures/live-processes.ts';
 import { authorizationUrl, exchange } from './fixtures/oidc-protocol.ts';
 import { seedOidc } from './fixtures/oidc.ts';
+import { measureRequests } from './fixtures/request-capacity.ts';
 
 type Fixture = Awaited<ReturnType<typeof seedOidc>>;
 type Cluster = Awaited<ReturnType<typeof startCluster>>;
 type Client = { clientId: string; clientSecret: string };
 
+const INTROSPECTION_REQUESTS = 32;
+const CONCURRENT_REQUESTS = 4;
 const HEALTHY = 0;
 const CRITICAL = 2;
 const PRIVATE_FILE = 0o600;
@@ -41,6 +44,8 @@ const tokensSchema = valibot.object({
 
 const accessSchema = valibot.object({
   active: valibot.boolean(),
+  sub: valibot.optional(valibot.string()),
+  client_id: valibot.optional(valibot.string()),
   permissions: valibot.optional(valibot.array(valibot.string())),
 });
 
@@ -86,6 +91,31 @@ async function introspect(
 
   expect(response.status).toBe(OK);
   return valibot.parse(accessSchema, await response.json());
+}
+
+async function measureLiveIntrospection(
+  issuer: URL,
+  fixture: Fixture,
+  token: string,
+): Promise<void> {
+  const output = process.env.IAM_PHASE5_INTROSPECTION_REPORT;
+  if (!output) {
+    return;
+  }
+
+  const sample = await measureRequests(INTROSPECTION_REQUESTS, CONCURRENT_REQUESTS, async () => {
+    const started = performance.now();
+    const access = await introspect(issuer, fixture.south, token).catch(() => null);
+    const elapsed = performance.now() - started;
+    const valid =
+      access?.active &&
+      access.sub === fixture.userId &&
+      access.client_id === fixture.south.clientId &&
+      access.permissions?.includes('reports.read');
+    return valid ? elapsed : null;
+  });
+  await writeFile(output, `${JSON.stringify(sample)}\n`, { flag: 'wx' });
+  expect(sample.successful).toBe(INTROSPECTION_REQUESTS);
 }
 
 async function checkClientAuthentication(
@@ -245,6 +275,8 @@ async function checkRevocation(
     active: true,
     permissions: ['reports.read'],
   });
+
+  await measureLiveIntrospection(issuer, fixture, south.token);
 
   await assignAppRole({
     ...assignment,

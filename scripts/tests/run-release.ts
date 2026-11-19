@@ -77,6 +77,9 @@ function runReleaseTests(): void {
       env: {
         ...process.env,
         ...settings,
+        ...(name === 'phase-5' && {
+          IAM_PHASE5_INTROSPECTION_REPORT: path.join(directory, 'introspection-capacity.json'),
+        }),
         ...(verifyIngress && {
           IAM_PHASE6_LOGIN_REPORT: path.join(directory, 'console-login-capacity.json'),
         }),
