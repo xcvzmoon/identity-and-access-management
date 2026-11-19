@@ -39,6 +39,10 @@ async function install(headers: Headers, userId: string, callback: string): Prom
   const client = await provisionClient(headers, {
     kind: 'installation',
     name: 'Reports',
+    rolePermissions: {
+      reader: ['reports.read'],
+      editor: ['reports.read', 'reports.write'],
+    },
     redirectUris: [callback],
     organizationId,
   });
