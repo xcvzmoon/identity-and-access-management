@@ -17,6 +17,7 @@ type ReleaseInputs = {
 };
 
 const EMPTY = 0;
+const ARGUMENT_OFFSET = 2;
 const workspaces = ['idp/api', 'idp/web', 'console/api', 'console/web'];
 
 /**
@@ -82,4 +83,13 @@ export function captureReleaseInputs(root: string): ReleaseInputs {
   }
 
   return { revision, dirty, bundleSha256 };
+}
+
+if (import.meta.main) {
+  const [directory] = process.argv.slice(ARGUMENT_OFFSET);
+  if (!directory) {
+    throw new Error('Supply the path to an extracted Nitro output directory.');
+  }
+
+  process.stdout.write(hashReleaseBundle(directory));
 }

@@ -109,12 +109,21 @@ For this review, the product issues authorization codes to statically registered
 
 ### Verify the release manifest before promotion
 
-The release signer signs the exact bytes of the clean build manifest after reviewing its commit and all four image digests. Use OpenSSL 3, an Ed25519 signing key and jq for this procedure. Supply the public key from the release operator's trust configuration and the expected commit from the approved deployment record.
+The release signer reviews the clean ten-case receipt, the build manifest and the four image digests. Test the application bundles extracted from the candidate images. Separate builds can produce different bundle contents from the same source revision.
+
+Bind the exact bytes of the passing receipt to the manifest and sign it with OpenSSL 3 and an Ed25519 key:
 
 ```sh
+receipt_hash=$(openssl dgst -sha256 -r "$PASSING_RECEIPT") || exit 1
+jq --arg hash "${receipt_hash%% *}" '.release_receipt_sha256 = $hash' build-manifest.json > manifest.json || exit 1
 openssl pkeyutl -sign -rawin -inkey "$SIGNING_KEY" -in manifest.json -out manifest.sig
-digest=$(sh scripts/verify-release-manifest.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifest.sig "$APPROVED_COMMIT" idp/api) || exit 1
-docker pull "$IDP_API_REPOSITORY@$digest"
 ```
 
-Repeat verification for each workspace using its configured repository. The current manifest covers Linux arm64. Keep the signing key separate from the deployment environment.
+On the promotion host, supply the public key and repository from deployment configuration and the commit from the approved release record. Use Node at the project version, Docker, OpenSSL 3 and jq. Run this command for each workspace before deploying any replica:
+
+```sh
+reference=$(sh scripts/verify-release-image.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifest.sig \
+  "$APPROVED_COMMIT" idp/api "$IDP_API_REPOSITORY" "$PASSING_RECEIPT") || exit 1
+```
+
+The verifier pulls the Linux arm64 image by its signed digest, extracts `/app/.output` from a stopped container, and compares it with the workspace digest in the signed receipt binding. Deploy the returned repository and digest. Keep the signing key separate from the deployment host.
