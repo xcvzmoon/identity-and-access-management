@@ -15,7 +15,8 @@ vp run build
 ```
 
 The root suite includes workspace discovery checks. For a local startup
-check, open both web scaffold pages and request `/api/v1/hello` from each API.
+check, open both web apps, then request `GET /api/v1/auth/get-session` from
+the IdP API and `GET /api/v1/hello` from the console API.
 The APIs need a reachable database and their runtime credentials.
 [Local database setup](local.md#database-setup)
 

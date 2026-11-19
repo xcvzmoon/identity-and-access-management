@@ -9,16 +9,16 @@ workspace you need in its own terminal. Set up PostgreSQL before starting
 the APIs. The web workspaces can start on their own.
 [Database setup](#database-setup)
 
-| Workspace   | Command                          | Local address                         |
-| ----------- | -------------------------------- | ------------------------------------- |
-| IdP web     | `vp -C apps/idp/web run dev`     | `http://localhost:3000` by default    |
-| IdP API     | `vp -C apps/idp/api run dev`     | `http://localhost:65430/api/v1/hello` |
-| Console web | `vp -C apps/console/web run dev` | `http://localhost:3001`               |
-| Console API | `vp -C apps/console/api run dev` | `http://localhost:65431/api/v1/hello` |
+| Workspace   | Command                          | Local address                                    |
+| ----------- | -------------------------------- | ------------------------------------------------ |
+| IdP web     | `vp -C apps/idp/web run dev`     | `http://localhost:3000` by default               |
+| IdP API     | `vp -C apps/idp/api run dev`     | `http://localhost:65430/api/v1/auth/get-session` |
+| Console web | `vp -C apps/console/web run dev` | `http://localhost:3001`                          |
+| Console API | `vp -C apps/console/api run dev` | `http://localhost:65431/api/v1/hello`            |
 
-Use the port printed by the dev server if the default is busy. Both API health examples return
-`{"message":"Hello from Nitro!"}`. Use the HTTPS setup below to exercise
-the IdP account pages.
+Use the port printed by the dev server if the default is busy. Without a session cookie, the IdP session endpoint returns JSON `null`.
+The console greeting returns `{"message":"Hello from Nitro!"}`. Use the
+HTTPS setup below to exercise the IdP account pages.
 
 ## Database setup
 
