@@ -81,6 +81,8 @@ tests follow links from delivered messages, check membership after concurrent
 acceptance, and use two session cookies to verify password reset revocation.
 Discard the fixture database and mailbox when finished.
 
+The release gate writes `password-sign-in-capacity.json` for the hosted password endpoint. One burst submits three correct passwords for a verified account. A second submits three incorrect passwords for that account. Each burst starts after the sign-in limit window and uses three concurrent requests. The timed interval includes password verification and response-body parsing. A successful rejection sample means the expected HTTP 401 and credential error arrived without a cookie. The audit reader must observe three issued and three rejected attempts in the web-form counters and three new sign-in events for the account. Set `IAM_PHASE3_PASSWORD_REPORT` to a new file path to collect this report in a standalone phase 3 run.
+
 ### Client secret rotation
 
 Create a fresh loopback PostgreSQL database named `iam_rotation_test`, apply the IdP migrations, and export the runtime settings for that database. Run this opt-in test from the repository root:

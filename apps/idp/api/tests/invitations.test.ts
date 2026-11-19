@@ -10,10 +10,10 @@ import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { finishAccountEmail } from '../server/utils/mail.ts';
 import { openAuditReader } from './fixtures/audit-reader.ts';
 import { seedInvitation } from './fixtures/invitation.ts';
+import { SIGN_IN_WINDOW_MS, recordPasswordCapacity } from './fixtures/password-sign-in-capacity.ts';
 
 const OK = 200;
 const TOO_MANY_REQUESTS = 429;
-const SIGN_IN_WINDOW_MS = 11_000;
 const FOUND = 302;
 const EXPECTED_MEMBERSHIPS = 2;
 const BAD_REQUEST = 400;
@@ -260,6 +260,15 @@ async function acceptVerifiedInvitations(): Promise<void> {
         actor: session.user.id,
       })),
   );
+  await recordPasswordCapacity(
+    async (candidate) =>
+      apiRequest('/api/v1/web/sign-in/email', {
+        email,
+        password: candidate,
+      }),
+    password,
+    session.user.id,
+  );
 }
 
 describe.skipIf(process.env.IAM_PHASE3_TESTS !== '1')(
@@ -292,7 +301,7 @@ describe.skipIf(process.env.IAM_PHASE3_TESTS !== '1')(
     test(
       'requires a verified invitee and commits exactly one membership on concurrent acceptance',
       acceptVerifiedInvitations,
-      TEST_TIMEOUT_MS,
+      TEST_TIMEOUT_MS + SIGN_IN_WINDOW_MS + SIGN_IN_WINDOW_MS,
     );
 
     test(
