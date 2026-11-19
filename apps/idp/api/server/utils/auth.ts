@@ -5,7 +5,6 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { betterAuth } from 'better-auth/minimal';
 import { jwt } from 'better-auth/plugins/jwt';
 import { organization } from 'better-auth/plugins/organization';
-import { isNull } from 'drizzle-orm';
 import { useDatabase } from '../database/index.ts';
 import * as schema from '../database/schema.ts';
 import {
@@ -13,13 +12,13 @@ import {
   recordIssuedAuthorization,
 } from '../services/authorization.service.ts';
 import { createRegistrationPolicy } from '../services/registration.service.ts';
+import { persistInitialKey, readSigningKeys } from '../services/signing-key.service.ts';
 import { useEnv } from './env.ts';
 import { sendAccountEmail } from './mail.ts';
 
 type AuthDatabase = Omit<ReturnType<typeof useDatabase>, '$client'>;
 type Auth = ReturnType<typeof configureAuth>;
 
-const FIRST_KEY_INDEX = 0;
 export const MIN_PASSWORD_LENGTH = 15;
 export const MAX_PASSWORD_LENGTH = 128;
 
@@ -57,36 +56,15 @@ function configureAuth(database: AuthDatabase, registration?: ClientRegistration
       jwt({
         schema: { jwks: { modelName: 'signingKey' } },
         adapter: {
-          async createJwk(candidate) {
-            const keys = await database
-              .insert(schema.signingKeys)
-              .values({
-                ...candidate,
-                alg: 'RS256',
-              })
-              .onConflictDoUpdate({
-                target: schema.signingKeys.alg,
-                targetWhere: isNull(schema.signingKeys.expiresAt),
-                set: { alg: 'RS256' },
-              })
-              .returning();
-            const key = keys.at(FIRST_KEY_INDEX);
-            if (!key) {
-              throw new Error('The IdP signing key could not be persisted.');
-            }
-
-            return {
-              id: key.id,
-              publicKey: key.publicKey,
-              privateKey: key.privateKey,
-              createdAt: key.createdAt,
-              alg: 'RS256',
-            };
-          },
+          getJwks: async () => readSigningKeys(database),
+          createJwk: async (candidate) => persistInitialKey(database, candidate),
         },
         disableSettingJwtHeader: true,
         jwt: { issuer: env.oidcIssuerUrl },
-        jwks: { keyPairConfig: { alg: 'RS256' } },
+        jwks: {
+          keyPairConfig: { alg: 'RS256' },
+          gracePeriod: Number.MAX_SAFE_INTEGER,
+        },
       }),
       oauthProvider({
         loginPage: '/sign-in',

@@ -20,16 +20,16 @@ const keySchema = valibot.object({
   [EXPONENT]: valibot.string(),
   [PRIVATE_EXPONENT]: valibot.optional(valibot.never()),
 });
-const jwksSchema = valibot.object({ keys: valibot.tuple([keySchema]) });
+const jwksSchema = valibot.object({
+  keys: valibot.pipe(valibot.array(keySchema), valibot.nonEmpty()),
+});
 
-async function readPublicKey(url: string): Promise<valibot.InferOutput<typeof keySchema>> {
+async function readPublicKeys(url: string): Promise<valibot.InferOutput<typeof keySchema>[]> {
   const response = await fetch(url);
   expect(response.ok).toBe(true);
 
-  const {
-    keys: [key],
-  } = valibot.parse(jwksSchema, await response.json());
-  return key;
+  const { keys } = valibot.parse(jwksSchema, await response.json());
+  return keys.toSorted((left, right) => left.kid.localeCompare(right.kid));
 }
 
 /**
@@ -45,18 +45,19 @@ export async function verifySigningKeys(issuer: string): Promise<void> {
   expect(metadata.issuer).toBe(issuer);
   expect(metadata.jwks_uri).toBe(url.href);
 
-  const [first, second] = await Promise.all([readPublicKey(url.href), readPublicKey(url.href)]);
+  const [first, second] = await Promise.all([readPublicKeys(url.href), readPublicKeys(url.href)]);
   const database = useDatabase();
+  const [key] = first;
   const rows = await database
     .select({ publicKey: signingKeys.publicKey })
     .from(signingKeys)
-    .where(eq(signingKeys.id, first.kid));
+    .where(eq(signingKeys.id, key.kid));
   const [row] = rows;
 
   expect(first).toEqual(second);
   expect(JSON.parse(row.publicKey)).toMatchObject({
-    kty: first.kty,
-    [MODULUS]: first.n,
-    [EXPONENT]: first.e,
+    kty: key.kty,
+    [MODULUS]: key.n,
+    [EXPONENT]: key.e,
   });
 }

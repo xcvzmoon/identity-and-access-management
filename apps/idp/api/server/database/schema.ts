@@ -186,10 +186,14 @@ export const signingKeys = idpSchema.table(
     privateKey: text('private_key').notNull(),
     createdAt: timestamp('created_at', TIMESTAMP_CONFIG).notNull(),
     expiresAt: timestamp('expires_at', TIMESTAMP_CONFIG),
+    activateAfter: timestamp('activate_after', TIMESTAMP_CONFIG),
     alg: text('alg').notNull(),
     crv: text('crv'),
   },
   (table) => [
+    uniqueIndex('signing_keys_pending_alg_idx')
+      .on(table.alg)
+      .where(sql`${table.activateAfter} is not null`),
     uniqueIndex('signing_keys_active_alg_idx').on(table.alg).where(isNull(table.expiresAt)),
   ],
 );

@@ -1,0 +1,2 @@
+ALTER TABLE "iam_idp"."signing_keys" ADD COLUMN "activate_after" timestamp(3) with time zone;--> statement-breakpoint
+CREATE UNIQUE INDEX "signing_keys_pending_alg_idx" ON "iam_idp"."signing_keys" ("alg") WHERE "activate_after" is not null;
