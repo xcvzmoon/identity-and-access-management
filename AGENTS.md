@@ -41,7 +41,7 @@ This is a [Nitro](https://nitro.build) v3 server project (built on H3 v2). Nitro
 - No auto-imports: import `defineHandler`, `HTTPError`, ... from `"nitro"`, H3 utilities (`getQuery`, `readBody`, ...) from `"nitro/h3"`, and your own helpers (e.g. `server/utils/`) with relative imports.
 - Handlers receive an H3 v2 event (`event.req` is a web `Request`, `event.url` a `URL`) and return JSON, a string or a `Response`.
 - Scripts: `dev`, `build` (bundles into `.output/`; run with `node .output/server/index.mjs`), `preview`.
-- Testing: `npx nitro fetch /api/hello` sends one request to the server sources (or to the running dev server) and prints the response, no build needed (curl-like options: `-X`, `-H`, `--json`, `-i`). `npx nitro serve` starts the server from the sources.
+- Testing: `npx nitro fetch /api/v1/hello` sends one request to the server sources (or to the running dev server) and prints the response, no build needed (curl-like options: `-X`, `-H`, `--json`, `-i`). `npx nitro serve` starts the server from the sources.
 
 <!-- NITRO END -->
 
@@ -54,18 +54,38 @@ This is a [Nitro](https://nitro.build) v3 server project (built on H3 v2). Nitro
 
 ## Changes and dependencies
 
+- Use Better Auth's built-in features and official plugins wherever they support the requirement. Generate auth tables from the installed Better Auth version and configured plugins, then use Drizzle Kit to generate the SQL migration. Confirm any capability gap before implementing custom auth behavior or storage.
+- Proceed when my request or correction makes the intended change clear. Ask for clarification when the intended change is ambiguous, and get approval before expanding the scope.
 - Always quote values in dotenv files, including `.env.example`, using double quotes.
 - Keep changes limited to the requested behavior. Leave unrelated code, names, formatting, and existing classes alone.
 - Use the simplest implementation that meets the requirements. Avoid speculative abstractions and temporary compatibility layers.
 - Remove obsolete code paths. Add database migrations when required to preserve or transform existing data.
 - Check existing dependencies' documentation and types before adding a package or implementing common functionality yourself.
 
+## Forms
+
+- Use Formisch (`@formisch/vue`) and Valibot schemas for every Vue form.
+
+## API handlers and readability
+
+- Keep auth operations in the auth service. Write an explicit route callback that passes the event to the named service operation. Add utility modules only when requested.
+- Give each HTTP handler a method-specific Nitro filename and delegate its operation to a service.
+- Bind dependencies such as `useEnv()`, `useAuth()`, and `useDatabase()` to named locals before accessing their properties or methods.
+- Keep consecutive `const` declarations together, including declarations initialized by a call or an awaited call. In a group of three or more declarations, leave a blank line between uppercase constants and ordinary variables. Keep a group of exactly two declarations together regardless of naming.
+- Keep two single-line statements together when they make up the entire block, including a pair of function calls.
+- Leave a blank line before a return that follows a multiline declaration, assignment, or call.
+- Use blank lines to separate distinct operations. Keep consecutive calls together when they perform one operation, such as removing credential headers.
+- Leave a blank line before a condition that follows a multiline declaration, even when it checks the declared variable. A guard that checks a single, one-line declaration can sit directly below it.
+- Leave a blank line between variable declarations and reassignments.
+
 ## TypeScript and naming
 
+- Place type declarations together immediately after the imports, before constants, schemas, and functions. In files without imports, place them first.
 - Prefer `type` over `interface`, functions over classes, and string literal unions for small enums. TaggedError subclasses are expected.
 - Use named function declarations for helpers and arrows for callbacks.
 - Always use braces for branches and loops.
 - Add explicit return types to exported functions and non-trivial helpers.
+- Keep each API’s Drizzle schema in `server/database/schema.ts`. Separate the schema, enum declarations, and individual table declarations with blank lines.
 - Use plural SQL table names and declaration identifiers, including fixtures.
 - Do not abbreviate iterable item names. Reserve one-letter names for conventional indexes.
 - Do not use `any`. Validate or narrow `unknown` values.
@@ -90,7 +110,7 @@ This is a [Nitro](https://nitro.build) v3 server project (built on H3 v2). Nitro
 
 ## Documentation and comments
 
-- Document public package exports with JSDoc. Document internal functions when callers need details about behavior, constraints, or ownership.
+- Document public package exports and every exported repository or service function with JSDoc. Document internal functions when callers need details about behavior, constraints, or ownership.
 - Where needed, explain parameters, defaults, return values, thrown errors, and resource cleanup. Distinguish returned Err values from thrown errors.
 - Use accurate TypeScript examples without repeating signature types.
 - Do not add ordinary comments except the required reasons above lint directives. Preserve lint directives, `SAFETY:` comments, and accurate JSDoc.
