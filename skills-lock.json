@@ -7,6 +7,13 @@
       "skillPath": ".agents/skills/adversarial-review/SKILL.md",
       "computedHash": "ebdc5ae482c0d1d48e7ce222ab02eafdd693f8e783e6f1d35a7eed0647f63c08"
     },
+    "analyze-logs": {
+      "source": "evlog.dev",
+      "sourceUrl": "https://www.evlog.dev/",
+      "sourceType": "well-known",
+      "computedHash": "2d120e1da01db67d570a21232c09672216bd18a3cd924b386a72081aea06b66b",
+      "wellKnownDigest": "sha256:1ef8c2cf841b686ee0fad9f229f905778f59e11ad754d91d2dec9d6ca6393fb2"
+    },
     "antfu-query": {
       "source": "antfu/skills",
       "sourceType": "github",
@@ -36,6 +43,13 @@
       "sourceType": "github",
       "skillPath": ".agents/skills/brain/SKILL.md",
       "computedHash": "bee941163d8a82be805676fcc5fda5ce0ae8cdf66eb7683ded87a613bb0c2ead"
+    },
+    "build-audit-logs": {
+      "source": "evlog.dev",
+      "sourceUrl": "https://www.evlog.dev/",
+      "sourceType": "well-known",
+      "computedHash": "8bbbb575aa15977228e7246bb702537bc3d0304cf8b88bfd52909738fce636fa",
+      "wellKnownDigest": "sha256:b23d47912c43ca0ef77c001186fcefe57133d5872124c368881e1424ae4b9836"
     },
     "cloudflare": {
       "source": "cloudflare/skills",
@@ -341,6 +355,13 @@
       "sourceType": "github",
       "skillPath": ".agents/skills/review/SKILL.md",
       "computedHash": "e67a88c888b22efcd6e0ddc9fc81940b98c0fe44da6af6bb8cc2a9bcc25b530c"
+    },
+    "review-logging-patterns": {
+      "source": "evlog.dev",
+      "sourceUrl": "https://www.evlog.dev/",
+      "sourceType": "well-known",
+      "computedHash": "e8f3bdd4418a45977f2ee4a03070af20048f909642151e65495f81116bee58b7",
+      "wellKnownDigest": "sha256:b2949ed9965f1d7eb04164e8a8916fd8869e87de493978cf4eeac34ad252893a"
     },
     "ruminate": {
       "source": "poteto/noodle",
