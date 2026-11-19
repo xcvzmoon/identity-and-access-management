@@ -13,6 +13,7 @@ import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { openAuditReader } from './fixtures/audit-reader.ts';
 import { registerAndAssign } from './fixtures/console-administration.ts';
 import { checkInvitationDeliveryExpiry } from './fixtures/invitation-delivery-expiry.ts';
+import { tabTo } from './fixtures/keyboard.ts';
 import { startCluster } from './fixtures/live-processes.ts';
 import { checkManagementIsolation } from './fixtures/management-isolation.ts';
 import { seedAccount } from './fixtures/oidc.ts';
@@ -60,9 +61,11 @@ async function enrollPasskey(page: Page, issuer: string): Promise<() => Promise<
     },
   });
   await page.goto(new URL('/passkeys', issuer).href);
-  await page.getByRole('button', { name: 'Enroll a passkey' }).click();
+  await tabTo(page.getByRole('button', { name: 'Enroll a passkey' }));
+  await page.keyboard.press('Enter');
   await page.getByText('Passkey enrolled. Verify it to continue.').waitFor();
-  await page.getByRole('button', { name: 'Verify passkey' }).click();
+  await tabTo(page.getByRole('button', { name: 'Verify passkey' }));
+  await page.keyboard.press('Enter');
   await page.getByText('Passkey verified. Return to your console to continue.').waitFor();
   return async () => {
     await protocol.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId });

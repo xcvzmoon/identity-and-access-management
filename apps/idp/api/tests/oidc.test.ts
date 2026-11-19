@@ -11,6 +11,7 @@ import { authorizationEvents, signInEvents } from '../server/database/schema.ts'
 import { assignAppRole, revokeAppGrant } from '../server/services/registration.service.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { openAuditReader, serverEnvironment } from './fixtures/audit-reader.ts';
+import { tabTo } from './fixtures/keyboard.ts';
 import { checkInstallationConsent } from './fixtures/oidc-consent.ts';
 import { authorizationUrl, exchange } from './fixtures/oidc-protocol.ts';
 import { seedOidc } from './fixtures/oidc.ts';
@@ -30,7 +31,8 @@ const enabled = process.env.IAM_PHASE4_TESTS === '1';
 async function presentConsent(page: Page, role: string): Promise<void> {
   await page.getByText('Reports', { exact: true }).waitFor();
   await page.getByText(role, { exact: false }).waitFor();
-  await page.getByRole('button', { name: 'Allow' }).click();
+  await tabTo(page.getByRole('button', { name: 'Allow' }));
+  await page.keyboard.press('Enter');
 }
 
 async function readApprovals(
@@ -56,9 +58,12 @@ async function checkConsent(
 ): Promise<void> {
   const origin = new URL(callback).origin;
   await page.goto(new URL('/sign-in', origin).href);
-  await page.getByLabel('Email address').fill(fixture.email);
-  await page.getByLabel('Password', { exact: true }).fill(fixture.password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await tabTo(page.getByLabel('Email address'));
+  await page.keyboard.insertText(fixture.email);
+  await tabTo(page.getByLabel('Password', { exact: true }));
+  await page.keyboard.insertText(fixture.password);
+  await tabTo(page.getByRole('button', { name: 'Sign in' }));
+  await page.keyboard.press('Enter');
   await presentConsent(page, 'reader');
   await page.waitForURL(`${callback}?**`);
   expect(await page.locator('body').textContent()).toContain(fixture.userId);
