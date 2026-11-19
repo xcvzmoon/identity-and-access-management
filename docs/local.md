@@ -136,3 +136,69 @@ will be denied, even if the access token has time left.
 Run the workspaces directly during development. The pilot phase adds
 container images and ingress for the four workspaces.
 [Pilot phase](plans/iam-v1-rewrite/phase-10-external-pilot.md)
+
+## Organization administration
+
+Apply the IdP and console migrations before deploying Phase 7. Console
+sessions created before the migration need to sign in again to manage an
+organization.
+
+### Provision an operator
+
+Use a named operator account with an independently confirmed email address.
+For a new installation, export the IdP API runtime settings in a trusted
+shell and run this command from the repository root.
+
+```sh
+vpx apps/idp/api/scripts/provision-operator.ts operator@example.org "IAM operator"
+```
+
+The command prints the IAM user ID. For a new account it sends an email
+verification link and generates a random password. The operator verifies
+the address and uses the IdP's **Forgot password** form to set their
+password. Running the command again for an existing account returns its
+ID and preserves its credentials.
+
+Set `OPERATOR_USER_IDS` on every IdP replica to a comma-separated list of
+approved IAM user IDs and restart the replicas. An empty list disables
+operator operations. To withdraw operator access, remove the ID and restart
+all replicas.
+
+### Onboard an organization
+
+1. Sign in on the IdP origin. Visit `/passkeys`, enroll a passkey, and
+   select **Verify passkey**. Verification lasts five minutes in this IAM
+   session. To enroll another passkey, first verify with an existing one.
+2. Open `/operator` on the same origin. Enter the organization name, unique
+   slug, and first owner's email. The owner invitation expires after 48 hours.
+3. The owner follows the emailed link and accepts using a verified account
+   with the invited address. The owner signs in to the console, opens
+   **Manage organizations**, and uses the passkey link to enroll and verify on
+   the IdP origin.
+4. In the console, register the app with its exact HTTPS callback URL.
+   Copy the issued client secret into the app's secret store. Define an
+   installation role and its permissions, then assign it to a member.
+
+Admins can invite and remove ordinary members. Owners can also invite
+admins and remove a different admin or owner. Removing membership revokes
+that user's installation grants in the organization.
+
+### Recover a locked-out organization
+
+1. Open a recovery case. Verify the organization ID, that every owner has
+   lost access to their enrolled passkeys, and the replacement owner's
+   email through an established organization contact independent of the
+   request. Keep the verification evidence in the case system. Use a
+   replacement address that is not already a member of the organization.
+2. As an allowlisted operator, verify a passkey. Select **Open recovery** at
+   `/operator`. Enter the organization ID, case reference, and verified
+   replacement address. Confirm the verification and send the invitation.
+3. The IdP cancels outstanding owner invitations and records the operator
+   ID, organization ID, case reference, timestamp, and `invited` outcome
+   when it issues the replacement invitation. Reusing that case reference
+   for the same organization is rejected. A later reissue requires a new
+   verified case reference.
+4. Have the replacement owner accept, enroll a passkey, and verify it.
+   Review existing owners and remove retired accounts from the organization.
+   Recovery grants ownership through invitation acceptance. It preserves
+   existing owners' credentials in any other organizations they administer.

@@ -34,7 +34,7 @@ The console validated the signed ID token, matched the UserInfo subject,
 and displayed the account associated with its own Secure, HTTP-only cookie.
 An invalid code, a repeated callback, and an external return URL were rejected.
 
-The console discards the tokens after reading the profile. Its PostgreSQL
+In Phase 6, the console discarded the tokens after reading the profile. Phase 7 retains the encrypted access token for management requests. Its PostgreSQL
 session expires at the earlier of the access token and ID token deadlines.
 Expiring the stored session produced a 401. Reopening the account page
 completed a new authorization using the current SSO session.

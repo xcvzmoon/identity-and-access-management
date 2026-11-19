@@ -27,3 +27,27 @@ Check denial for ordinary members, admins of another organization, and
 requests without step-up for the current session. Exercise a locked-out
 organization recovery and verify the audit record identifies the
 operator, affected organization, timestamp, and outcome.
+
+## Results
+
+Chromium completed operator onboarding and verified owner acceptance using
+a delivered email link. The owner enrolled a virtual WebAuthn authenticator
+on the IdP origin, registered an app in the console, defined a role, and
+assigned it. The console displayed the assignment after rereading it from
+the IdP.
+
+The IdP denied mutations by ordinary members and administrators outside the
+target organization. It denied mutations when verification was absent,
+expired, or attached to another IAM session. A separate regression test
+confirmed that a challenge issued to one session could not elevate another
+session for the same user.
+
+After the fixture removed the owner's virtual authenticator, the operator
+issued a replacement invitation. The replacement owner accepted and enrolled
+a new passkey. PostgreSQL contained one recovery record for the case with
+the operator, organization, timestamp, and invitation outcome. A duplicate
+submission was rejected.
+
+The live Phase 3–5 regression fixtures passed. The Phase 6 console sign-in
+fixture timed out during a concurrent run and passed when rerun independently.
+[Run the Phase 7 fixtures](../../validation.md#administration-and-owner-recovery)

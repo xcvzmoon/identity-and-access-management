@@ -6,7 +6,7 @@ Phase 1 is complete. The evidence supports Better Auth `1.7.26` for the
 rewrite. Phase 2 established the PostgreSQL baseline and verified schema
 and migration isolation. Phase 3 verified invitation signup and password recovery. Phase 4 verified the OIDC issuer, installation grants, and consent through the reference app.
 Phase 5 verified live access and IAM sign-out across two IdP processes.
-Phase 6 verified the console session and both sign-out actions through hosted sign-in.
+Phase 6 verified the console session and both sign-out actions through hosted sign-in. Phase 7 verified tenant administration, session-bound passkey verification, and operator-assisted owner recovery.
 
 ## Implementation boundaries
 
@@ -33,7 +33,7 @@ Phase 6 verified the console session and both sign-out actions through hosted si
 | [4. Build the OIDC issuer and app grants](phase-04-oidc-issuer-and-app-grants.md)                   | Complete | A reference app signs in through the issuer. Two installations of the same app have independent clients, grants, and consent.                                      |
 | [5. Implement live checks and IAM sign-out](phase-05-live-access-and-iam-sign-out.md)               | Complete | The next protected request is denied after revocation or IAM sign-out across two IdP processes, or when the live check is unavailable.                             |
 | [6. Build the console OIDC session](phase-06-console-oidc-session.md)                               | Complete | A verified user with zero memberships can open their account. The console owns its session and offers both sign-out actions.                                       |
-| [7. Build administration and owner recovery](phase-07-administration-and-owner-recovery.md)         | Planned  | An operator onboards an owner. Admin actions enforce tenant scope and step-up. Locked-out owner recovery is audited.                                               |
+| [7. Build administration and owner recovery](phase-07-administration-and-owner-recovery.md)         | Complete | An operator onboards an owner. Admin actions enforce tenant scope and step-up. Locked-out owner recovery is audited.                                               |
 | [8. Verify authorization audit and retention](phase-08-authorization-audit.md)                      | Planned  | Authorization outcomes and owner recovery are traceable. Audit access, retention, and redaction pass checks.                                                       |
 | [9. Automate signing-key rotation](phase-09-signing-key-rotation.md)                                | Planned  | Two IdP processes observe staged publication, activation, overlap, and rollback.                                                                                   |
 | [10. Rehearse the external pilot](phase-10-external-pilot.md)                                       | Planned  | A packaged deployment passes the pilot checks on at least two IdP replicas, with runbooks and recorded evidence.                                                   |

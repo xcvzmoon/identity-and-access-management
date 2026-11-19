@@ -133,3 +133,29 @@ vp test --run apps/idp/api/tests/console-session.test.ts
 The fixture provisions the console client and passes its secret directly
 to the console API process. It starts with a verified user without
 memberships and later grants the same user access to the reference app.
+
+### Administration and owner recovery
+
+Build all four workspaces, install Playwright Chromium, and apply both
+APIs' migrations to a disposable PostgreSQL database named
+`iam_phase7_test`. Export the IdP runtime settings and the console runtime
+database password as in the console session fixture. Start Mailpit on
+loopback, configure the IdP SMTP settings to use it, and supply a local
+test certificate covering `localhost`, `console.localhost`, and
+`reports.localhost`. Reserve the issuer port and the next six ports.
+
+```sh
+NODE_EXTRA_CA_CERTS="/absolute/path/to/test-certificate.pem" \
+IAM_PHASE6_TLS_KEY="/absolute/path/to/test-key.pem" \
+IAM_PHASE7_MAILPIT="http://127.0.0.1:8025" \
+OIDC_ISSUER_URL="https://localhost:56750" \
+IAM_PHASE7_TESTS="1" \
+vp test --run apps/idp/api/tests/administration.test.ts apps/idp/api/tests/passkey-session.test.ts
+```
+
+The browser fixture creates temporary operator and owner accounts, uses a
+virtual WebAuthn authenticator, and reads the delivered invitations. It
+exercises the hosted operator workflow, console app registration and role
+assignment, tenant and session denials, and replacement-owner recovery.
+The second test checks challenge binding across two IAM sessions for the
+same user. Discard the fixture database and mailbox after verification.
