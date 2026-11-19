@@ -118,6 +118,16 @@ For a busy existing deployment, build the two retention indexes from the
 audit migration with `CREATE INDEX CONCURRENTLY` before applying it, and
 verify both indexes are valid. The migration reuses those indexes. When upgrading an installation that predates restricted audit access, deploy the compatible IdP API to every replica before the audit migration tightens its grants. See the recorded rollout in the project history. [Audit history](history.md#phase-8--restrict-audit-access-and-expire-events)
 
+#### Check retained rate-limit row ages
+
+Capture the [aggregate age report](../apps/idp/api/scripts/report-rate-limit-retention.sql) before and after a purge. Run it with an operator login that can read `iam_idp.rate_limits.last_request`. The query needs only that column and scans the table once. On large installations, run the report outside peak traffic.
+
+```sh
+psql -X --no-password -v ON_ERROR_STOP=1 --csv -f apps/idp/api/scripts/report-rate-limit-retention.sql
+```
+
+The output contains counts by age and the oldest age in whole hours. Rows become eligible for deletion **after** 720 hours. A nonzero `over_744_hours` count means eligible rows have persisted longer than one daily interval. Check the scheduler, purge failures and row locks. Future timestamps have their own count. The oldest age is empty when there are no past or current timestamps.
+
 #### Schedule retention on a Linux host
 
 On a systemd host with the PostgreSQL client installed, place the purge script at `/usr/local/libexec/iam/purge-expired-audit-events.sh`. Copy [iam-retention.service](../deploy/systemd/iam-retention.service) and [iam-retention.timer](../deploy/systemd/iam-retention.timer) into `/etc/systemd/system/`. Configure the retention login's host, port, database, username and TLS settings as libpq environment variables in `/etc/iam/retention.env`. Put its matching password entry in `/etc/iam/retention.pgpass`, owned by root with mode 0600. The service manager supplies a private copy to the job. Make any configured CA certificate readable by the service.
