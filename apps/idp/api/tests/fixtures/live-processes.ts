@@ -12,6 +12,8 @@ import { expect } from 'vite-plus/test';
 type Client = { clientId: string; clientSecret: string };
 type Cluster = {
   appOrigin: string;
+  consoleOrigin: string;
+  startConsole: (client: Client) => Promise<void>;
   startApp: (client: Client) => Promise<void>;
   setIntrospectionAvailable: (available: boolean) => void;
   close: () => Promise<void>;
@@ -22,6 +24,8 @@ const PRIMARY_OFFSET = 1;
 const REPLICA_OFFSET = 2;
 const WEB_OFFSET = 3;
 const APP_OFFSET = 4;
+const CONSOLE_API_OFFSET = 5;
+const CONSOLE_WEB_OFFSET = 6;
 const STARTUP_TIMEOUT = 20_000;
 const SUCCESS = 200;
 const UNAVAILABLE = 503;
@@ -73,6 +77,30 @@ async function start(
   }
 }
 
+async function startConsole(
+  processes: ChildProcess[],
+  issuerPort: number,
+  consoleOrigin: string,
+  client: Client,
+): Promise<void> {
+  await start(
+    processes,
+    '../../../../console/api/.output/server/index.mjs',
+    issuerPort + CONSOLE_API_OFFSET,
+    {
+      CONSOLE_ORIGIN: consoleOrigin,
+      DB_USER: 'iam_console_runtime',
+      DB_PASSWORD: process.env.IAM_PHASE6_CONSOLE_DB_PASSWORD,
+      OIDC_CLIENT_SECRET: client.clientSecret,
+    },
+  );
+  await start(
+    processes,
+    '../../../../console/web/.output/server/index.mjs',
+    issuerPort + CONSOLE_WEB_OFFSET,
+  );
+}
+
 /**
  * Starts two built IdP servers sharing one issuer, a web UI, and a TLS proxy.
  * The proxy sends all introspection requests to the replica and sign-out to the primary.
@@ -80,7 +108,7 @@ async function start(
  * @returns {Promise<Cluster>} Running servers and their cleanup operation.
  */
 export async function startCluster(issuer: URL): Promise<Cluster> {
-  const key = process.env.IAM_PHASE5_TLS_KEY;
+  const key = process.env.IAM_PHASE6_TLS_KEY ?? process.env.IAM_PHASE5_TLS_KEY;
   const certificate = process.env.NODE_EXTRA_CA_CERTS;
   assert.ok(key && certificate);
   assert.equal(issuer.hostname, 'localhost');
@@ -88,6 +116,7 @@ export async function startCluster(issuer: URL): Promise<Cluster> {
 
   const issuerPort = Number(issuer.port);
   const appOrigin = `https://reports.localhost:${issuerPort}`;
+  const consoleOrigin = `https://console.localhost:${issuerPort}`;
   const processes: ChildProcess[] = [];
   let introspectionAvailable = true;
 
@@ -107,6 +136,8 @@ export async function startCluster(issuer: URL): Promise<Cluster> {
       let offset = WEB_OFFSET;
       if (incoming.headers.host === new URL(appOrigin).host) {
         offset = APP_OFFSET;
+      } else if (incoming.headers.host === new URL(consoleOrigin).host) {
+        offset = path.startsWith('/api/') ? CONSOLE_API_OFFSET : CONSOLE_WEB_OFFSET;
       } else if (introspection) {
         offset = REPLICA_OFFSET;
       } else if (path.startsWith('/api/') || path.startsWith('/.well-known/')) {
@@ -160,6 +191,8 @@ export async function startCluster(issuer: URL): Promise<Cluster> {
 
     return {
       appOrigin,
+      consoleOrigin,
+      startConsole: async (client) => startConsole(processes, issuerPort, consoleOrigin, client),
       async startApp(client) {
         await start(
           processes,
