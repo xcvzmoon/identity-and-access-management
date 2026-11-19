@@ -75,6 +75,16 @@ tests follow links from delivered messages, check membership after concurrent
 acceptance, and use two session cookies to verify password reset revocation.
 Discard the fixture database and mailbox when finished.
 
+### Client secret rotation
+
+Create a fresh loopback PostgreSQL database named `iam_rotation_test`, apply the IdP migrations, and export the runtime settings for that database. Run this opt-in test from the repository root:
+
+```sh
+IAM_ROTATION_TESTS=1 vp test --run apps/idp/api/tests/client-secret-rotation.test.ts
+```
+
+The fixture runs the rotation CLI for the console and a tenant installation. It checks authorization, immediate cutoff, console token introspection and grant preservation. It seeds a fresh passkey verification timestamp to exercise the credential operation.
+
 ### OIDC issuer and app grants
 
 1. Create the disposable PostgreSQL database `iam_phase4_test`. Apply the

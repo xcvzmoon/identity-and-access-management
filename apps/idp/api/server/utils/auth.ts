@@ -19,6 +19,7 @@ import { sendAccountEmail } from './mail.ts';
 type AuthDatabase = Omit<ReturnType<typeof useDatabase>, '$client'>;
 type AuthOptions = {
   registration?: ClientRegistration;
+  rotation?: { clientId: string; referenceId: string; userId: string; sessionId: string };
   beforeAcceptInvitation?: (userId: string) => Promise<void>;
 };
 type Auth = ReturnType<typeof configureAuth>;
@@ -38,6 +39,7 @@ async function sendInvitation(email: string, id: string): Promise<void> {
 // oxlint-disable-next-line typescript/explicit-function-return-type
 function configureAuth(database: AuthDatabase, options: AuthOptions) {
   const env = useEnv();
+  const { rotation } = options;
 
   return betterAuth({
     baseURL: env.oidcIssuerUrl,
@@ -77,7 +79,17 @@ function configureAuth(database: AuthDatabase, options: AuthOptions) {
         grantTypes: ['authorization_code'],
         allowDynamicClientRegistration: false,
         ...authorizationPolicy,
-        ...createRegistrationPolicy(database, options.registration),
+        ...(rotation
+          ? {
+              clientPrivileges: ({ action, clientId, user, session }): boolean =>
+                action === 'rotate' &&
+                clientId === rotation.clientId &&
+                user?.emailVerified === true &&
+                user.id === rotation.userId &&
+                session?.id === rotation.sessionId,
+              clientReference: (): string => rotation.referenceId,
+            }
+          : createRegistrationPolicy(database, options.registration)),
       }),
       organization({
         allowUserToCreateOrganization: false,
@@ -122,7 +134,7 @@ function configureAuth(database: AuthDatabase, options: AuthOptions) {
 
 /**
  * @param {AuthDatabase} database - IdP connection or transaction that owns the operation.
- * @param {AuthOptions} [options] - Scoped client registration or invitation acceptance hooks.
+ * @param {AuthOptions} [options] - Scoped client registration, secret rotation or invitation acceptance hooks.
  * @returns {Auth} An issuer whose Better Auth writes use the supplied connection.
  */
 export function createAuth(database: AuthDatabase, options: AuthOptions = {}): Auth {

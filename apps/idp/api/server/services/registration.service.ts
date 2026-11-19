@@ -2,9 +2,12 @@ import type { OAuthOptions, Scope } from '@better-auth/oauth-provider';
 import { and, eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { useDatabase } from '../database/index.ts';
-import { appGrants, appInstallations } from '../database/schema.ts';
-import { createAuth } from '../utils/auth.ts';
+import { appGrants, appInstallations, memberships, oauthClients } from '../database/schema.ts';
+import { createAuth, useAuth } from '../utils/auth.ts';
+import { useEnv } from '../utils/env.ts';
+import { ForbiddenError } from '../utils/http-errors.ts';
 import { CONSOLE_CLIENT_ID } from './authorization.service.ts';
+import { requireFreshStepUp } from './passkey.service.ts';
 
 export type ClientRegistration = {
   name: string;
@@ -58,6 +61,84 @@ export function createRegistrationPolicy(
     clientReference: () =>
       registration.kind === 'installation' ? registration.organizationId : CONSOLE_CLIENT_ID,
   };
+}
+
+/**
+ * Replaces a managed client's secret after the operator or installation owner verifies a passkey.
+ * @param {Headers} headers - Current IAM session cookie from the credential holder.
+ * @param {string} clientId - Reserved console ID or installation client ID.
+ * @returns {Promise<string>} One-time replacement secret after commit. Failed authorization or provider updates roll back.
+ */
+export async function rotateManagedClientSecret(
+  headers: Headers,
+  clientId: string,
+): Promise<string> {
+  const auth = useAuth();
+  const database = useDatabase();
+  const env = useEnv();
+  const session = await auth.api.getSession({
+    headers,
+    query: {
+      disableCookieCache: true,
+      disableRefresh: true,
+    },
+  });
+  if (!session?.user.emailVerified) {
+    throw new ForbiddenError('A verified session is required.');
+  }
+
+  return database.transaction(async (transaction) => {
+    await requireFreshStepUp(session.user.id, session.session.id, transaction);
+
+    let referenceId = CONSOLE_CLIENT_ID;
+    if (clientId === CONSOLE_CLIENT_ID) {
+      if (!env.operatorUserIds.includes(session.user.id)) {
+        throw new ForbiddenError('Operator access is required.');
+      }
+    } else {
+      const installations = await transaction
+        .select({ organizationId: appInstallations.organizationId })
+        .from(appInstallations)
+        .innerJoin(memberships, eq(memberships.organizationId, appInstallations.organizationId))
+        .innerJoin(oauthClients, eq(oauthClients.clientId, appInstallations.clientId))
+        .where(
+          and(
+            eq(appInstallations.clientId, clientId),
+            eq(memberships.userId, session.user.id),
+            eq(memberships.role, 'owner'),
+            eq(oauthClients.disabled, false),
+          ),
+        )
+        .for('update');
+      const installation = installations.at(FIRST_ASSIGNMENT);
+      if (!installation) {
+        throw new ForbiddenError('An active installation and owner access are required.');
+      }
+
+      referenceId = installation.organizationId;
+    }
+
+    await transaction.execute(
+      sql`SELECT set_config('iam.management_actor_id', ${session.user.id}, true)`,
+    );
+    const issuer = createAuth(transaction, {
+      rotation: {
+        clientId,
+        referenceId,
+        userId: session.user.id,
+        sessionId: session.session.id,
+      },
+    });
+    const result = await issuer.api.rotateClientSecret({
+      headers,
+      body: { client_id: clientId },
+    });
+    if (!result.client_secret) {
+      throw new Error('The provider did not return a replacement secret.');
+    }
+
+    return result.client_secret;
+  });
 }
 
 /**

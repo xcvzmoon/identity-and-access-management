@@ -63,6 +63,18 @@ Store the returned value as `OIDC_CLIENT_SECRET` in the console runtime environm
 
 Register the reference installation through the console, grant a test member a role with `reports.read`, and run its backend behind a separate HTTPS hostname. [Connect a server-backed app](client-integration.md) · [Start the reference app](local.md#sign-in-through-the-reference-app)
 
+## Rotate a managed client secret
+
+For the console, use a verified operator session and set `CLIENT_ID` to `iam-console`. For a customer installation, use a verified session belonging to an owner of that organization and set `CLIENT_ID` to the installation client ID. Verify a passkey in the same session within five minutes of rotation.
+
+The provider accepts one secret at a time. Prepare the consumer's secret store and reload procedure, and coordinate a maintenance window for token exchange and introspection. Before invoking the command, you can abort the cutover and keep using the current secret. Run from a trusted host with the IdP runtime settings. Supply the session cookie in a private file and choose a fresh path for the replacement.
+
+```sh
+(umask 077; set -C; vpx apps/idp/api/scripts/rotate-client-secret.ts "$CLIENT_ID" < "$COOKIE_FILE" > "$NEW_SECRET_FILE")
+```
+
+On success, install the captured value in the console or customer backend and reload every replica. Check a protected request and confirm the previous secret receives a client authentication error. The old secret stops working at commit. If the new value is lost, repeat rotation to issue another one. Use the same procedure for a suspected disclosure, with immediate cutoff. The audit reader can verify an `updated` event with `credential_changed` and the expected actor. End the privileged session and remove the temporary files after delivery.
+
 ## Back up and rehearse restore
 
 1. From an authorized backup host, configure libpq credentials for a login with read access to both application schemas and migration journals. Preserve PostgreSQL role definitions and memberships in the deployment's administrator-managed configuration.
