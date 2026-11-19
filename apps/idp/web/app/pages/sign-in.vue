@@ -26,7 +26,7 @@
     await submit(async () => {
       const query = new URLSearchParams(globalThis.location.search);
       const authorization = query.has('sig') || query.has('client_id');
-      const response = await $fetch<unknown>('/api/v1/auth/sign-in/email', {
+      const response = await $fetch<unknown>('/api/v1/web/sign-in/email', {
         method: 'POST',
         body: {
           email: values.email,
@@ -119,6 +119,10 @@
       </UButton>
       <NuxtLink to="/forgot-password">Forgot password?</NuxtLink>
       <NuxtLink to="/verify-email">Resend verification email</NuxtLink>
+      <p>
+        IAM counts password sign-ins and keeps the account, time, and sign-in route for security
+        investigations for 30 days.
+      </p>
     </Form>
   </AccountPanel>
 </template>

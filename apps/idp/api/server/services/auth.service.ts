@@ -1,10 +1,13 @@
 import type { H3Event } from 'nitro/h3';
 import { decodeBasicCredentials } from '@better-auth/core/oauth2';
 import { metadataResponse } from '@better-auth/oauth-provider';
+import { sql } from 'drizzle-orm';
 import { assertBodySize, getRequestIP } from 'nitro/h3';
+import { constants } from 'node:http2';
 import { isIP } from 'node:net';
 import * as valibot from 'valibot';
-import { useAuth } from '../utils/auth.ts';
+import { useDatabase } from '../database/index.ts';
+import { createAuth, useAuth } from '../utils/auth.ts';
 import { useEnv } from '../utils/env.ts';
 import {
   ForbiddenError,
@@ -143,6 +146,46 @@ export async function forwardPostRequestToBetterAuth(
   const auth = useAuth();
   const response = await auth.handler(request);
   return privateResponse(response);
+}
+
+/**
+ * Verifies a password and commits session issuance and its investigation record together.
+ * The route supplies the entry point. Client headers cannot override it.
+ * Provider 4xx responses count as rejected attempts when no session was issued.
+ * @param {H3Event} event - Same-origin JSON credential submission.
+ * @param {'api' | 'web_form'} entry - Public endpoint that received the request.
+ * @returns {Promise<Response>} Unmodified provider status and cookies with private cache headers.
+ */
+export async function signInWithPassword(
+  event: H3Event,
+  entry: 'api' | 'web_form',
+): Promise<Response> {
+  checkAuthPost(event);
+
+  const database = useDatabase();
+  const url = authUrl(event);
+  url.pathname = '/api/v1/auth/sign-in/email';
+
+  const request = new Request(url, {
+    method: 'POST',
+    headers: authHeaders(event),
+    body: await event.req.text(),
+  });
+
+  return database.transaction(async (transaction) => {
+    await transaction.execute(sql`select set_config('iam.sign_in_entry', ${entry}, true)`);
+    const auth = createAuth(transaction);
+    const response = await auth.handler(request);
+
+    if (
+      response.status >= constants.HTTP_STATUS_BAD_REQUEST &&
+      response.status < constants.HTTP_STATUS_INTERNAL_SERVER_ERROR
+    ) {
+      await transaction.execute(sql`select iam_idp.record_rejected_sign_in()`);
+    }
+
+    return privateResponse(response);
+  });
 }
 
 /**

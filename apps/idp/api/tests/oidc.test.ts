@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { expect, test } from 'vite-plus/test';
 import { useDatabase } from '../server/database/index.ts';
-import { authorizationEvents } from '../server/database/schema.ts';
+import { authorizationEvents, signInEvents } from '../server/database/schema.ts';
 import { assignAppRole, revokeAppGrant } from '../server/services/registration.service.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { openAuditReader, serverEnvironment } from './fixtures/audit-reader.ts';
@@ -79,6 +79,12 @@ async function checkConsent(
   await page.goto(new URL('/sign-in', origin).href);
   await page.waitForURL(`${callback}?**`);
   expect(await page.locator('body').textContent()).toContain(fixture.userId);
+
+  const signIns = await reader
+    .select({ entry: signInEvents.entry })
+    .from(signInEvents)
+    .where(eq(signInEvents.userId, fixture.userId));
+  expect(signIns).toEqual([{ entry: 'web_form' }]);
 
   const reused = await readApprovals(fixture, reader);
   expect(reused).toEqual([expected, expected]);

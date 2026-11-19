@@ -3,11 +3,13 @@ import {
   bigint,
   boolean,
   check,
+  date,
   foreignKey,
   index,
   integer,
   jsonb,
   pgSchema,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -458,3 +460,33 @@ export const ownerRecoveryEvents = idpSchema.table(
 export const processedOwnerRecoveryCases = idpSchema.table('processed_owner_recovery_cases', {
   digest: text('digest').primaryKey(),
 });
+
+export const signInEvents = idpSchema.table(
+  'sign_in_events',
+  {
+    id: generateUuid(),
+    userId: uuid('user_id').notNull(),
+    entry: text('entry', { enum: ['web_form', 'api'] }).notNull(),
+    createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
+  },
+  (table) => [
+    index('sign_in_events_account_idx').on(table.userId, table.createdAt),
+    index('sign_in_events_expiry_idx').on(table.createdAt),
+    check('sign_in_events_entry', sql`${table.entry} in ('web_form', 'api')`),
+  ],
+);
+
+export const signInCounts = idpSchema.table(
+  'sign_in_counts',
+  {
+    day: date('day').notNull(),
+    entry: text('entry', { enum: ['web_form', 'api'] }).notNull(),
+    outcome: text('outcome', { enum: ['issued', 'rejected'] }).notNull(),
+    total: bigint('total', { mode: 'bigint' }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.day, table.entry, table.outcome] }),
+    check('sign_in_counts_entry', sql`${table.entry} in ('web_form', 'api')`),
+    check('sign_in_counts_outcome', sql`${table.outcome} in ('issued', 'rejected')`),
+  ],
+);

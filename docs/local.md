@@ -102,19 +102,64 @@ schema. Runtime roles have `CONNECT` and grants on their own application data.
 
 The IdP retains authorization and owner recovery events for 90 days. Configure
 a daily scheduler job to run `apps/idp/api/scripts/purge-expired-audit-events.sh`
-with the retention login's libpq connection settings. Each call commits up to
-1,000 expired rows per table. The job stops when it finds no unlocked expired
+with the retention login's libpq connection settings. Each call removes up to
+1,000 expired rows per event table and clears expired daily sign-in counts. The job stops when it finds no unlocked expired
 rows. Alert on a failed or missed run. Rows become eligible at 90 days and
 are normally removed by the next daily run. Apply a separate expiration
 policy to backups and restored copies. After expiry, the IdP keeps only a digest
 of the organization and case reference to prevent repeat recovery for the same case.
 
-Security reviewers can query both event tables. The retention role can run
-the fixed purge function. Schema owners and database administrators retain
+Security reviewers can query the audit tables. The retention role can run
+the fixed purge functions. Schema owners and database administrators retain
 privileged access. Keep migrator credentials out of the API and scheduler.
 For a busy existing deployment, build the two retention indexes from the
 audit migration with `CREATE INDEX CONCURRENTLY` before applying it, and
 verify both indexes are valid. The migration reuses those indexes. When upgrading an installation that predates restricted audit access, deploy the compatible IdP API to every replica before the audit migration tightens its grants. See the recorded rollout in the project history. [Audit history](history.md#phase-8--restrict-audit-access-and-expire-events)
+
+### Password sign-in telemetry
+
+The IdP counts password sessions issued and requests rejected by Better Auth (HTTP 4xx)
+for each UTC day and entry point. `web_form` means the sign-in or invitation form's
+public endpoint, `/api/v1/web/sign-in/email`. `api` means the original
+`/api/v1/auth/sign-in/email` endpoint. Any HTTP client can call either route.
+These values establish which endpoint handled a request. They cannot identify
+curl, Postman, a browser, or a person operating that browser.
+
+Each issued password session also creates a security record containing the account
+UUID, database time, and entry point. Session creation and the two telemetry writes
+commit together. Rejections increment a counter only. Invalid origins, requests
+rejected before Better Auth, server failures, passkey step-up, and SSO session reuse
+are outside the counts. Collection starts when the updated API handles traffic.
+Existing sessions have no historical entry-point information.
+
+Use a read-only audit login for an authorized account investigation. In psql, set
+the account UUID with `\set account_id '...'` and run:
+
+```sql
+SELECT created_at, entry
+FROM iam_idp.sign_in_events
+WHERE user_id = :'account_id'::uuid
+ORDER BY created_at DESC;
+```
+
+For service reporting, grant the reporting login schema `USAGE` and `SELECT`
+on `iam_idp.sign_in_counts` alone. The following query returns daily totals:
+
+```sql
+SELECT day, entry, outcome, total
+FROM iam_idp.sign_in_counts
+ORDER BY day DESC, entry, outcome;
+```
+
+The daily retention job above removes account history older than 30 days and
+keeps the current UTC day plus 89 previous days of counts. Deploy the migration
+before the API and web updates, and schedule the job before enabling traffic.
+Restrict access to backups and expire them under the deployment's backup policy.
+The telemetry tables omit emails, IP addresses, user agents, session identifiers,
+and credentials. Better Auth's existing session metadata has a separate lifecycle.
+The sign-in and invitation forms disclose collection. Before production, document
+the deployment's lawful basis, investigation access, privacy contact, and retention
+in its privacy notice. The windows here are operational defaults.
 
 ## IdP account flows
 

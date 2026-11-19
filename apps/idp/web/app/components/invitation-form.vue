@@ -76,7 +76,7 @@
         return;
       }
 
-      await $fetch('/api/v1/auth/sign-in/email', {
+      await $fetch('/api/v1/web/sign-in/email', {
         method: 'POST',
         signal: requests.signal,
         body: {
@@ -213,6 +213,10 @@
       >
         {{ mode === 'new' ? 'Create account' : 'Sign in and accept' }}
       </UButton>
+      <p>
+        IAM counts password sign-ins and keeps the account, time, and sign-in route for security
+        investigations for 30 days.
+      </p>
     </Form>
   </AccountPanel>
 </template>

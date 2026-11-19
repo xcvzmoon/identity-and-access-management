@@ -95,4 +95,44 @@ BEGIN
 END
 $verify$;
 
+RESET ROLE;
+
+INSERT INTO iam_idp.sign_in_events (user_id, entry, created_at)
+VALUES (uuidv7(), 'api', now() - interval '31 days'), (uuidv7(), 'web_form', now());
+
+INSERT INTO iam_idp.sign_in_counts (day, entry, outcome, total)
+VALUES ((now() AT TIME ZONE 'UTC')::date - 90, 'api', 'issued', 1);
+
+SET LOCAL ROLE iam_idp_runtime;
+SELECT set_config('iam.sign_in_entry', 'api', true);
+SELECT iam_idp.record_rejected_sign_in();
+SELECT iam_idp.record_rejected_sign_in();
+
+DO $verify$
+BEGIN
+  IF has_table_privilege(current_user, 'iam_idp.sign_in_counts', 'SELECT, INSERT, UPDATE, DELETE')
+    OR has_table_privilege(current_user, 'iam_idp.sign_in_events', 'SELECT, INSERT, UPDATE, DELETE')
+    OR has_function_privilege(current_user, 'iam_idp.purge_expired_sign_ins()', 'EXECUTE')
+    OR has_function_privilege('iam_audit_reader', 'iam_idp.record_rejected_sign_in()', 'EXECUTE')
+    OR has_table_privilege('iam_audit_retention', 'iam_idp.sign_in_events', 'SELECT') THEN
+    RAISE EXCEPTION 'Unexpected sign-in telemetry privileges';
+  END IF;
+END
+$verify$;
+
+SET LOCAL ROLE iam_audit_retention;
+SELECT iam_idp.purge_expired_sign_ins();
+
+SET LOCAL ROLE iam_audit_reader;
+DO $verify$
+BEGIN
+  IF EXISTS (SELECT FROM iam_idp.sign_in_events WHERE created_at < now() - interval '30 days')
+    OR NOT EXISTS (SELECT FROM iam_idp.sign_in_events WHERE entry = 'web_form' AND created_at = now()::timestamptz(3))
+    OR EXISTS (SELECT FROM iam_idp.sign_in_counts WHERE day <= (now() AT TIME ZONE 'UTC')::date - 90)
+    OR NOT EXISTS (SELECT FROM iam_idp.sign_in_counts WHERE entry = 'api' AND outcome = 'rejected' AND total >= 2) THEN
+    RAISE EXCEPTION 'Incorrect sign-in telemetry retention or counter';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;
