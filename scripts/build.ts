@@ -7,24 +7,8 @@ const rootDirectory = path.resolve(import.meta.dirname, '..');
 
 try {
   const workspaces = getWorkspaces(rootDirectory, 'build');
-  const database = 'packages/database';
-  const shared = 'packages/shared';
-  const orderedWorkspaces = [
-    database,
-    shared,
-    ...workspaces.filter(
-      (workspace) =>
-        workspace.startsWith('packages/') && workspace !== database && workspace !== shared,
-    ),
-    ...workspaces.filter((workspace) => !workspace.startsWith('packages/')),
-  ];
 
-  execFileSync('vp', ['-C', shared, 'run', 'build:utils'], {
-    cwd: rootDirectory,
-    stdio: 'inherit',
-  });
-
-  for (const workspace of orderedWorkspaces) {
+  for (const workspace of workspaces) {
     execFileSync('vp', ['-C', workspace, 'run', 'build'], {
       cwd: rootDirectory,
       stdio: 'inherit',
