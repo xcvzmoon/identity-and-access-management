@@ -222,6 +222,9 @@ catalogs:
     openid-client:
       specifier: 6.9.0
       version: 6.9.0
+    portless:
+      specifier: 0.18.1
+      version: 0.18.1
     typescript:
       specifier: 6.0.3
       version: 6.0.3
@@ -283,6 +286,9 @@ importers:
       node:
         specifier: runtime:26.13.0
         version: runtime:26.13.0
+      portless:
+        specifier: 'catalog:'
+        version: 0.18.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -4790,6 +4796,12 @@ packages:
   pngjs@7.0.0:
     resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
     engines: {node: '>=14.19.0'}
+
+  portless@0.18.1:
+    resolution: {integrity: sha512-3gfeicAvS5kwFUbZrsZpt1oU1MUBvfiy2S0MT/n8mwWEp/ZjQsWI0mC353GEi/q8JUVgdx7lBGDzCcMI9O1MXg==}
+    engines: {node: '>=24'}
+    os: [darwin, linux, win32]
+    hasBin: true
 
   postcss-calc@11.3.0:
     resolution: {integrity: sha512-DjOpy9au57PK8MXPrjDbGIVjO6VN4CGy4ADzPGi1vEJ0XOpJ/MxoCB5FRgQ3Hnv58oobpBZtERS/qwQVT3WPWQ==}
@@ -10050,6 +10062,8 @@ snapshots:
       playwright-core: 1.65.1
 
   pngjs@7.0.0: {}
+
+  portless@0.18.1: {}
 
   postcss-calc@11.3.0(postcss@8.5.33):
     dependencies:

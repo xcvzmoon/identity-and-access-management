@@ -40,10 +40,7 @@
 	log_append route {log_route}
 }
 
-https://{$IDP_HOST} {
-	import access_log
-	tls /run/secrets/tls_cert /run/secrets/tls_key
-
+(idp_routes) {
 	@api path /api/* /.well-known/*
 	handle @api {
 		reverse_proxy idp-api-1:3000 idp-api-2:3000 {
@@ -61,10 +58,13 @@ https://{$IDP_HOST} {
 	}
 }
 
-https://{$CONSOLE_HOST} {
+https://{$IDP_HOST} {
 	import access_log
 	tls /run/secrets/tls_cert /run/secrets/tls_key
+	import idp_routes
+}
 
+(console_routes) {
 	handle /api/* {
 		reverse_proxy console-api:3000
 	}
@@ -73,3 +73,11 @@ https://{$CONSOLE_HOST} {
 		reverse_proxy console-web:3000
 	}
 }
+
+https://{$CONSOLE_HOST} {
+	import access_log
+	tls /run/secrets/tls_cert /run/secrets/tls_key
+	import console_routes
+}
+
+import /etc/caddy/sites/*.caddy

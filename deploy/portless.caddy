@@ -1,0 +1,4 @@
+http://{$PORTLESS_HOST}:8080 {
+	import access_log
+	import {$PORTLESS_ROUTES}
+}

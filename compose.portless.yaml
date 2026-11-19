@@ -1,0 +1,43 @@
+x-portless-issuer: &portless-issuer
+  OIDC_ISSUER_URL: ${IDP_ORIGIN:?Set the public Portless issuer origin}
+
+services:
+  idp-api-1:
+    environment: *portless-issuer
+
+  idp-api-2:
+    environment: *portless-issuer
+
+  console-api:
+    environment:
+      <<: *portless-issuer
+      CONSOLE_ORIGIN: ${CONSOLE_ORIGIN:?Set the public Portless console origin}
+
+  ingress:
+    labels:
+      portless.name: idp
+    environment:
+      PORTLESS_HOST: ${IDP_HOST}
+      PORTLESS_ROUTES: idp_routes
+      IDP_HOST: ${IDP_AUTHORITY}
+      CONSOLE_HOST: ${CONSOLE_AUTHORITY}
+    volumes:
+      - ./deploy/portless.caddy:/etc/caddy/sites/portless.caddy:ro
+    ports: !override
+      - '127.0.0.1::8080'
+
+  console-ingress:
+    extends:
+      file: compose.yaml
+      service: ingress
+    labels:
+      portless.name: console
+    environment:
+      PORTLESS_HOST: ${CONSOLE_HOST}
+      PORTLESS_ROUTES: console_routes
+    networks: !override
+      - default
+    volumes:
+      - ./deploy/portless.caddy:/etc/caddy/sites/portless.caddy:ro
+    ports: !override
+      - '127.0.0.1::8080'

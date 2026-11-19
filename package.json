@@ -17,12 +17,14 @@
     "test": "vp test",
     "test:watch": "vp test --watch",
     "test:verbose": "vp test --reporter=verbose",
-    "docker": "vpx scripts/docker.ts"
+    "docker": "vpx scripts/docker.ts",
+    "docker:portless": "sh scripts/portless-compose.sh"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "consola": "catalog:",
     "genbumppush": "catalog:",
+    "portless": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"
   },
