@@ -1,5 +1,5 @@
 import type { H3Event } from 'nitro/h3';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { readBody } from 'nitro/h3';
 import { randomUUID } from 'node:crypto';
 import * as valibot from 'valibot';
@@ -113,18 +113,13 @@ export async function inviteOwner(event: H3Event): Promise<Response> {
         throw new BadRequestError('Use a verified recovery contact who is not an existing member.');
       }
 
-      const recorded = await transaction
-        .insert(ownerRecoveryEvents)
-        .values({
-          organizationId: id,
-          operatorId: session.user.id,
-          caseReference: input.caseReference,
-          outcome: 'invited',
-        })
-        .onConflictDoNothing()
-        .returning({ id: ownerRecoveryEvents.id });
+      const recorded = await transaction.execute(sql`
+        INSERT INTO ${ownerRecoveryEvents} (organization_id, operator_id, case_reference, outcome)
+        VALUES (${id}, ${session.user.id}, ${input.caseReference}, 'invited')
+        ON CONFLICT DO NOTHING
+      `);
 
-      if (!recorded.at(FIRST)) {
+      if (!recorded.count) {
         throw new BadRequestError('This recovery case has already been processed.');
       }
 

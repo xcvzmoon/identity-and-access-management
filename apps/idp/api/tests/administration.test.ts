@@ -10,6 +10,7 @@ import { useDatabase } from '../server/database/index.ts';
 import { oauthClients, ownerRecoveryEvents } from '../server/database/schema.ts';
 import { provisionClient } from '../server/services/registration.service.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
+import { openAuditReader } from './fixtures/audit-reader.ts';
 import { registerAndAssign } from './fixtures/console-administration.ts';
 import { startCluster } from './fixtures/live-processes.ts';
 import { checkManagementIsolation } from './fixtures/management-isolation.ts';
@@ -19,7 +20,6 @@ type Recovery = { operatorId: string; organizationId: string; replacement: Accou
 
 type Account = Awaited<ReturnType<typeof seedAccount>>;
 
-const FIRST = 0;
 const TIMEOUT = 120_000;
 const OWNER_PATH = '/api/v1/operator/owner-invitations';
 const MANAGEMENT_PATH = '/api/v1/management';
@@ -145,7 +145,7 @@ async function recover(
   issuer: string,
   { operatorId, replacement, organizationId }: Recovery,
 ): Promise<void> {
-  const database = useDatabase();
+  const reader = openAuditReader();
   const caseReference = randomUUID();
   const recovery = {
     operation: 'recover',
@@ -169,18 +169,22 @@ async function recover(
   await signIn(replacementPage, issuer, replacement);
   await acceptOwner(replacementPage, issuer, replacement.email);
   await enrollPasskey(replacementPage, issuer);
-  const audit = await database
+  const audit = await reader
     .select()
     .from(ownerRecoveryEvents)
     .where(eq(ownerRecoveryEvents.caseReference, caseReference));
-  expect(audit.at(FIRST)?.createdAt).toBeInstanceOf(Date);
+  const id: unknown = expect.any(String);
+  const createdAt: unknown = expect.any(Date);
+
   expect(audit).toEqual([
-    expect.objectContaining({
+    {
+      id,
       organizationId,
       operatorId,
-
+      caseReference,
+      createdAt,
       outcome: 'invited',
-    }),
+    },
   ]);
 }
 

@@ -1,4 +1,5 @@
 import type { Page } from 'playwright';
+import { and, eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -9,14 +10,17 @@ import { useDatabase } from '../server/database/index.ts';
 import { authorizationEvents } from '../server/database/schema.ts';
 import { assignAppRole, revokeAppGrant } from '../server/services/registration.service.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
+import { openAuditReader, serverEnvironment } from './fixtures/audit-reader.ts';
 import { checkInstallationConsent } from './fixtures/oidc-consent.ts';
 import { authorizationUrl, exchange } from './fixtures/oidc-protocol.ts';
 import { seedOidc } from './fixtures/oidc.ts';
 import { verifySigningKeys } from './fixtures/signing-keys.ts';
 
+type Reader = ReturnType<typeof openAuditReader>;
 type Fixture = Awaited<ReturnType<typeof seedOidc>>;
 
 const TIMEOUT = 45_000;
+const ONE_APPROVAL = 1;
 const RANDOM_BYTES = 32;
 const OK = 200;
 const BAD_REQUEST = 400;
@@ -28,7 +32,27 @@ async function presentConsent(page: Page, role: string): Promise<void> {
   await page.getByRole('button', { name: 'Allow' }).click();
 }
 
-async function checkConsent(page: Page, fixture: Fixture, callback: string): Promise<void> {
+async function readApprovals(
+  fixture: Fixture,
+  reader: Reader,
+): Promise<(typeof authorizationEvents.$inferSelect)[]> {
+  return reader
+    .select()
+    .from(authorizationEvents)
+    .where(
+      and(
+        eq(authorizationEvents.clientId, fixture.north.clientId),
+        eq(authorizationEvents.stage, 'authorization'),
+      ),
+    );
+}
+
+async function checkConsent(
+  page: Page,
+  fixture: Fixture,
+  callback: string,
+  reader: Reader,
+): Promise<void> {
   const origin = new URL(callback).origin;
   await page.goto(new URL('/sign-in', origin).href);
   await page.getByLabel('Email address').fill(fixture.email);
@@ -38,9 +62,27 @@ async function checkConsent(page: Page, fixture: Fixture, callback: string): Pro
   await page.waitForURL(`${callback}?**`);
   expect(await page.locator('body').textContent()).toContain(fixture.userId);
 
+  const eventId: unknown = expect.any(String);
+  const createdAt: unknown = expect.any(Date);
+  const expected = {
+    id: eventId,
+    createdAt,
+    clientId: fixture.north.clientId,
+    organizationId: fixture.north.organizationId,
+    userId: fixture.userId,
+    outcome: 'approved',
+    stage: 'authorization',
+  };
+  const first = await readApprovals(fixture, reader);
+  expect(first).toEqual([expected]);
+
   await page.goto(new URL('/sign-in', origin).href);
   await page.waitForURL(`${callback}?**`);
   expect(await page.locator('body').textContent()).toContain(fixture.userId);
+
+  const reused = await readApprovals(fixture, reader);
+  expect(reused).toEqual([expected, expected]);
+  expect(new Set(reused.map(({ id }) => id)).size).toBe(reused.length);
 
   await assignAppRole({
     clientId: fixture.north.clientId,
@@ -64,29 +106,37 @@ async function checkAuthorization(page: Page, fixture: Fixture, callback: string
   const invalidCallback = authorizationUrl(fixture.north, callback, verifier);
   invalidCallback.searchParams.set('redirect_uri', 'https://unregistered.example/callback');
 
-  await Promise.all(
-    [missingPkce, invalidCallback, authorizationUrl(fixture.south, callback, verifier)].map(
-      async (url) => {
-        const response = await page.request.get(url.href, { maxRedirects: 0 });
-        const destination = new URL(new Headers(response.headers()).get('location') ?? '/', origin);
+  const denied = authorizationUrl(fixture.south, callback, verifier);
+  denied.searchParams.set('organization_id', fixture.north.organizationId);
+  denied.searchParams.set('user_id', fixture.north.organizationId);
 
-        expect(destination.searchParams.has('code')).toBe(false);
-        expect(destination.hostname).not.toBe('unregistered.example');
-        expect(response.status() >= BAD_REQUEST || destination.searchParams.has('error')).toBe(
-          true,
-        );
-      },
-    ),
+  await Promise.all(
+    [missingPkce, invalidCallback, denied].map(async (url) => {
+      const response = await page.request.get(url.href, { maxRedirects: 0 });
+      const destination = new URL(new Headers(response.headers()).get('location') ?? '/', origin);
+
+      expect(destination.searchParams.has('code')).toBe(false);
+      expect(destination.hostname).not.toBe('unregistered.example');
+      expect(response.status() >= BAD_REQUEST || destination.searchParams.has('error')).toBe(true);
+    }),
   );
 }
 
-async function checkExchange(page: Page, fixture: Fixture, callback: string): Promise<void> {
+async function checkExchange(
+  page: Page,
+  fixture: Fixture,
+  callback: string,
+  reader: Reader,
+): Promise<void> {
   const verifier = randomBytes(RANDOM_BYTES).toString('base64url');
   const authorize = authorizationUrl(fixture.north, callback, verifier);
+  const previous = await readApprovals(fixture, reader);
   const response = await page.request.get(authorize.href, { maxRedirects: 0 });
   const code = new URL(response.headers().location).searchParams.get('code');
 
   assert.ok(code);
+  const approvals = await readApprovals(fixture, reader);
+  expect(approvals.length - previous.length).toBe(ONE_APPROVAL);
   const accepted = await exchange(fixture.north, callback, code, verifier);
   expect(accepted.status).toBe(OK);
   const replay = await exchange(fixture.north, callback, code, verifier);
@@ -108,14 +158,18 @@ async function checkExchange(page: Page, fixture: Fixture, callback: string): Pr
   const revoked = await exchange(fixture.north, callback, pendingCode, verifier);
   expect(await revoked.json()).toMatchObject({ error: 'invalid_grant' });
 
-  const database = useDatabase();
-  const events = await database.select().from(authorizationEvents);
+  const events = await reader
+    .select()
+    .from(authorizationEvents)
+    .where(eq(authorizationEvents.userId, fixture.userId));
 
   expect(events).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
         userId: fixture.userId,
         clientId: fixture.south.clientId,
+        organizationId: fixture.south.organizationId,
+        stage: 'authorization',
         outcome: 'denied',
       }),
       expect.objectContaining({
@@ -151,6 +205,7 @@ test.skipIf(!enabled)(
       await verifySigningKeys(env.oidcIssuerUrl);
 
       const fixture = await seedOidc(callback);
+      const reader = openAuditReader();
       const server = fileURLToPath(
         new URL('../../../../examples/reference-app/server.ts', import.meta.url),
       );
@@ -158,7 +213,7 @@ test.skipIf(!enabled)(
       const app = spawn(process.execPath, [server], {
         stdio: 'inherit',
         env: {
-          ...process.env,
+          ...serverEnvironment(),
           APP_ORIGIN: origin,
           CLIENT_ID: fixture.north.clientId,
           CLIENT_SECRET: fixture.north.clientSecret,
@@ -178,10 +233,10 @@ test.skipIf(!enabled)(
           .toBe(OK);
         const page = await browser.newPage({ ignoreHTTPSErrors: true });
 
-        await checkConsent(page, fixture, callback);
+        await checkConsent(page, fixture, callback, reader);
         await checkAuthorization(page, fixture, callback);
-        await checkExchange(page, fixture, callback);
-        await checkInstallationConsent(page, fixture, callback);
+        await checkExchange(page, fixture, callback, reader);
+        await checkInstallationConsent(page, fixture, callback, reader);
       } finally {
         app.kill();
         await browser.close();

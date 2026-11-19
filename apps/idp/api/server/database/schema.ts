@@ -421,15 +421,19 @@ export const appGrants = idpSchema.table(
   ],
 );
 
-export const authorizationEvents = idpSchema.table('authorization_events', {
-  id: generateUuid(),
-  clientId: text('client_id').notNull(),
-  organizationId: uuid('organization_id'),
-  userId: uuid('user_id'),
-  outcome: text('outcome', { enum: ['approved', 'denied'] }).notNull(),
-  stage: text('stage', { enum: ['authorization', 'consent', 'exchange'] }).notNull(),
-  createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
-});
+export const authorizationEvents = idpSchema.table(
+  'authorization_events',
+  {
+    id: generateUuid(),
+    clientId: text('client_id').notNull(),
+    organizationId: uuid('organization_id'),
+    userId: uuid('user_id'),
+    outcome: text('outcome', { enum: ['approved', 'denied'] }).notNull(),
+    stage: text('stage', { enum: ['authorization', 'consent', 'exchange'] }).notNull(),
+    createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
+  },
+  (table) => [index('authorization_events_created_at_idx').on(table.createdAt)],
+);
 
 export const ownerRecoveryEvents = idpSchema.table(
   'owner_recovery_events',
@@ -441,5 +445,12 @@ export const ownerRecoveryEvents = idpSchema.table(
     outcome: text('outcome', { enum: ['invited'] }).notNull(),
     createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
   },
-  (table) => [unique().on(table.organizationId, table.caseReference)],
+  (table) => [
+    unique().on(table.organizationId, table.caseReference),
+    index('owner_recovery_events_created_at_idx').on(table.createdAt),
+  ],
 );
+
+export const processedOwnerRecoveryCases = idpSchema.table('processed_owner_recovery_cases', {
+  digest: text('digest').primaryKey(),
+});

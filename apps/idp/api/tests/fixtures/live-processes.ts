@@ -8,6 +8,7 @@ import { createServer } from 'node:https';
 import { createServer as createTcpServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { expect } from 'vite-plus/test';
+import { serverEnvironment } from './audit-reader.ts';
 
 type Client = { clientId: string; clientSecret: string };
 type Cluster = {
@@ -44,7 +45,7 @@ async function start(
   const child = spawn(process.execPath, [fileURLToPath(new URL(script, import.meta.url))], {
     stdio: 'inherit',
     env: {
-      ...process.env,
+      ...serverEnvironment(),
       ...env,
       HOST: LOOPBACK,
       PORT: String(port),

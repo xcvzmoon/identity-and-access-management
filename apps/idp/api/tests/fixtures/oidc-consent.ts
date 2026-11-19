@@ -1,10 +1,10 @@
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { Page } from 'playwright';
 import type { seedOidc } from './oidc.ts';
 import { and, eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { expect } from 'vite-plus/test';
-import { useDatabase } from '../../server/database/index.ts';
 import { authorizationEvents } from '../../server/database/schema.ts';
 import { assignAppRole } from '../../server/services/registration.service.ts';
 import { authorizationUrl, exchange } from './oidc-protocol.ts';
@@ -19,11 +19,13 @@ const DENIED_CONSENTS = 2;
  * @param {Page} page - Browser with the fixture user's SSO cookie.
  * @param {Fixture} fixture - Member and installation registrations.
  * @param {string} callback - Exact redirect URI registered for the client.
+ * @param {PostgresJsDatabase} reader - Connection authorized to read the audit tables.
  */
 export async function checkInstallationConsent(
   page: Page,
   fixture: Fixture,
   callback: string,
+  reader: PostgresJsDatabase,
 ): Promise<void> {
   const { south, userId } = fixture;
   const assignment = {
@@ -74,8 +76,7 @@ export async function checkInstallationConsent(
   const accepted = await exchange(south, callback, code, verifier);
   expect(accepted.ok).toBe(true);
 
-  const database = useDatabase();
-  const events = await database
+  const events = await reader
     .select()
     .from(authorizationEvents)
     .where(
