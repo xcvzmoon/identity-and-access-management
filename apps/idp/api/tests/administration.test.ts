@@ -12,6 +12,7 @@ import { provisionClient } from '../server/services/registration.service.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { openAuditReader } from './fixtures/audit-reader.ts';
 import { registerAndAssign } from './fixtures/console-administration.ts';
+import { checkInvitationDeliveryExpiry } from './fixtures/invitation-delivery-expiry.ts';
 import { startCluster } from './fixtures/live-processes.ts';
 import { checkManagementIsolation } from './fixtures/management-isolation.ts';
 import { seedAccount } from './fixtures/oidc.ts';
@@ -229,6 +230,7 @@ test.skipIf(!enabled)(
       vi.unstubAllEnvs();
     });
 
+    await checkInvitationDeliveryExpiry();
     const cluster = await startCluster(new URL(issuer));
     onTestFinished(cluster.close);
     const consoleOrigin = cluster.consoleOrigin;

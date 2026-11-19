@@ -1,4 +1,5 @@
 import { and, eq, inArray, lte, sql } from 'drizzle-orm';
+import { log } from 'evlog';
 import { randomUUID } from 'node:crypto';
 import { useDatabase } from '../database/index.ts';
 import {
@@ -32,7 +33,9 @@ export async function deliverNextInvitation(kind: 'owner' | 'member'): Promise<v
       .select({
         id: invitations.id,
         email: invitations.email,
-        eligible: sql<boolean>`${invitations.status} = 'pending' AND ${roleMatches} AND ${invitations.expiresAt} > now()`,
+        pending: sql<boolean>`${invitations.status} = 'pending' AND ${roleMatches}`,
+        expired: sql<boolean>`${invitations.expiresAt} <= now()`,
+        previouslyClaimed: sql<boolean>`${queue.attemptId} IS NOT NULL`,
       })
       .from(queue)
       .innerJoin(invitations, eq(invitations.id, queue.invitationId))
@@ -50,9 +53,9 @@ export async function deliverNextInvitation(kind: 'owner' | 'member'): Promise<v
     }
 
     const selected = eq(queue.invitationId, candidate.id);
-    if (!candidate.eligible) {
+    if (!candidate.pending || candidate.expired) {
       await transaction.delete(queue).where(selected);
-      return null;
+      return candidate.pending ? candidate : null;
     }
 
     await transaction
@@ -67,6 +70,15 @@ export async function deliverNextInvitation(kind: 'owner' | 'member'): Promise<v
   });
 
   if (!invitation) {
+    return;
+  }
+
+  if (invitation.expired) {
+    log.error({
+      event: 'invitation-delivery-expired',
+      queue: kind,
+      previouslyClaimed: invitation.previouslyClaimed,
+    });
     return;
   }
 
