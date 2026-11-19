@@ -1,3 +1,4 @@
+import { log } from 'evlog';
 import { definePlugin } from 'nitro';
 import { rotateSigningKeys } from '../services/signing-key.service.ts';
 
@@ -7,20 +8,16 @@ async function tick(): Promise<void> {
   try {
     const result = await rotateSigningKeys();
     if (result) {
-      console.info(
-        JSON.stringify({
-          event: 'signing-key-rotation',
-          ...result,
-        }),
-      );
+      log.info({
+        event: 'signing-key-rotation',
+        ...result,
+      });
     }
   } catch {
-    console.error(
-      JSON.stringify({
-        event: 'signing-key-rotation',
-        outcome: 'failed',
-      }),
-    );
+    log.error({
+      event: 'signing-key-rotation',
+      outcome: 'failed',
+    });
   }
 }
 

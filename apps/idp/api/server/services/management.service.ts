@@ -5,6 +5,7 @@ import { makeSignature } from 'better-auth/crypto';
 import { and, eq, gt, inArray } from 'drizzle-orm';
 import { assertBodySize, readBody } from 'nitro/h3';
 import * as valibot from 'valibot';
+import { recordManagementAction } from '../../../../../shared/server/api-logging.ts';
 import { useDatabase } from '../database/index.ts';
 import {
   appGrants,
@@ -402,6 +403,8 @@ export async function manageOrganization(event: H3Event): Promise<Response> {
   if (!parsed.success) {
     throw new BadRequestError('Invalid management command.');
   }
+
+  recordManagementAction(event, parsed.output.action);
 
   const database = useDatabase();
   try {

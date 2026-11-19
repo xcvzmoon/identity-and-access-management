@@ -15,4 +15,14 @@ if grep -Fq 'iam-fixture-log-canary' "$log"; then
   exit 1
 fi
 
-echo 'Console session fixture passed. No synthetic credentials appeared in the HTTPS fixture logs.'
+if ! grep -F '"service":"iam-idp-api"' "$log" | grep -F '"event":"api-request"' | grep -Fq '"path":"/api/v1/auth/reset-password/:token"'; then
+  echo 'The IdP did not log the password-reset route template.' >&2
+  exit 1
+fi
+
+if ! grep -F '"service":"iam-console-api"' "$log" | grep -F '"event":"api-request"' | grep -F '"path":"/api/v1/callback"' | grep -Fq '"status":400'; then
+  echo 'The console API did not log the rejected callback.' >&2
+  exit 1
+fi
+
+echo 'Console session fixture passed. API events contained route templates and no synthetic credentials.'

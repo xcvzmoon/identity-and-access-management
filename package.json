@@ -24,6 +24,8 @@
     "@types/node": "catalog:",
     "consola": "catalog:",
     "genbumppush": "catalog:",
+    "evlog": "catalog:api",
+    "nitro": "catalog:api",
     "portless": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"

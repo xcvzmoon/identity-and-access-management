@@ -25,6 +25,7 @@
     "better-auth": "catalog:api",
     "drizzle-orm": "catalog:api",
     "drizzle-query-logger": "catalog:api",
+    "evlog": "catalog:api",
     "nitro": "catalog:api",
     "nodemailer": "catalog:api",
     "postgres": "catalog:api",

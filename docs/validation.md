@@ -179,7 +179,7 @@ fixtures exercise the same permissions as the services.
 
 With the console session fixture environment configured, run
 `sh scripts/tests/verify-ingress-logs.sh` from the repository root. It checks
-the fixture proxy and upstream process output for synthetic credentials.
+the fixture proxy and upstream process output for synthetic credentials. It also verifies the IdP reset route template and the console callback failure event.
 Repeat the checks against the deployed proxy and its log sinks during the pilot.
 
 ### Signing-key rotation

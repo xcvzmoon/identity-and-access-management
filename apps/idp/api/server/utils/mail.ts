@@ -1,4 +1,5 @@
 import type { Transporter } from 'nodemailer';
+import { log } from 'evlog';
 import { useEnv } from './env.ts';
 
 const IMPLICIT_TLS_PORT = 465;
@@ -39,6 +40,14 @@ async function mailTransport(): Promise<Transporter> {
   return transport;
 }
 
+function logDeliveryFailure(delivery: 'queued' | 'confirmed'): void {
+  log.error({
+    event: 'account-email-delivery',
+    outcome: 'failed',
+    delivery,
+  });
+}
+
 /** Sends an account link. Confirmed delivery propagates SMTP errors to the caller.
  * @param {string} to - Recipient address.
  * @param {string} subject - Email subject.
@@ -61,13 +70,19 @@ export async function sendAccountEmail(
   });
 
   if (mode === 'confirmed') {
-    await sending;
+    try {
+      await sending;
+    } catch (error) {
+      logDeliveryFailure(mode);
+      throw error;
+    }
+
     return;
   }
 
   const delivery = sending
     .catch(() => {
-      process.stderr.write('IAM account email delivery failed. Check the SMTP service.\n');
+      logDeliveryFailure(mode);
     })
     .finally(() => {
       pending.delete(delivery);

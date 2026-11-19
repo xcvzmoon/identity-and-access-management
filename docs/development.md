@@ -60,3 +60,9 @@ same workspace to generate the SQL migration and snapshot.
 naming, validation, and directive comments. Vite+ configures Oxfmt, Oxlint,
 and Vitest. The pre-commit hook runs staged formatting and lint checks.
 [Project conventions](../AGENTS.md) · [Vite+ configuration](../vite.config.ts)
+
+## API logs
+
+The IdP and console APIs emit one evlog JSON event per response to the process log streams. Filter by `event="api-request"` and `service="iam-idp-api"` or `service="iam-console-api"`. Each event includes a generated request ID, HTTP method, route template, response status, and duration in milliseconds. The IdP adds the validated action for organization management. Requests without a matched route use `unmatched`.
+
+Use the HTTP status and route to investigate a failure. Request events omit raw URLs, query strings, headers, bodies, user identifiers, and exception details. The IdP emits separate events for signing-key transitions and email delivery failures. PostgreSQL remains the source for authorization and owner-recovery audit records. [Log verification](validation.md#audit-access-and-retention) · [Audit retention](local.md#audit-retention)
