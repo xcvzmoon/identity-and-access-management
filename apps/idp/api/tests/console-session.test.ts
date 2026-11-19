@@ -16,8 +16,10 @@ type Account = Awaited<ReturnType<typeof seedAccount>>;
 
 const TIMEOUT = 90_000;
 const UNAUTHORIZED = 401;
+const FOUND = 302;
 const SEE_OTHER = 303;
 const BAD_REQUEST = 400;
+const LOG_CANARY = 'iam-fixture-log-canary';
 
 const enabled = process.env.IAM_PHASE6_TESTS === '1';
 
@@ -35,7 +37,7 @@ async function checkRejectedLogin(page: Page, origin: string): Promise<void> {
 
   const callback = new URL('/api/v1/callback', origin);
   callback.searchParams.set('state', state);
-  callback.searchParams.set('code', 'invalid-fixture-code');
+  callback.searchParams.set('code', `${LOG_CANARY}-code`);
   callback.searchParams.set('iss', authorization.origin);
   const canceled = await page.request.get(callback.href, { maxRedirects: 0 });
   expect(canceled.status()).toBe(BAD_REQUEST);
@@ -48,12 +50,34 @@ async function checkRejectedLogin(page: Page, origin: string): Promise<void> {
   expect(session.status()).toBe(UNAUTHORIZED);
 }
 
+async function exerciseIngressLogs(page: Page, origin: string): Promise<void> {
+  const reset = new URL(`/api/v1/auth/reset-password/${LOG_CANARY}-reset-token`, origin);
+  reset.searchParams.set('callbackURL', new URL('/reset-password', origin).href);
+  const response = await page.request.get(reset.href, { maxRedirects: 0 });
+  expect(response.status()).toBe(FOUND);
+
+  const tokens = new URL('/api/v1/auth/oauth2/introspect', origin);
+  const denied = await page.request.post(tokens.href, {
+    headers: {
+      authorization: `Bearer ${LOG_CANARY}-credential`,
+      cookie: `session=${LOG_CANARY}-cookie`,
+    },
+    form: {
+      token: `${LOG_CANARY}-access-token`,
+      client_secret: `${LOG_CANARY}-client-secret`,
+    },
+  });
+
+  expect([BAD_REQUEST, UNAUTHORIZED]).toContain(denied.status());
+}
+
 async function openAccount(page: Page, cluster: Cluster, account: Account): Promise<void> {
-  const requested = new URL('/account?from=fixture', cluster.consoleOrigin);
+  const requested = new URL('/account', cluster.consoleOrigin);
   const callback = page.waitForRequest(
     (request) => new URL(request.url()).pathname === '/api/v1/callback',
   );
 
+  requested.searchParams.set('from', `${LOG_CANARY}-query`);
   await page.goto(requested.href);
   await page.getByLabel('Email address').fill(account.email);
   await page.getByLabel('Password', { exact: true }).fill(account.password);
@@ -178,6 +202,7 @@ test.skipIf(!enabled)(
     const browser = await chromium.launch();
     onTestFinished(async () => browser.close());
     const page = await browser.newPage({ ignoreHTTPSErrors: true });
+    await exerciseIngressLogs(page, env.oidcIssuerUrl);
     await checkRejectedLogin(page, cluster.consoleOrigin);
     await openAccount(page, cluster, account);
     await checkExpiry(page, cluster.consoleOrigin, account);
