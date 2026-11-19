@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@xcvzlabs/env": "catalog:",
+    "openid-client": "catalog:",
     "nitro": "catalog:api",
     "drizzle-query-logger": "catalog:api",
     "drizzle-orm": "catalog:api",

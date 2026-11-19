@@ -301,6 +301,9 @@ importers:
       nitro:
         specifier: catalog:api
         version: 3.0.261103-rc
+      openid-client:
+        specifier: 'catalog:'
+        version: 6.9.0
       postgres:
         specifier: catalog:api
         version: 4.1.1

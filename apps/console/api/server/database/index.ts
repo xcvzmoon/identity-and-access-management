@@ -20,6 +20,8 @@ export function useDatabase(): Database {
   }
 
   const env = useEnv();
+  const queryLogger = new EnhancedQueryLogger();
+
   db = drizzle({
     client: postgres({
       host: env.db.host,
@@ -29,7 +31,11 @@ export function useDatabase(): Database {
       database: env.db.database,
       ssl: env.db.ssl,
     }),
-    logger: env.db.logger && new EnhancedQueryLogger(),
+    logger: env.db.logger && {
+      logQuery: (query): void => {
+        queryLogger.logQuery(query, []);
+      },
+    },
     relations,
   });
   return db;

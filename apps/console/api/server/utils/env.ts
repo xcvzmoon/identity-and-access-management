@@ -48,6 +48,7 @@ const runtimeSchema = {
   db: databaseSchema,
   oidcIssuerUrl: httpsOriginSchema,
   consoleOrigin: httpsOriginSchema,
+  oidcClientSecret: nonEmptyStringSchema,
 };
 
 let env: Env | null = null;
