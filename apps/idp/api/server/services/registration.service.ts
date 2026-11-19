@@ -78,7 +78,7 @@ export async function provisionClient(
       headers,
       body: {
         redirect_uris: redirectUris,
-        scope: 'openid',
+        scope: registration.kind === 'console' ? 'openid email profile' : 'openid',
         ...(registration.kind === 'installation' && {
           metadata: { rolePermissions: registration.rolePermissions ?? {} },
         }),

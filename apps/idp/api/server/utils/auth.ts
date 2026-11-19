@@ -72,7 +72,7 @@ function configureAuth(database: AuthDatabase, registration?: ClientRegistration
       oauthProvider({
         loginPage: '/sign-in',
         consentPage: '/consent',
-        scopes: ['openid'],
+        scopes: ['openid', 'email', 'profile'],
         grantTypes: ['authorization_code'],
         allowDynamicClientRegistration: false,
         ...authorizationPolicy,
