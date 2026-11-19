@@ -13,6 +13,18 @@ vp -C apps/idp/api run db:migrate
 vp -C apps/console/api run db:migrate
 ```
 
+## Monitor database connection admission
+
+Run the [database admission check](../deploy/check-database-admission.sh) from the API network against each PostgreSQL primary serving IAM. Point it directly at the database so each run opens a fresh server connection. Use a dedicated login with CONNECT on the IAM database, ordinary connection privileges and no application table grants. Configure `PGHOST`, `PGDATABASE`, `PGUSER`, the port and TLS trust as for the APIs. Supply the password through a protected libpq password file.
+
+```sh
+sh deploy/check-database-admission.sh
+```
+
+Exit 0 confirms that the writable server admitted an ordinary login and answered a query. Exit 2 means the monitor could not establish that session. Check connection-slot usage, primary availability, TLS and login configuration when investigating. Exit 3 means the monitor needs configuration. Have the monitoring agent enforce a wall-clock timeout and page on repeated failures, including timeouts. Set the interval and alert delay from the deployment's availability target.
+
+Rehearse on a disposable primary with a small connection limit. Hold enough ordinary connections to exhaust the available slots, verify exit 2, then release them and verify exit 0. Confirm both notifications with the database on-call. This check covers connection exhaustion. Pool wait time, CPU and storage saturation need separate measurements.
+
 ## Local rehearsal origins
 
 For a local run, set `IDP_HOST="idp.localhost"` and `CONSOLE_HOST="console.localhost"`. Use a test certificate whose SANs include both names, signed by a locally trusted CA. Supply the certificate, key and root CA paths below. Use a recent Docker Compose release with support for the `!override` tag.
