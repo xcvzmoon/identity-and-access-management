@@ -27,4 +27,4 @@ The console and customer app backends run Authorization Code with S256 PKCE. Bet
 
 Each customer app installation has a distinct OAuth client. The backend introspects the user's access token for every protected request and checks permissions and resource ownership. Grant revocation or IAM sign-out affects the next live check. The backend withholds protected resources if introspection fails. App sign-out clears the app's own session.
 
-For organization management, the console API forwards requests on the user's behalf. The IdP checks live console authorization, target organization membership, role, and session-bound passkey verification. [Client integration](client-integration.md) · [Architecture decisions](README.md#architecture-decisions)
+For organization management, the console API forwards requests on the user's behalf. The IdP checks live console authorization, target organization membership, role, and session-bound passkey verification. [Client integration](client-integration.md)

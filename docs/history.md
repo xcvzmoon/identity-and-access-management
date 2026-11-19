@@ -10,7 +10,7 @@ The repository began as a single web and API workspace. The v1 rewrite establish
 
 ## 19 November 2026 · The v1 rewrite
 
-The plan at `719c638` chose one IAM issuer per deployment, a separate console origin, one OAuth client per customer installation, and a live grant check on each protected request. It defined ten phases against fresh data. The architecture records the resulting boundaries. [Architecture](architecture.md) · [Decision records](README.md#architecture-decisions)
+The plan at `719c638` chose one IAM issuer per deployment, a separate console origin, one OAuth client per customer installation, and a live grant check on each protected request. It defined ten phases against fresh data. The architecture records the resulting boundaries. [Architecture](architecture.md)
 
 ### Phase 1 · Evaluate Better Auth
 
