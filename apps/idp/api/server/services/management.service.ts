@@ -28,6 +28,7 @@ import {
 } from '../utils/http-errors.ts';
 import { privateResponse } from './auth.service.ts';
 import { CONSOLE_CLIENT_ID } from './authorization.service.ts';
+import { inviteOrganizationMember } from './invitation.service.ts';
 import { requireFreshStepUp } from './passkey.service.ts';
 import { assignAppRole, provisionClient, revokeAppGrant } from './registration.service.ts';
 
@@ -233,7 +234,6 @@ async function mutateOrganization(
   headers: Headers,
   actorMembership: Pick<typeof memberships.$inferSelect, 'id' | 'role'>,
 ): Promise<Response> {
-  const auth = createAuth(tx);
   const { organizationId } = command;
 
   if (command.action === 'register') {
@@ -252,6 +252,7 @@ async function mutateOrganization(
   }
 
   if (command.action === 'rename') {
+    const auth = createAuth(tx);
     await auth.api.updateOrganization({
       headers,
       body: {
@@ -268,13 +269,10 @@ async function mutateOrganization(
       throw new ForbiddenError('Only an owner can invite an administrator.');
     }
 
-    await auth.api.createInvitation({
-      headers,
-      body: {
-        organizationId,
-        email: command.email,
-        role: command.role,
-      },
+    await inviteOrganizationMember(tx, headers, {
+      organizationId,
+      email: command.email,
+      role: command.role,
     });
 
     return Response.json({ ok: true });
@@ -299,6 +297,7 @@ async function mutateOrganization(
       throw new ForbiddenError('Member removal is restricted.');
     }
 
+    const auth = createAuth(tx);
     await auth.api.removeMember({
       headers,
       body: {

@@ -4,7 +4,13 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test';
 import { useDatabase } from '../server/database/index.ts';
-import { membershipEvents, memberships, users } from '../server/database/schema.ts';
+import {
+  memberInvitationDeliveries,
+  membershipEvents,
+  memberships,
+  users,
+} from '../server/database/schema.ts';
+import { inviteOrganizationMember } from '../server/services/invitation.service.ts';
 import { useAuth } from '../server/utils/auth.ts';
 import { initializeEnv, useEnv } from '../server/utils/env.ts';
 import { finishAccountEmail } from '../server/utils/mail.ts';
@@ -135,14 +141,26 @@ async function sendOrganizationInvitation(headers: Headers, email: string): Prom
 
   assert.ok(organization);
 
-  const invitation = await auth.api.createInvitation({
-    headers,
-    body: {
-      email,
-      role: 'member',
-      organizationId: organization.id,
-    },
-  });
+  const database = useDatabase();
+  const input = {
+    email,
+    role: 'member',
+    organizationId: organization.id,
+  } satisfies { email: string; role: 'member'; organizationId: string };
+  const rollback = new Error('Roll back the invitation fixture.');
+  await expect(
+    database.transaction(async (transaction) => {
+      const draft = await inviteOrganizationMember(transaction, headers, input);
+      const queued = await transaction
+        .select({ id: memberInvitationDeliveries.invitationId })
+        .from(memberInvitationDeliveries)
+        .where(eq(memberInvitationDeliveries.invitationId, draft.id));
+
+      expect(queued).toEqual([{ id: draft.id }]);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+  const invitation = await inviteOrganizationMember(database, headers, input);
   const link = await emailLink(email, 'Join your organization');
   const invitationToken = new URLSearchParams(link.hash.replace(/^#/u, '')).get('token');
 

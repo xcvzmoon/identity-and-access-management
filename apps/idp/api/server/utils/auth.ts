@@ -27,14 +27,6 @@ type Auth = ReturnType<typeof configureAuth>;
 export const MIN_PASSWORD_LENGTH = 15;
 export const MAX_PASSWORD_LENGTH = 128;
 
-async function sendInvitation(email: string, id: string): Promise<void> {
-  const env = useEnv();
-  const url = new URL('/invite', env.oidcIssuerUrl);
-
-  url.hash = new URLSearchParams({ token: id }).toString();
-  await sendAccountEmail(email, 'Join your organization', url.href, 'confirmed');
-}
-
 // Better Auth infers the organization endpoints from the configured plugins.
 // oxlint-disable-next-line typescript/explicit-function-return-type
 function configureAuth(database: AuthDatabase, options: AuthOptions) {
@@ -98,7 +90,6 @@ function configureAuth(database: AuthDatabase, options: AuthOptions) {
           beforeAcceptInvitation: async ({ user }) => options.beforeAcceptInvitation?.(user.id),
         },
         schema: { member: { modelName: 'membership' } },
-        sendInvitationEmail: async ({ email, id }) => sendInvitation(email, id),
       }),
     ],
     advanced: {

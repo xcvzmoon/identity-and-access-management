@@ -2,12 +2,42 @@ import type { InvitationSignup } from '../schemas/invitation.ts';
 import { isAPIError } from 'better-auth/api';
 import { sql } from 'drizzle-orm';
 import { useDatabase } from '../database/index.ts';
+import { memberInvitationDeliveries } from '../database/schema.ts';
 import { hasEligibleInvitation } from '../repositories/invitation.repository.ts';
 import { createAuth, useAuth } from '../utils/auth.ts';
 import { useEnv } from '../utils/env.ts';
 import { BadRequestError, InternalServerError, UnauthorizedError } from '../utils/http-errors.ts';
 
+type InvitationInput = { organizationId: string; email: string; role: 'member' | 'admin' };
+type InvitationResult = { id: string; inviterId: string };
+type Database = Omit<ReturnType<typeof useDatabase>, '$client'>;
+
 const unavailableMessage = 'This invitation is unavailable.';
+
+/** Creates a Better Auth invitation and commits its pending delivery in the same transaction.
+ * @param {Database} database - IdP connection or enclosing management transaction.
+ * @param {Headers} headers - Headers carrying the inviter's session.
+ * @param {InvitationInput} input - Organization, recipient and authorized membership role.
+ * @returns {Promise<InvitationResult>} The invitation ID and the user who issued it.
+ */
+export async function inviteOrganizationMember(
+  database: Database,
+  headers: Headers,
+  input: InvitationInput,
+): Promise<InvitationResult> {
+  return database.transaction(async (transaction) => {
+    const auth = createAuth(transaction);
+    const invitation = await auth.api.createInvitation({
+      headers,
+      body: input,
+    });
+    await transaction.insert(memberInvitationDeliveries).values({ invitationId: invitation.id });
+    return {
+      id: invitation.id,
+      inviterId: invitation.inviterId,
+    };
+  });
+}
 
 /**
  * Accepts the invitation through Better Auth and commits its status and membership together.
