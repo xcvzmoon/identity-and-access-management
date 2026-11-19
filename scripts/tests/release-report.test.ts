@@ -43,6 +43,28 @@ test('accepts required cases in any reporter order', () => {
   }).not.toThrow();
 });
 
+test('rejects an extra suite omitted from the summary counts', () => {
+  const report = structuredClone(passing);
+  report.testResults.push(suiteResult);
+
+  expect(() => {
+    verifyReleaseReport(JSON.stringify(report), suites, testsDirectory);
+  }).toThrow();
+});
+
+test('rejects an extra assertion omitted from the summary counts', () => {
+  const report = structuredClone(passing);
+  const [suite] = report.testResults;
+  suite.assertionResults.push({
+    title: 'unexpected case',
+    status: 'failed',
+  });
+
+  expect(() => {
+    verifyReleaseReport(JSON.stringify(report), suites, testsDirectory);
+  }).toThrow();
+});
+
 test('rejects duplicate titles even when the number of passed cases matches', () => {
   const report = structuredClone(passing);
   const [suite] = report.testResults;

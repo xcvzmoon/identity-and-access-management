@@ -29,6 +29,7 @@
     "nitro": "catalog:api",
     "portless": "catalog:",
     "typescript": "catalog:",
+    "valibot": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {

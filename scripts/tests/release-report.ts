@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { array, literal, object, parse, string } from 'valibot';
 
 type ReleaseSuite = {
   file: string;
@@ -10,6 +11,17 @@ type ReleasePhase = {
   name: string;
   suites: readonly ReleaseSuite[];
 };
+
+const assertionSchema = object({
+  title: string(),
+  status: literal('passed'),
+});
+const suiteSchema = object({
+  name: string(),
+  status: literal('passed'),
+  assertionResults: array(assertionSchema),
+});
+const reportSchema = object({ testResults: array(suiteSchema) });
 
 export const releasePhases: readonly ReleasePhase[] = [
   {
@@ -116,26 +128,16 @@ export function verifyReleaseReport(
     'Vitest did not report every expected test as passed.',
   );
 
+  const { testResults } = parse(reportSchema, report);
+  assert.equal(testResults.length, suites.length, 'Unexpected number of suite results.');
   for (const suite of suites) {
-    for (const title of suite.titles) {
-      assert.partialDeepStrictEqual(
-        report,
-        {
-          testResults: [
-            {
-              name: path.join(testsDirectory, suite.file),
-              status: 'passed',
-              assertionResults: [
-                {
-                  title,
-                  status: 'passed',
-                },
-              ],
-            },
-          ],
-        },
-        `Required passing test missing from ${suite.file}: ${title}`,
-      );
-    }
+    const filename = path.join(testsDirectory, suite.file);
+    const result = testResults.find((entry) => entry.name === filename);
+    assert.ok(result, `Missing suite: ${filename}`);
+    assert.deepEqual(
+      result.assertionResults.map((assertion) => assertion.title).toSorted(),
+      suite.titles.toSorted(),
+      `Unexpected cases in ${suite.file}.`,
+    );
   }
 }
