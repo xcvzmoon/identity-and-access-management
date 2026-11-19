@@ -456,6 +456,20 @@ export const appGrantEvents = idpSchema.table(
   (table) => [index('app_grant_events_created_at_idx').on(table.createdAt)],
 );
 
+export const membershipEvents = idpSchema.table(
+  'membership_events',
+  {
+    id: generateUuid(),
+    organizationId: uuid('organization_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    actorUserId: uuid('actor_user_id'),
+    previousRole: text('previous_role'),
+    newRole: text('new_role'),
+    createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
+  },
+  (table) => [index('membership_events_created_at_idx').on(table.createdAt)],
+);
+
 export const ownerRecoveryEvents = idpSchema.table(
   'owner_recovery_events',
   {

@@ -219,4 +219,45 @@ BEGIN
 END
 $verify$;
 
+SET LOCAL ROLE iam_idp_runtime;
+UPDATE iam_idp.memberships SET role='admin'
+WHERE organization_id=(SELECT id FROM iam_idp.organizations WHERE slug='grant-audit');
+UPDATE iam_idp.memberships SET role='admin'
+WHERE organization_id=(SELECT id FROM iam_idp.organizations WHERE slug='grant-audit');
+SAVEPOINT before_membership_reversal;
+UPDATE iam_idp.memberships SET role='member'
+WHERE organization_id=(SELECT id FROM iam_idp.organizations WHERE slug='grant-audit');
+ROLLBACK TO before_membership_reversal;
+DELETE FROM iam_idp.users WHERE email='grant-audit@example.invalid';
+
+RESET ROLE;
+SELECT set_config('iam.fixture_org', id::text, true) FROM iam_idp.organizations WHERE slug='grant-audit';
+SET LOCAL ROLE iam_audit_reader;
+DO $verify$
+DECLARE
+  org uuid := current_setting('iam.fixture_org')::uuid;
+  actor uuid := '00000000-0000-4000-8000-000000000123';
+BEGIN
+  IF (SELECT count(*) FROM iam_idp.membership_events WHERE organization_id=org) <> 3 OR
+     NOT EXISTS (SELECT FROM iam_idp.membership_events WHERE organization_id=org AND actor_user_id IS NULL AND previous_role IS NULL AND new_role='member') OR
+     NOT EXISTS (SELECT FROM iam_idp.membership_events WHERE organization_id=org AND actor_user_id=actor AND previous_role='member' AND new_role='admin') OR
+     NOT EXISTS (SELECT FROM iam_idp.membership_events WHERE organization_id=org AND actor_user_id=actor AND previous_role='admin' AND new_role IS NULL) OR
+     has_table_privilege('iam_idp_runtime','iam_idp.membership_events','SELECT, INSERT, UPDATE, DELETE') THEN
+    RAISE EXCEPTION 'Membership history or privileges mismatch';
+  END IF;
+END
+$verify$;
+
+RESET ROLE;
+UPDATE iam_idp.membership_events SET created_at=now()-interval '91 days'
+WHERE organization_id=current_setting('iam.fixture_org')::uuid AND previous_role IS NULL;
+SET LOCAL ROLE iam_audit_retention;
+DO $verify$
+BEGIN
+  IF iam_idp.purge_expired_membership_events() <> 1 THEN
+    RAISE EXCEPTION 'Membership audit retention mismatch';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;

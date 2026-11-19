@@ -133,6 +133,19 @@ ORDER BY created_at, id;
 
 A null previous role marks the initial assignment. A null new role marks revocation. A rolled-back change leaves no event.
 
+#### Investigate organization membership changes
+
+After the membership audit migration, the audit reader can inspect joins, role changes and removals in `iam_idp.membership_events`. The organization and user IDs remain available after a deletion. Console management changes record the authenticated actor. Other writers, including invitation acceptance, can leave `actor_user_id` empty. Existing memberships receive their first event when they change.
+
+```sql
+SELECT created_at, actor_user_id, previous_role, new_role
+FROM iam_idp.membership_events
+WHERE organization_id = :'organization_id' AND user_id = :'user_id'
+ORDER BY created_at, id;
+```
+
+A join has an empty previous role. A removal has an empty new role. Unchanged roles and rolled-back transactions leave no events. Apply the migration before updating the retention job, which expires these events after 90 days.
+
 #### Check retained rate-limit row ages
 
 Capture the [aggregate age report](../apps/idp/api/scripts/report-rate-limit-retention.sql) before and after a purge. Run it with an operator login that can read `iam_idp.rate_limits.last_request`. The query needs only that column and scans the table once. On large installations, run the report outside peak traffic.
