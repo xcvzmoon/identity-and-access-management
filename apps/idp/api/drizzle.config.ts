@@ -6,7 +6,7 @@ initializeEnv();
 export default defineConfig({
   dialect: 'postgresql',
   out: './migrations',
-  schema: './server/database/schema/index.ts',
+  schema: './server/database/schema.ts',
   schemaFilter: ['iam_idp'],
   migrations: { schema: 'iam_idp_migrations' },
   dbCredentials: useEnv().db,

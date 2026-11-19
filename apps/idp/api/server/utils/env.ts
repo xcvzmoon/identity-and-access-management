@@ -8,6 +8,7 @@ import * as v from 'valibot';
 
 type Env = InferEnvOutput<typeof runtimeSchema>;
 
+const MIN_SECRET_LENGTH = 32;
 const MIN_PORT = 1;
 const MAX_PORT = 65_535;
 
@@ -47,15 +48,37 @@ const httpsOriginSchema = v.pipe(
 const runtimeSchema = {
   db: databaseSchema,
   oidcIssuerUrl: httpsOriginSchema,
+  trustProxyIp: stringToBoolSchema,
+  betterAuthSecret: v.pipe(v.string(), v.minLength(MIN_SECRET_LENGTH)),
+  smtp: {
+    host: nonEmptyStringSchema,
+    port: v.pipe(
+      v.string(),
+      v.digits(),
+      v.transform(Number),
+      v.integer(),
+      v.minValue(MIN_PORT),
+      v.maxValue(MAX_PORT),
+    ),
+    from: v.pipe(v.string(), v.email()),
+    user: v.optional(nonEmptyStringSchema),
+    password: v.optional(nonEmptyStringSchema),
+  },
 };
 
 let env: Env | null = null;
 
 function validateEnv(source: EnvSource): Env {
-  return defineEnv({
+  const settings = defineEnv({
     schema: runtimeSchema,
     source,
   });
+
+  if (Boolean(settings.smtp.user) !== Boolean(settings.smtp.password)) {
+    throw new Error('Set both SMTP_USER and SMTP_PASSWORD when using SMTP authentication.');
+  }
+
+  return settings;
 }
 
 function getInvalidEnvKeys(path: string): string[] | null {

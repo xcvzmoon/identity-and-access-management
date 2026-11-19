@@ -18,15 +18,20 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@better-auth/core": "catalog:",
     "@xcvzlabs/env": "catalog:",
-    "nitro": "catalog:api",
-    "drizzle-query-logger": "catalog:api",
+    "better-auth": "catalog:api",
     "drizzle-orm": "catalog:api",
+    "drizzle-query-logger": "catalog:api",
+    "nitro": "catalog:api",
+    "nodemailer": "catalog:api",
     "postgres": "catalog:api",
+    "uuid": "catalog:",
     "valibot": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/nodemailer": "catalog:api",
     "drizzle-kit": "catalog:api",
     "rolldown": "catalog:api",
     "typescript": "catalog:"
