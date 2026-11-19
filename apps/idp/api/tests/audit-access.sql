@@ -347,4 +347,20 @@ BEGIN
 END
 $verify$;
 
+SET LOCAL ROLE iam_idp_runtime;
+INSERT INTO iam_idp.oauth_clients (client_id, reference_id, redirect_uris, metadata)
+VALUES ('reserved-reference-fixture', 'iam-console', ARRAY['https://console.invalid/callback'],
+        '{"rolePermissions":{"reader":["read"]}}');
+SET LOCAL ROLE iam_audit_reader;
+DO $verify$
+BEGIN
+  IF NOT EXISTS (SELECT FROM iam_idp.oauth_client_events WHERE client_id='reserved-reference-fixture'
+                 AND operation='created' AND organization_id IS NULL) OR
+     NOT EXISTS (SELECT FROM iam_idp.installation_role_events WHERE client_id='reserved-reference-fixture'
+                 AND role='reader' AND organization_id IS NULL) THEN
+    RAISE EXCEPTION 'Expected client and role audit events without organization attribution';
+  END IF;
+END
+$verify$;
+
 ROLLBACK;
