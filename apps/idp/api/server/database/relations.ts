@@ -3,6 +3,10 @@ import * as schema from './schema.ts';
 
 export const relations = defineRelations(schema, (relation) => ({
   users: {
+    passkeys: relation.many.passkeys({
+      from: relation.users.id,
+      to: relation.passkeys.userId,
+    }),
     sessions: relation.many.sessions({
       from: relation.users.id,
       to: relation.sessions.userId,
@@ -18,6 +22,13 @@ export const relations = defineRelations(schema, (relation) => ({
     invitations: relation.many.invitations({
       from: relation.users.id,
       to: relation.invitations.inviterId,
+    }),
+  },
+  passkeys: {
+    user: relation.one.users({
+      from: relation.passkeys.userId,
+      to: relation.users.id,
+      optional: false,
     }),
   },
   sessions: {

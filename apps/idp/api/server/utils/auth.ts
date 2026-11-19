@@ -1,5 +1,6 @@
 import type { ClientRegistration } from '../services/registration.service.ts';
 import { oauthProvider } from '@better-auth/oauth-provider';
+import { passkey } from '@better-auth/passkey';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { betterAuth } from 'better-auth/minimal';
 import { jwt } from 'better-auth/plugins/jwt';
@@ -19,6 +20,14 @@ const FIRST_KEY_INDEX = 0;
 export const MIN_PASSWORD_LENGTH = 15;
 export const MAX_PASSWORD_LENGTH = 128;
 
+async function sendInvitation(email: string, id: string): Promise<void> {
+  const env = useEnv();
+  const url = new URL('/invite', env.oidcIssuerUrl);
+
+  url.hash = new URLSearchParams({ token: id }).toString();
+  await sendAccountEmail(email, 'Join your organization', url.href, 'confirmed');
+}
+
 // Better Auth infers the organization endpoints from the configured plugins.
 // oxlint-disable-next-line typescript/explicit-function-return-type
 function configureAuth(database: AuthDatabase, registration?: ClientRegistration) {
@@ -35,6 +44,12 @@ function configureAuth(database: AuthDatabase, registration?: ClientRegistration
       transaction: true,
     }),
     plugins: [
+      passkey({
+        rpID: new URL(env.oidcIssuerUrl).hostname,
+        rpName: 'IAM',
+        origin: env.oidcIssuerUrl,
+        authenticatorSelection: { userVerification: 'required' },
+      }),
       jwt({
         schema: { jwks: { modelName: 'signingKey' } },
         adapter: {
@@ -82,11 +97,7 @@ function configureAuth(database: AuthDatabase, registration?: ClientRegistration
         allowUserToCreateOrganization: false,
         requireEmailVerificationOnInvitation: true,
         schema: { member: { modelName: 'membership' } },
-        async sendInvitationEmail(invitation) {
-          const url = new URL('/invite', env.oidcIssuerUrl);
-          url.hash = new URLSearchParams({ token: invitation.id }).toString();
-          await sendAccountEmail(invitation.email, 'Join your organization', url.href);
-        },
+        sendInvitationEmail: async ({ email, id }) => sendInvitation(email, id),
       }),
     ],
     advanced: {

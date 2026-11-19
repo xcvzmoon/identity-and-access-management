@@ -48,6 +48,16 @@ const httpsOriginSchema = v.pipe(
 const runtimeSchema = {
   db: databaseSchema,
   oidcIssuerUrl: httpsOriginSchema,
+  operatorUserIds: v.pipe(
+    v.optional(v.string(), ''),
+    v.transform((value) =>
+      value
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
+    v.array(v.pipe(v.string(), v.uuid())),
+  ),
   trustProxyIp: stringToBoolSchema,
   betterAuthSecret: v.pipe(v.string(), v.minLength(MIN_SECRET_LENGTH)),
   smtp: {

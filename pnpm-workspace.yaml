@@ -21,6 +21,7 @@ catalog:
 
 catalogs:
   api:
+    '@better-auth/passkey': 1.7.26
     '@better-auth/oauth-provider': 1.7.26
     '@types/nodemailer': 8.0.2
     better-auth: 1.7.26
@@ -58,6 +59,7 @@ allowBuilds:
   vue-demi: true
 
 minimumReleaseAgeExclude:
+  - '@better-auth/passkey@1.7.26'
   - '@better-auth/oauth-provider@1.7.26'
   - '@better-auth/core@1.7.26'
   - '@better-auth/drizzle-adapter@1.7.26'

@@ -39,16 +39,33 @@ async function mailTransport(): Promise<Transporter> {
   return transport;
 }
 
-export async function sendAccountEmail(to: string, subject: string, url: string): Promise<void> {
+/** Sends an account link. Confirmed delivery propagates SMTP errors to the caller.
+ * @param {string} to - Recipient address.
+ * @param {string} subject - Email subject.
+ * @param {string} url - Account action link.
+ * @param {'queued' | 'confirmed'} [mode] - Whether to wait for SMTP acceptance.
+ */
+export async function sendAccountEmail(
+  to: string,
+  subject: string,
+  url: string,
+  mode: 'queued' | 'confirmed' = 'queued',
+): Promise<void> {
   const env = useEnv();
   const smtp = await mailTransport();
-  const delivery = smtp
-    .sendMail({
-      from: env.smtp.from,
-      to,
-      subject,
-      text: `${subject}\n\n${url}\n\nIf you did not request this email, you can ignore it.`,
-    })
+  const sending = smtp.sendMail({
+    from: env.smtp.from,
+    to,
+    subject,
+    text: `${subject}\n\n${url}\n\nIf you did not request this email, you can ignore it.`,
+  });
+
+  if (mode === 'confirmed') {
+    await sending;
+    return;
+  }
+
+  const delivery = sending
     .catch(() => {
       process.stderr.write('IAM account email delivery failed. Check the SMTP service.\n');
     })

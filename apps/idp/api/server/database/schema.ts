@@ -46,9 +46,34 @@ export const sessions = idpSchema.table(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    passkeyChallenge: text('passkey_challenge'),
+    passkeyVerifiedAt: timestamp('passkey_verified_at', TIMESTAMP_CONFIG),
     activeOrganizationId: uuid('active_organization_id'),
   },
   (table) => [unique().on(table.token), index('sessions_userId_idx').on(table.userId)],
+);
+
+export const passkeys = idpSchema.table(
+  'passkeys',
+  {
+    id: generateUuid(),
+    name: text('name'),
+    publicKey: text('public_key').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    credentialID: text('credential_id').notNull(),
+    counter: integer('counter').notNull(),
+    deviceType: text('device_type').notNull(),
+    backedUp: boolean('backed_up').notNull(),
+    transports: text('transports'),
+    createdAt: timestamp('created_at', TIMESTAMP_CONFIG),
+    aaguid: text('aaguid'),
+  },
+  (table) => [
+    index('passkeys_userId_idx').on(table.userId),
+    uniqueIndex('passkeys_credentialID_idx').on(table.credentialID),
+  ],
 );
 
 export const accounts = idpSchema.table(
@@ -405,3 +430,16 @@ export const authorizationEvents = idpSchema.table('authorization_events', {
   stage: text('stage', { enum: ['authorization', 'consent', 'exchange'] }).notNull(),
   createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
 });
+
+export const ownerRecoveryEvents = idpSchema.table(
+  'owner_recovery_events',
+  {
+    id: generateUuid(),
+    organizationId: uuid('organization_id').notNull(),
+    operatorId: uuid('operator_id').notNull(),
+    caseReference: text('case_reference').notNull(),
+    outcome: text('outcome', { enum: ['invited'] }).notNull(),
+    createdAt: timestamp('created_at', TIMESTAMP_CONFIG).defaultNow().notNull(),
+  },
+  (table) => [unique().on(table.organizationId, table.caseReference)],
+);
