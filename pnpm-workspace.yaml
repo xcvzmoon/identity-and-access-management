@@ -1,4 +1,5 @@
 packages:
+  - apps/console/api
   - apps/idp/*
 
 catalogMode: strict
