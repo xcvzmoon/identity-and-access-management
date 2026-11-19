@@ -1,1 +1,0 @@
-ALTER TABLE "iam"."app_assignments" ADD COLUMN "grant_version" uuid DEFAULT gen_random_uuid() NOT NULL;
