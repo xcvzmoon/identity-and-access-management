@@ -15,22 +15,28 @@ if grep -Fq 'iam-fixture-log-canary' "$log"; then
   exit 1
 fi
 
-if ! grep -F '"service":"iam-idp-api"' "$log" | grep -F '"event":"account-email-backlog"' | grep -F '"pendingDeliveries":0' | grep -Fq '"oldestPendingMs":0'; then
+has_event() {
+  jq -Rne --argjson expected "$1" '
+    any(inputs | fromjson? | objects; . + $expected == .)
+  ' < "$log" >/dev/null
+}
+
+if ! has_event '{"service":"iam-idp-api","event":"account-email-backlog","pendingDeliveries":0,"oldestPendingMs":0}'; then
   echo 'The IdP did not emit the empty SMTP backlog at startup.' >&2
   exit 1
 fi
 
-if ! grep -F '"service":"iam-idp-api"' "$log" | grep -F '"event":"api-request"' | grep -Fq '"path":"/api/v1/auth/reset-password/:token"'; then
+if ! has_event '{"service":"iam-idp-api","event":"api-request","path":"/api/v1/auth/reset-password/:token"}'; then
   echo 'The IdP did not log the password-reset route template.' >&2
   exit 1
 fi
 
-if ! grep -F '"service":"iam-console-api"' "$log" | grep -F '"event":"api-request"' | grep -F '"path":"/api/v1/callback"' | grep -Fq '"status":400'; then
+if ! has_event '{"service":"iam-console-api","event":"api-request","path":"/api/v1/callback","status":400}'; then
   echo 'The console API did not log the rejected callback.' >&2
   exit 1
 fi
 
-if ! grep -F '"service":"iam-idp-api"' "$log" | grep -F '"event":"api-request"' | grep -F '"method":"POST"' | grep -F '"path":"/api/v1/web/sign-in/email"' | grep -Fq '"status":200'; then
+if ! has_event '{"service":"iam-idp-api","event":"api-request","method":"POST","path":"/api/v1/web/sign-in/email","status":200}'; then
   echo 'The IdP did not log the successful password sign-in POST after checking its body size.' >&2
   exit 1
 fi
