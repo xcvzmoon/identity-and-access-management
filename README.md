@@ -12,6 +12,7 @@ The implementation plan tracks what remains before the external pilot.
 | ------------------------------------------ | --------------------------------------------------------------------------- |
 | Find a workspace or see who owns a feature | [Target monorepo structure](docs/architecture.md#target-monorepo-structure) |
 | Run the four workspaces locally            | [Local setup](docs/local.md)                                                |
+| Run IAM in Docker with named HTTPS URLs    | [Portless setup](docs/local.md#docker-with-portless)                        |
 | See what ships in v1                       | [Launch scope](docs/rewrite-scope.md)                                       |
 | Follow the rewrite                         | [Implementation plan](docs/plans/iam-v1-rewrite/overview.md)                |
 | Reproduce the Better Auth evaluation       | [Evaluation evidence](docs/plans/iam-v1-rewrite/better-auth-evaluation.md)  |

@@ -159,7 +159,51 @@ will be denied, even if the access token has time left.
 
 ## Containers
 
-Run the workspaces directly during development. For the four-workspace deployment with TLS ingress and two IdP API replicas, follow the [pilot deployment guide](pilot.md).
+### Docker with Portless
+
+Run this setup from the repository root. Portless assigns a loopback port to each of the two public ingress containers. The issuer and console keep separate HTTPS origins. Both IdP API replicas share the issuer. The console API resolves that same hostname on the Compose network for discovery and token exchange. [Portless Docker Compose commands](https://portless.sh/commands#docker-compose)
+
+1. Run `vp install` and prepare the two API runtime environment files. Use database and SMTP addresses reachable from Docker. If you supply PostgreSQL, apply both APIs’ migrations before starting the stack.
+2. Copy `.env.portless.example` to `.env.portless`. Set `IDP_ENV_FILE` and `CONSOLE_ENV_FILE` to the runtime files. For services on an external Docker network, append a machine-local Compose override to `COMPOSE_FILE` that names that network.
+3. Provide a certificate covering `idp.iam.localhost` and `console.iam.localhost` for HTTPS **inside Docker**. The following commands create the files used by the example configuration. Run them once on a new setup. Renew the certificate before it expires and recreate the ingress and API containers. If PostgreSQL or SMTP uses another private CA, include its public certificate in the bundle specified by `TLS_CA_FILE`.
+
+   ```sh
+   umask 077
+   mkdir -p .env.portless.d
+   openssl req -x509 -nodes -newkey rsa:2048 -days 90 \
+     -subj "/CN=idp.iam.localhost" \
+     -addext "subjectAltName=DNS:idp.iam.localhost,DNS:console.iam.localhost" \
+     -keyout .env.portless.d/ingress.key -out .env.portless.d/ingress.pem
+   ```
+
+4. Start the host Portless proxy. This example uses 1355 so Kiri can keep port 443. On a machine with port 443 available, use `vp exec portless proxy start --https` for port-free URLs. Trust the Portless CA in your user account when prompted.
+
+   ```sh
+   vp exec portless proxy start --https -p 1355
+   vp exec portless trust
+   ```
+
+5. For the bundled local database and inbox, complete the [container setup](#optional-postgresql-and-mailbox-containers) now. Run `vp run docker:portless up -d --build` and check the routes with `vp exec portless list`.
+6. Open the issuer at `https://idp.iam.localhost:1355/sign-in` and the console at `https://console.iam.localhost:1355/account`. The launcher derives the origins from the current HTTPS proxy. Use those exact origins when provisioning clients. For a fresh database, follow the operator and reserved console registration steps in the pilot guide, using `vp run docker:portless up -d` to apply environment changes. Register the console callback at `/api/v1/callback` on the console origin. [Console provisioning](pilot.md#start-the-services)
+
+Use `vp run docker:portless ps` for service status and `vp run docker:portless down` to stop the IAM project and remove its routes. Portless keeps its shared host proxy running. The standalone pilot deployment has its own ingress settings. [Pilot deployment guide](pilot.md)
+
+#### Optional PostgreSQL and mailbox containers
+
+To run the dependencies in the same project, append `:compose.portless-infra.yaml` to `COMPOSE_FILE` in `.env.portless`. This adds PostgreSQL 18 and a local Mailpit inbox with named volumes. The database listens on host loopback port 56985 and the inbox at `http://localhost:56986`.
+
+Before the first start, generate the local administrator password and the mailbox's STARTTLS certificate. Keep the generated files in the private directory created above.
+
+```sh
+umask 077
+openssl rand -hex 32 > .env.portless.d/postgres-password
+openssl req -x509 -nodes -newkey rsa:2048 -days 90 -subj "/CN=mail" \
+  -addext "subjectAltName=DNS:mail" \
+  -keyout .env.portless.d/mail.key -out .env.portless.d/mail.pem
+cat .env.portless.d/ingress.pem .env.portless.d/mail.pem > .env.portless.d/ca.pem
+```
+
+Set `TLS_CA_FILE="./.env.portless.d/ca.pem"`. Configure the API runtime files with `DB_HOST="database"`, `DB_PORT="5432"`, and `DB_DATABASE="iam_portless"`. Use `SMTP_HOST="mail"` and `SMTP_PORT="1025"` for the IdP. Start the dependencies with `vp run docker:portless up -d database mail`. The image creates the database on first start. Create the [database roles](pilot.md#prepare-the-issuer-and-database) as the database administrator and run each API's migrations from the host using its migrator login on `127.0.0.1:56985`. Once both schemas exist, start the full project and provision the console as described above.
 
 ## Organization administration
 
