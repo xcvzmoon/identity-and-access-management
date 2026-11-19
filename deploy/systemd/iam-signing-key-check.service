@@ -1,0 +1,17 @@
+[Unit]
+Description=Check IAM signing key rotation on the primary
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+EnvironmentFile=/etc/iam/signing-key-check.env
+LoadCredential=pgpass:/etc/iam/signing-key-check.pgpass
+Environment=PGPASSFILE=%d/pgpass
+ExecStart=/bin/sh /usr/local/libexec/iam/check-signing-key-rotation.sh
+TimeoutStartSec=30s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes

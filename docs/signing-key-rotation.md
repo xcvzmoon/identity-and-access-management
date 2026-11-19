@@ -30,7 +30,21 @@ GRANT SELECT (alg, created_at, activate_after, expires_at)
   ON iam_idp.signing_keys TO iam_key_monitor;
 ```
 
-Route exit 2 to the identity on-call for a missing active signer or a missed transition. Exit 3 means monitoring lost visibility, including when the connection reaches a standby. Exit 0 clears the alert. During commissioning, verify alert delivery and recovery against a disposable issuer before enabling the production check.
+On a systemd monitoring host, configure the primary's host, port, database, monitor username and TLS settings in `/etc/iam/signing-key-check.env` using libpq variables. Keep the matching password entry in `/etc/iam/signing-key-check.pgpass`, owned by root with mode 0600. Put the trusted CA certificate where the service can read it.
+
+From the release checkout, install and verify the timer as root:
+
+```sh
+install -Dm755 apps/idp/api/scripts/check-signing-key-rotation.sh /usr/local/libexec/iam/check-signing-key-rotation.sh
+install -m644 deploy/systemd/iam-signing-key-check.service deploy/systemd/iam-signing-key-check.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now iam-signing-key-check.timer
+systemctl start iam-signing-key-check.service
+systemctl list-timers --all iam-signing-key-check.timer
+journalctl -u iam-signing-key-check.service -n 10
+```
+
+Route exit 2 to the identity on-call for an unexpected active signer count or a missed transition. Exit 3 means monitoring lost visibility, including when the connection reaches a standby. Exit 0 clears the alert. During commissioning, verify alert delivery and recovery against a disposable issuer before enabling the production check.
 
 ## Restore a trusted signer
 
