@@ -2,7 +2,7 @@ import type { OAuthOptions, Scope } from '@better-auth/oauth-provider';
 import { getCurrentAuthEndpointContext } from '@better-auth/core/context';
 import { getOAuthProviderState } from '@better-auth/oauth-provider';
 import { APIError } from 'better-auth/api';
-import { and, eq, exists, gt, isNotNull } from 'drizzle-orm';
+import { and, eq, exists, gt, isNotNull, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import * as valibot from 'valibot';
 import { useDatabase } from '../database/index.ts';
@@ -27,7 +27,10 @@ type Access = {
 
 type AccessBinding = { callback: string } | { sessionId: string };
 
-type AuthorizationEvent = typeof authorizationEvents.$inferInsert;
+type AuthorizationEvent = Pick<
+  typeof authorizationEvents.$inferSelect,
+  'clientId' | 'userId' | 'outcome' | 'stage'
+>;
 
 const FIRST_ROW = 0;
 export const CONSOLE_CLIENT_ID = 'iam-console';
@@ -39,6 +42,17 @@ const clientMetadataSchema = valibot.object({
 export const authorizationQuerySchema = valibot.object({
   client_id: valibot.string(),
   redirect_uri: valibot.string(),
+});
+
+const storedAuthorizationCodeSchema = valibot.pipe(
+  valibot.string(),
+  valibot.parseJson(),
+  valibot.looseObject({ type: valibot.literal('authorization_code') }),
+);
+
+const authorizationCodeSchema = valibot.object({
+  query: authorizationQuerySchema,
+  userId: valibot.pipe(valibot.string(), valibot.uuid()),
 });
 
 /**
@@ -139,11 +153,41 @@ export async function readAppAccess(
 /**
  * Records an authorization decision without storing request parameters or credentials.
  *
- * @param {AuthorizationEvent} event - Client, tenant, user, decision, and protocol stage.
+ * @param {AuthorizationEvent} event - Client, user, decision, and protocol stage. The registration supplies the organization.
  */
 export async function recordAuthorizationEvent(event: AuthorizationEvent): Promise<void> {
   const database = useDatabase();
-  await database.insert(authorizationEvents).values(event);
+  const inserted = await database.execute(sql`
+    INSERT INTO ${authorizationEvents} (client_id, organization_id, user_id, outcome, stage)
+    SELECT ${oauthClients.clientId}, ${appInstallations.organizationId}, ${event.userId},
+           ${event.outcome}, ${event.stage}
+    FROM ${oauthClients}
+    LEFT JOIN ${appInstallations} ON ${appInstallations.clientId} = ${oauthClients.clientId}
+    WHERE ${oauthClients.clientId} = ${event.clientId}
+  `);
+
+  if (!inserted.count && event.outcome === 'approved') {
+    throw new APIError('FORBIDDEN', { error: 'access_denied' });
+  }
+}
+
+/**
+ * Records the provider's authorization decision before it returns a newly issued code.
+ * @param {{ value: string }} verification - Stored Better Auth verification record.
+ */
+export async function recordIssuedAuthorization(verification: { value: string }): Promise<void> {
+  const parsed = valibot.safeParse(storedAuthorizationCodeSchema, verification.value);
+  if (!parsed.success) {
+    return;
+  }
+
+  const code = valibot.parse(authorizationCodeSchema, parsed.output);
+  await recordAuthorizationEvent({
+    clientId: code.query.client_id,
+    userId: code.userId,
+    outcome: 'approved',
+    stage: 'authorization',
+  });
 }
 
 export const authorizationPolicy: Pick<
@@ -174,7 +218,6 @@ export const authorizationPolicy: Pick<
         await recordAuthorizationEvent({
           clientId,
           userId: user.id,
-          organizationId: access?.organizationId,
           outcome: 'denied',
           stage: consent ? 'consent' : 'authorization',
         });
@@ -201,7 +244,6 @@ export const authorizationPolicy: Pick<
     await recordAuthorizationEvent({
       clientId,
       userId: user.id,
-      organizationId: access?.organizationId,
       stage: 'exchange',
       outcome: approved ? 'approved' : 'denied',
     });

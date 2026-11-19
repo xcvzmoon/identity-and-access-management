@@ -94,16 +94,13 @@ export async function consentDetails(event: H3Event): Promise<Response> {
  * @returns {Promise<Response>} The provider's response to the decision.
  */
 export async function forwardConsent(event: H3Event): Promise<Response> {
-  const { clientId, callback, userId, decline } = await readConsentRequest(event);
+  const { clientId, userId, decline } = await readConsentRequest(event);
   const response = await forwardPostRequestToBetterAuth(event, 'include');
 
   if (decline && response.ok) {
-    const access = await readAppAccess(clientId, userId, { callback });
-
     await recordAuthorizationEvent({
       clientId,
       userId,
-      organizationId: access?.organizationId,
       stage: 'consent',
       outcome: 'denied',
     });

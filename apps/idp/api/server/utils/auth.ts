@@ -8,7 +8,10 @@ import { organization } from 'better-auth/plugins/organization';
 import { isNull } from 'drizzle-orm';
 import { useDatabase } from '../database/index.ts';
 import * as schema from '../database/schema.ts';
-import { authorizationPolicy } from '../services/authorization.service.ts';
+import {
+  authorizationPolicy,
+  recordIssuedAuthorization,
+} from '../services/authorization.service.ts';
 import { createRegistrationPolicy } from '../services/registration.service.ts';
 import { useEnv } from './env.ts';
 import { sendAccountEmail } from './mail.ts';
@@ -43,6 +46,7 @@ function configureAuth(database: AuthDatabase, registration?: ClientRegistration
       usePlural: true,
       transaction: true,
     }),
+    databaseHooks: { verification: { create: { after: recordIssuedAuthorization } } },
     plugins: [
       passkey({
         rpID: new URL(env.oidcIssuerUrl).hostname,
