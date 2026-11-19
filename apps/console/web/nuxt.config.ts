@@ -16,6 +16,7 @@ export default defineNuxtConfig({
     '/**': {
       headers: {
         'Cache-Control': 'no-store',
+        'Content-Security-Policy': "frame-ancestors 'none'",
         'Referrer-Policy': 'same-origin',
         'X-Robots-Tag': 'noindex',
       },
