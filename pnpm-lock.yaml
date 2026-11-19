@@ -213,6 +213,9 @@ catalogs:
     genbumppush:
       specifier: 0.0.10
       version: 0.0.10
+    openid-client:
+      specifier: 6.9.0
+      version: 6.9.0
     typescript:
       specifier: 6.0.3
       version: 6.0.3
@@ -446,6 +449,22 @@ importers:
       vue-tsc:
         specifier: catalog:web
         version: 3.3.14(typescript@6.0.3)
+
+  examples/reference-app:
+    dependencies:
+      openid-client:
+        specifier: 'catalog:'
+        version: 6.9.0
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
 packages:
 
@@ -4519,6 +4538,9 @@ packages:
       '@types/node':
         optional: true
 
+  oauth4webapi@3.8.8:
+    resolution: {integrity: sha512-8N28E+a/oxfXWBgOMt+ZP/JUf/XR+IFbvkAEPP3gznXOMv9BpAAwiIj0TFNz3tGTPc0ZQ8zmWBNgN1nAys0gng==}
+
   object-identity@0.2.3:
     resolution: {integrity: sha512-2J8Joz2Tf7aaylhqFvIUJHNgpuGR38Hh75Voq9GzTbStBxJUaOtN0K1aOd3cV5qp+ij1pMqRbPrGCGMOyX303w==}
 
@@ -4554,6 +4576,9 @@ packages:
   open@11.0.4:
     resolution: {integrity: sha512-++Zlftm0kVLPmzC06t6epuWmcRMDbI4z5P3NNX979WA/k23+NtSOynEGzsVfZwguKw2mi5umVgnBlJQMwRz4Pg==}
     engines: {node: '>=20'}
+
+  openid-client@6.9.0:
+    resolution: {integrity: sha512-2IvamJR8PAnWHngaCsGGA8TYfcLI2egvuqa9cOQYHIISwIUhxJwwwcCnkgVX95fzZ6J0TAna0aVGUMOxnPeRqg==}
 
   orderedmap@2.1.1:
     resolution: {integrity: sha512-TvAWxi0nDe1j/rtMcWcIj94+Ffe6n7zhow33h40SKxmsmozs6dz/e+EajymfoFcHd7sxNn8yHM8839uixMOV6g==}
@@ -9611,6 +9636,8 @@ snapshots:
       - xml2js
       - yaml
 
+  oauth4webapi@3.8.8: {}
+
   object-identity@0.2.3: {}
 
   obug@2.2.1: {}
@@ -9645,6 +9672,11 @@ snapshots:
       is-inside-container: 1.0.0
       powershell-utils: 0.2.1
       wsl-utils: 1.0.1
+
+  openid-client@6.9.0:
+    dependencies:
+      jose: 6.2.17
+      oauth4webapi: 3.8.8
 
   orderedmap@2.1.1: {}
 
