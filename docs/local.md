@@ -101,7 +101,7 @@ schema. Runtime roles have `CONNECT` and grants on their own application data.
 ### Audit retention
 
 The IdP retains authorization and owner recovery events for 90 days. Configure
-a daily scheduler job to run `apps/idp/api/scripts/purge-expired-audit-events.sh`
+a daily scheduler job to run `apps/idp/api/scripts/sh.purge-expired-audit-events.sh`
 with the retention login's libpq connection settings. Each call removes up to
 1,000 expired rows per event table and clears expired daily sign-in counts. The job stops when it finds no unlocked expired
 rows. Alert on a failed or missed run. Rows become eligible at 90 days and
@@ -175,19 +175,19 @@ History begins when the installation role audit migration runs. Reordering or re
 
 #### Check retained rate-limit row ages
 
-Capture the [aggregate age report](../apps/idp/api/scripts/report-rate-limit-retention.sql) before and after a purge. Run it with an operator login that can read `iam_idp.rate_limits.last_request`. The query needs only that column and scans the table once. On large installations, run the report outside peak traffic.
+Capture the [aggregate age report](../apps/idp/api/scripts/sql.report-rate-limit-retention.sql) before and after a purge. Run it with an operator login that can read `iam_idp.rate_limits.last_request`. The query needs only that column and scans the table once. On large installations, run the report outside peak traffic.
 
 ```sh
-psql -X --no-password -v ON_ERROR_STOP=1 --csv -f apps/idp/api/scripts/report-rate-limit-retention.sql
+psql -X --no-password -v ON_ERROR_STOP=1 --csv -f apps/idp/api/scripts/sql.report-rate-limit-retention.sql
 ```
 
 The output contains counts by age and the oldest age in whole hours. Rows become eligible for deletion **after** 720 hours. A nonzero `over_744_hours` count means eligible rows have persisted longer than one daily interval. Check the scheduler, purge failures and row locks. Future timestamps have their own count. The oldest age is empty when there are no past or current timestamps.
 
-Run [check-rate-limit-retention.sh](../deploy/check-rate-limit-retention.sh) from the monitoring host to alert on rows older than 744 hours. Configure libpq for the writable primary with a login granted schema USAGE and SELECT on `rate_limits.last_request`. The check uses the timestamp index and stops at the first overdue row. Exit 0 means the deadline is met, exit 2 means an overdue row exists, and exit 3 means the monitor could not verify retention. Run this check independently of the purge completion marker because a successful purge can skip locked rows.
+Run [sh.check-rate-limit-retention.sh](../deploy/sh.check-rate-limit-retention.sh) from the monitoring host to alert on rows older than 744 hours. Configure libpq for the writable primary with a login granted schema USAGE and SELECT on `rate_limits.last_request`. The check uses the timestamp index and stops at the first overdue row. Exit 0 means the deadline is met, exit 2 means an overdue row exists, and exit 3 means the monitor could not verify retention. Run this check independently of the purge completion marker because a successful purge can skip locked rows.
 
 #### Schedule retention on a Linux host
 
-On a systemd host with the PostgreSQL client installed, place the purge script at `/usr/local/libexec/iam/purge-expired-audit-events.sh`. Copy [iam-retention.service](../deploy/systemd/iam-retention.service) and [iam-retention.timer](../deploy/systemd/iam-retention.timer) into `/etc/systemd/system/`. Configure the retention login's host, port, database, username and TLS settings as libpq environment variables in `/etc/iam/retention.env`. Put its matching password entry in `/etc/iam/retention.pgpass`, owned by root with mode 0600. The service manager supplies a private copy to the job. Make any configured CA certificate readable by the service.
+On a systemd host with the PostgreSQL client installed, place the purge script at `/usr/local/libexec/iam/sh.purge-expired-audit-events.sh`. Copy [iam-retention.service](../deploy/systemd/iam-retention.service) and [iam-retention.timer](../deploy/systemd/iam-retention.timer) into `/etc/systemd/system/`. Configure the retention login's host, port, database, username and TLS settings as libpq environment variables in `/etc/iam/retention.env`. Put its matching password entry in `/etc/iam/retention.pgpass`, owned by root with mode 0600. The service manager supplies a private copy to the job. Make any configured CA certificate readable by the service.
 
 After applying the retention migrations, run:
 
@@ -205,10 +205,10 @@ On success the job writes one `retention-completed` JSON event to stdout, which 
 
 The purge allows five seconds per database connection attempt and 30 seconds per SQL statement by default. Adjust these with `PGCONNECT_TIMEOUT` and a `statement_timeout` setting in `PGOPTIONS` if the deployment requires different limits. The systemd service allows one hour for the whole run. On timeout, the completion marker keeps its previous timestamp. Earlier batches stay committed. Check database availability, locks and backlog age before restarting the service to process the remaining rows.
 
-Run [check-retention-age.sh](../deploy/systemd/check-retention-age.sh) from an independent host monitoring agent with permission to stat the marker. With `DynamicUser=yes`, systemd stores the state beneath `/var/lib/private`; a host-level collector may need a narrowly scoped privilege rule to run the check. The check uses GNU stat on Linux and requires no database credentials.
+Run [sh.check-retention-age.sh](../deploy/systemd/sh.check-retention-age.sh) from an independent host monitoring agent with permission to stat the marker. With `DynamicUser=yes`, systemd stores the state beneath `/var/lib/private`; a host-level collector may need a narrowly scoped privilege rule to run the check. The check uses GNU stat on Linux and requires no database credentials.
 
 ```sh
-sh /usr/local/libexec/iam/check-retention-age.sh
+sh /usr/local/libexec/iam/sh.check-retention-age.sh
 ```
 
 Install the script at the path above and route nonzero exits to the on-call receiver. Exit 2 means that the marker is missing, unreadable, in the future or older than 26 hours. This gives the daily job two hours of grace. Keep the service failure alert for immediate notification when a run fails. During commissioning, run the check once before the first purge and once after it succeeds to verify the alert and recovery.
@@ -258,14 +258,14 @@ The sign-in and invitation forms disclose collection. Before production, documen
 the deployment's lawful basis, investigation access, privacy contact, and retention
 in its privacy notice. The windows here are operational defaults.
 
-Run [check-sign-in-retention.sh](../deploy/check-sign-in-retention.sh) against the writable primary from the monitoring host. Configure libpq with a login granted schema USAGE and SELECT on only `sign_in_events.created_at` and `sign_in_counts.day`. The check allows one daily purge interval after each cutoff. It reports exit 2 for events older than 744 hours or counts dated earlier than 90 days before the current UTC date. Its output identifies the affected collection. Exit 0 means both checks passed. Exit 3 means the monitor could not verify retention.
+Run [sh.check-sign-in-retention.sh](../deploy/sh.check-sign-in-retention.sh) against the writable primary from the monitoring host. Configure libpq with a login granted schema USAGE and SELECT on only `sign_in_events.created_at` and `sign_in_counts.day`. The check allows one daily purge interval after each cutoff. It reports exit 2 for events older than 744 hours or counts dated earlier than 90 days before the current UTC date. Its output identifies the affected collection. Exit 0 means both checks passed. Exit 3 means the monitor could not verify retention.
 
 ### Inspect expired IdP session metadata
 
-Have the database operator run the [session metadata retention report](../apps/idp/api/scripts/report-session-metadata-retention.sql) when reviewing the deployment’s retention policy. Use an existing restricted operations environment. The query reads the expiry, client address and user agent columns in one scan of `iam_idp.sessions`. On large installations, schedule it outside peak traffic.
+Have the database operator run the [session metadata retention report](../apps/idp/api/scripts/sql.report-session-metadata-retention.sql) when reviewing the deployment’s retention policy. Use an existing restricted operations environment. The query reads the expiry, client address and user agent columns in one scan of `iam_idp.sessions`. On large installations, schedule it outside peak traffic.
 
 ```sh
-psql -X --no-password -v ON_ERROR_STOP=1 --csv -f apps/idp/api/scripts/report-session-metadata-retention.sql
+psql -X --no-password -v ON_ERROR_STOP=1 --csv -f apps/idp/api/scripts/sql.report-session-metadata-retention.sql
 ```
 
 The report returns aggregate counts and the age in whole hours of the oldest expired session that still holds either field. A session with both fields contributes to both counts. An empty age means no expired session retains either field. Compare samples with the approved post-expiry retention period. Review backup retention separately.
@@ -368,7 +368,7 @@ Use a named operator account with an independently confirmed email address.
 Export the IdP API runtime settings in a trusted shell. Set `OIDC_ISSUER_URL` to the exact issuer origin, including its port when present. Run the command from the repository root.
 
 ```sh
-vpx apps/idp/api/scripts/provision-operator.ts operator@example.org "IAM operator"
+vpx apps/idp/api/scripts/ts.provision-operator.ts operator@example.org "IAM operator"
 ```
 
 The command prints the IAM user ID. For a new account it sends an email

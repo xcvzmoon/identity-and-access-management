@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { expect, test } from 'vite-plus/test';
-import { releasePhases, verifyReleaseReport } from './release-report.ts';
+import { releasePhases, verifyReleaseReport } from './ts.release-report.ts';
 
 const testsDirectory = path.join(import.meta.dirname, 'fixtures');
 const suites = [

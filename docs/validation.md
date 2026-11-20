@@ -216,7 +216,7 @@ Use a test administrator who can switch to the runtime, reader, and retention
 roles. The SQL fixture rolls back its changes.
 
 ```sh
-psql -X -d iam_phase8_test -f apps/idp/api/tests/audit-access.sql
+psql -X -d iam_phase8_test -f apps/idp/api/tests/sql.audit-access.sql
 ```
 
 Run the OIDC and owner recovery browser fixtures above with the migrated
@@ -224,7 +224,7 @@ database for each phase. Use separate runtime and reader logins so the
 fixtures exercise the same permissions as the services.
 
 With the console session fixture environment configured, run
-`sh scripts/tests/verify-ingress-logs.sh` from the repository root. It checks
+`sh scripts/tests/sh.verify-ingress-logs.sh` from the repository root. It checks
 the fixture proxy and upstream process output for synthetic credentials. It also verifies the IdP reset route template, the successful password sign-in POST after its body-size check, and the console callback failure event.
 Repeat the checks against the deployed proxy and its log sinks during the pilot.
 

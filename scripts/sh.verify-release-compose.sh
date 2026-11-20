@@ -19,7 +19,7 @@ cat < "$5" > "$scratch/receipt"
 commit=$4
 
 verify() {
-  sh "$script_dir/verify-release-image.sh" "$scratch/key" "$scratch/manifest" \
+  sh "$script_dir/sh.verify-release-image.sh" "$scratch/key" "$scratch/manifest" \
     "$scratch/signature" "$commit" "$1" "$2" "$scratch/receipt"
 }
 

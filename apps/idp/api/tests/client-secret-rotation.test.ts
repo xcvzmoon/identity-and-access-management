@@ -21,7 +21,7 @@ const FAILURE = 1;
 const TIMEOUT = 60_000;
 
 function rotate(cookie: string, clientId: string, operators: string): SpawnSyncReturns<string> {
-  return spawnSync('vpx', ['apps/idp/api/scripts/rotate-client-secret.ts', clientId], {
+  return spawnSync('vpx', ['apps/idp/api/scripts/ts.rotate-client-secret.ts', clientId], {
     input: cookie,
     encoding: 'utf8',
     env: {

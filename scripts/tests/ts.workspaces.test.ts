@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, expect, test } from 'vite-plus/test';
-import { getWorkspaces } from '../utils/workspaces.ts';
+import { getWorkspaces } from '../utils/ts.workspaces.ts';
 
 let rootDirectory = '';
 

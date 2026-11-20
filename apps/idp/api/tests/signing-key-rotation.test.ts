@@ -20,7 +20,7 @@ const enabled = process.env.IAM_PHASE9_TESTS === '1';
 function rotationCheck(): RotationCheck {
   const env = useEnv();
   const script = fileURLToPath(
-    new URL('../scripts/check-signing-key-rotation.sh', import.meta.url),
+    new URL('../scripts/sh.check-signing-key-rotation.sh', import.meta.url),
   );
   const result = spawnSync('sh', [script], {
     encoding: 'utf8',

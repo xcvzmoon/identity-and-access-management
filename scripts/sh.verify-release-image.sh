@@ -21,7 +21,7 @@ trap 'exit 1' HUP INT TERM
 
 cat < "$2" > "$scratch/manifest"
 cat < "$7" > "$scratch/receipt"
-digest=$(sh "$script_dir/verify-release-manifest.sh" "$1" "$scratch/manifest" "$3" "$4" "$5")
+digest=$(sh "$script_dir/sh.verify-release-manifest.sh" "$1" "$scratch/manifest" "$3" "$4" "$5")
 receipt_hash=$(openssl dgst -sha256 -r "$scratch/receipt")
 if ! jq -e --arg hash "${receipt_hash%% *}" '.release_receipt_sha256 == $hash' "$scratch/manifest" >/dev/null; then
   echo "Passing receipt digest differs from the signed manifest" >&2
@@ -46,7 +46,7 @@ if [ "$platform" != 'linux/arm64' ]; then
 fi
 container=$(docker create --pull never --platform linux/arm64 "$reference")
 docker cp "$container:/app/.output" "$scratch/bundle"
-actual=$(node "$script_dir/tests/release-inputs.ts" "$scratch/bundle")
+actual=$(node "$script_dir/tests/ts.release-inputs.ts" "$scratch/bundle")
 if [ "$actual" != "$expected" ]; then
   echo "Packaged $5 bundle differs from the passing release receipt" >&2
   exit 1

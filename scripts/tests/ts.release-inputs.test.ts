@@ -10,7 +10,7 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import { expect, test } from 'vite-plus/test';
-import { hashReleaseBundle } from './release-inputs.ts';
+import { hashReleaseBundle } from './ts.release-inputs.ts';
 
 test('binds the release digest to bundle contents, paths and link targets', ({
   onTestFinished,

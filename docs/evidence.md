@@ -36,10 +36,10 @@ Discovery returned the configured issuer, supported Authorization Code and S256 
 
 ## 2. Bootstrap the operator and console
 
-1. Run `vpx apps/idp/api/scripts/provision-operator.ts` for the operator account using the host database address. Add the returned user ID to `OPERATOR_USER_IDS` and recreate both IdP replicas.
+1. Run `vpx apps/idp/api/scripts/ts.provision-operator.ts` for the operator account using the host database address. Add the returned user ID to `OPERATOR_USER_IDS` and recreate both IdP replicas.
 2. Use **Resend verification email** on the issuer. Open the delivered verification link in Mailpit. Use **Forgot password** to set the operator's password, then sign in.
 3. Enroll a passkey at `/passkeys` and verify it. The success message confirms a five-minute verification window.
-4. Supply the verified operator's session cookie to `provision-console.ts` through a private file. Set `CONSOLE_ORIGIN` to the full Portless console origin. Put the returned client secret into `OIDC_CLIENT_SECRET` and recreate the console API.
+4. Supply the verified operator's session cookie to `ts.provision-console.ts` through a private file. Set `CONSOLE_ORIGIN` to the full Portless console origin. Put the returned client secret into `OIDC_CLIENT_SECRET` and recreate the console API.
 5. Open the console's `/account` page. The reserved console client reused the operator's IAM session and displayed the account before any organization membership existed. [Console provisioning](pilot.md#provision-the-console-client)
 
 ![Operator email verification request](evidence-assets/03-operator-verification-request.png)

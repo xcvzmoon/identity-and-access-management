@@ -15,10 +15,10 @@ vp -C apps/console/api run db:migrate
 
 ## Monitor database connection admission
 
-Run the [database admission check](../deploy/check-database-admission.sh) from the API network against each PostgreSQL primary serving IAM. Point it directly at the database so each run opens a fresh server connection. Use a dedicated login with CONNECT on the IAM database, ordinary connection privileges and no application table grants. Configure `PGHOST`, `PGDATABASE`, `PGUSER`, the port and TLS trust as for the APIs. Supply the password through a protected libpq password file.
+Run the [database admission check](../deploy/sh.check-database-admission.sh) from the API network against each PostgreSQL primary serving IAM. Point it directly at the database so each run opens a fresh server connection. Use a dedicated login with CONNECT on the IAM database, ordinary connection privileges and no application table grants. Configure `PGHOST`, `PGDATABASE`, `PGUSER`, the port and TLS trust as for the APIs. Supply the password through a protected libpq password file.
 
 ```sh
-sh deploy/check-database-admission.sh
+sh deploy/sh.check-database-admission.sh
 ```
 
 Exit 0 confirms that the writable server admitted an ordinary login and answered a query. Exit 2 means the monitor could not establish that session. Check connection-slot usage, primary availability, TLS and login configuration when investigating. Exit 3 means the monitor needs configuration. Have the monitoring agent enforce a wall-clock timeout and page on repeated failures, including timeouts. Set the interval and alert delay from the deployment's availability target.
@@ -27,10 +27,10 @@ Rehearse on a disposable primary with a small connection limit. Hold enough ordi
 
 ### Measure database sessions during a capacity rehearsal
 
-Sample the [database session report](../deploy/report-database-sessions.sql) while the sign-in, token exchange and introspection workloads run. Connect to each IAM database on the primary using a DBA-controlled statistics login with `pg_read_all_stats`. Keep that privilege off the application and connection-admission logins.
+Sample the [database session report](../deploy/sql.report-database-sessions.sql) while the sign-in, token exchange and introspection workloads run. Connect to each IAM database on the primary using a DBA-controlled statistics login with `pg_read_all_stats`. Keep that privilege off the application and connection-admission logins.
 
 ```sh
-psql -Xw --csv -f deploy/report-database-sessions.sql
+psql -Xw --csv -f deploy/sql.report-database-sessions.sql
 ```
 
 Each sample returns a timestamp and aggregate counts for both runtime roles in the connected database. Record the sampling interval alongside the workload and request latencies. A session waiting on a lock can also count as active. A nonzero `activity_tracking_disabled` count means the state breakdown is incomplete. Short waits can fall between samples. Measure application-side pool checkout delays separately.
@@ -41,18 +41,18 @@ Each IdP process emits an `account-email-backlog` event at startup and every min
 
 The IdP waits up to `SMTP_CONFIRMED_TIMEOUT_MS` (default 30,000 milliseconds) for the relay to accept an invitation email. The deadline starts when the IdP submits the message and includes time waiting for a pooled connection. Apply the owner and member invitation delivery migrations before deploying the IdP. A successful owner, administrator, or member invitation response means the invitation and its delivery request have committed. Each replica checks both PostgreSQL queues independently every two seconds and sends the email after releasing the database lock.
 
-A failed or interrupted invitation delivery becomes eligible again one minute plus the configured SMTP deadline after its last claim. A later attempt checks that the invitation is pending and unexpired. If the relay accepted an email before its acknowledgement was lost, the recipient may receive another copy of the same single-use link. The per-process backlog measures SMTP submissions. Run the [invitation backlog check](../deploy/check-invitation-backlog.sh) against the IdP primary to monitor work across replicas, including time between attempts. Age starts at invitation creation and continues until the queue entry is removed. Owner bootstrap and recovery appear as `owner`. Member and administrator invitations appear as `member`.
+A failed or interrupted invitation delivery becomes eligible again one minute plus the configured SMTP deadline after its last claim. A later attempt checks that the invitation is pending and unexpired. If the relay accepted an email before its acknowledgement was lost, the recipient may receive another copy of the same single-use link. The per-process backlog measures SMTP submissions. Run the [invitation backlog check](../deploy/sh.check-invitation-backlog.sh) against the IdP primary to monitor work across replicas, including time between attempts. Age starts at invitation creation and continues until the queue entry is removed. Owner bootstrap and recovery appear as `owner`. Member and administrator invitations appear as `member`.
 
 Alert on `invitation-delivery-expired` events. A worker emits one when it removes a still-pending invitation whose link has expired. The `queue` field identifies the owner or member queue. If `previouslyClaimed` is false, check worker availability and backlog age. If true, check relay failures and worker restarts. A claim alone does not establish whether the relay accepted the message. A fresh invitation requires the usual authorization.
 
 Apply the `invitation_delivery_backlog` migration and grant the monitoring login database CONNECT, schema USAGE and EXECUTE on `iam_idp.invitation_delivery_backlog()`. The function returns a count and oldest age for each queue, including zeros for empty queues. It requires no table grants for the monitoring login.
 
-Configure libpq credentials, TLS and a wall-clock timeout as for the database admission check. Run the check at the agreed monitoring interval with the end-to-end invitation deadline in milliseconds. For example, a five-minute deadline uses `sh deploy/check-invitation-backlog.sh 300000`. Exit 2 means a queue exceeded the deadline or the monitor could not read the primary. Exit 3 indicates a configuration error or an invalid reading. Treat a missing queue, duplicate queue, or inconsistent count and age as lost monitoring coverage. Route alerts and recovery notifications to the identity on-call.
+Configure libpq credentials, TLS and a wall-clock timeout as for the database admission check. Run the check at the agreed monitoring interval with the end-to-end invitation deadline in milliseconds. For example, a five-minute deadline uses `sh deploy/sh.check-invitation-backlog.sh 300000`. Exit 2 means a queue exceeded the deadline or the monitor could not read the primary. Exit 3 indicates a configuration error or an invalid reading. Treat a missing queue, duplicate queue, or inconsistent count and age as lost monitoring coverage. Route alerts and recovery notifications to the identity on-call.
 
-Configure the host monitor to pass the latest JSON event for each expected replica to [check-mail-backlog.sh](../deploy/check-mail-backlog.sh) on standard input. Run it every minute, even if the collector has received nothing. Use an empty input for a missing replica. The argument is the relay acceptance deadline in milliseconds, chosen by the service owner. For example, to check a 30-second deadline, run:
+Configure the host monitor to pass the latest JSON event for each expected replica to [sh.check-mail-backlog.sh](../deploy/sh.check-mail-backlog.sh) on standard input. Run it every minute, even if the collector has received nothing. Use an empty input for a missing replica. The argument is the relay acceptance deadline in milliseconds, chosen by the service owner. For example, to check a 30-second deadline, run:
 
 ```sh
-sh deploy/check-mail-backlog.sh 30000 < latest-replica-sample.json
+sh deploy/sh.check-mail-backlog.sh 30000 < latest-replica-sample.json
 ```
 
 The check requires jq. Exit 0 means the latest sample is within the deadline. Exit 2 signals an overdue delivery or a problem with the sample, including a timestamp older than three minutes or ahead of the monitor clock. Exit 3 signals a monitor configuration error.
@@ -100,7 +100,7 @@ Load the IdP runtime environment and set `CONSOLE_ORIGIN` to the public console 
 
 ```sh
 umask 077
-vpx apps/idp/api/scripts/provision-console.ts < "$COOKIE_FILE" > "$NEW_SECRET_FILE"
+vpx apps/idp/api/scripts/ts.provision-console.ts < "$COOKIE_FILE" > "$NEW_SECRET_FILE"
 ```
 
 After provisioning, the audit reader can check the `created` event for `iam-console` in `iam_idp.oauth_client_events`. Its `actor_user_id` identifies the verified operator who ran the command.
@@ -116,7 +116,7 @@ For the console, use a verified operator session and set `CLIENT_ID` to `iam-con
 The provider accepts one secret at a time. Prepare the consumer's secret store and reload procedure, and coordinate a maintenance window for token exchange and introspection. Before invoking the command, you can abort the cutover and keep using the current secret. Run from a trusted host with the IdP runtime settings. Supply the session cookie in a private file and choose a fresh path for the replacement.
 
 ```sh
-(umask 077; set -C; vpx apps/idp/api/scripts/rotate-client-secret.ts "$CLIENT_ID" < "$COOKIE_FILE" > "$NEW_SECRET_FILE")
+(umask 077; set -C; vpx apps/idp/api/scripts/ts.rotate-client-secret.ts "$CLIENT_ID" < "$COOKIE_FILE" > "$NEW_SECRET_FILE")
 ```
 
 On success, install the captured value in the console or customer backend and reload every replica. Check a protected request and confirm the previous secret receives a client authentication error. The old secret stops working at commit. If the new value is lost, repeat rotation to issue another one. Use the same procedure for a suspected disclosure, with immediate cutoff. The audit reader can verify an `updated` event with `credential_changed` and the expected actor. End the privileged session and remove the temporary files after delivery.
@@ -168,7 +168,7 @@ openssl pkeyutl -sign -rawin -inkey "$SIGNING_KEY" -in manifest.json -out manife
 On the promotion host, supply the public key and repository from deployment configuration and the commit from the approved release record. Use Node at the project version, Docker, OpenSSL 3 and jq. Run this command for each workspace before deploying any replica:
 
 ```sh
-reference=$(sh scripts/verify-release-image.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifest.sig \
+reference=$(sh scripts/sh.verify-release-image.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifest.sig \
   "$APPROVED_COMMIT" idp/api "$IDP_API_REPOSITORY" "$PASSING_RECEIPT") || exit 1
 ```
 
@@ -177,7 +177,7 @@ The verifier pulls the Linux arm64 image by its signed digest, extracts `/app/.o
 For the Compose pilot, set `IDP_API_REPOSITORY`, `IDP_WEB_REPOSITORY`, `CONSOLE_API_REPOSITORY` and `CONSOLE_WEB_REPOSITORY` from deployment configuration. Generate a fresh override in the release directory. Keep the manifest, signature, receipt, and override with that release.
 
 ```sh
-sh scripts/verify-release-compose.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifest.sig \
+sh scripts/sh.verify-release-compose.sh "$TRUSTED_PUBLIC_KEY" manifest.json manifest.sig \
   "$APPROVED_COMMIT" "$PASSING_RECEIPT" > verified-images.yaml &&
   docker compose -f compose.yaml -f verified-images.yaml config --quiet &&
   docker compose -f compose.yaml -f verified-images.yaml up -d --no-build

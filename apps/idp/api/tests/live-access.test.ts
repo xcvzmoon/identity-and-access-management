@@ -163,7 +163,7 @@ async function login(
 
 async function probeIntrospection(endpoint: URL, netrc: string): Promise<number> {
   const script = fileURLToPath(
-    new URL('../../../../deploy/check-introspection.sh', import.meta.url),
+    new URL('../../../../deploy/sh.check-introspection.sh', import.meta.url),
   );
   try {
     await promisify(execFile)('sh', [script, endpoint.href, netrc], {

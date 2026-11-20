@@ -22,7 +22,7 @@ ORDER BY created_at DESC;
 
 Route stderr events with `event=signing-key-rotation` and either `outcome=failed` or `outcome=rollback-failed` to the identity on-call. A failed transaction leaves the prior state intact. The next tick retries. Alert separately if a staged key remains past its activation time by more than two ticks or an active key is over 91 days old. Successful transition logs identify both key IDs. Compare the public JWKS from every issuer replica when investigating a missed transition.
 
-After the first JWKS request initializes the keyring, run [check-signing-key-rotation.sh](../apps/idp/api/scripts/check-signing-key-rotation.sh) every minute from a monitoring host with `psql` and libpq settings for the primary. Use a dedicated monitoring login. A DBA can grant it the four metadata columns the check reads:
+After the first JWKS request initializes the keyring, run [sh.check-signing-key-rotation.sh](../apps/idp/api/scripts/sh.check-signing-key-rotation.sh) every minute from a monitoring host with `psql` and libpq settings for the primary. Use a dedicated monitoring login. A DBA can grant it the four metadata columns the check reads:
 
 ```sql
 GRANT USAGE ON SCHEMA iam_idp TO iam_key_monitor;
@@ -35,7 +35,7 @@ On a systemd monitoring host, configure the primary's host, port, database, moni
 From the release checkout, install and verify the timer as root:
 
 ```sh
-install -Dm755 apps/idp/api/scripts/check-signing-key-rotation.sh /usr/local/libexec/iam/check-signing-key-rotation.sh
+install -Dm755 apps/idp/api/scripts/sh.check-signing-key-rotation.sh /usr/local/libexec/iam/sh.check-signing-key-rotation.sh
 install -m644 deploy/systemd/iam-signing-key-check.service deploy/systemd/iam-signing-key-check.timer /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now iam-signing-key-check.timer
@@ -51,7 +51,7 @@ Route exit 2 to the identity on-call for an unexpected active signer count or a 
 Confirm the target was previously active, is still present in every replica's JWKS, and is trusted by the relying parties. From the matching source release, load the IdP runtime environment and run the following in `apps/idp/api`:
 
 ```sh
-vpx scripts/rollback-signing-key.ts "$TRUSTED_KID"
+vpx scripts/ts.rollback-signing-key.ts "$TRUSTED_KID"
 ```
 
 Check the logged key IDs, obtain a fresh token, and verify its signature and `kid`. Rollback discards a pending replacement and starts the displaced active key's retention period. A restored key older than 90 days triggers publication of a fresh replacement on the next tick.

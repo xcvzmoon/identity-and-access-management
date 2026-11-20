@@ -5,8 +5,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseEnv } from 'node:util';
 import manifest from '../../package.json' with { type: 'json' };
-import { captureReleaseInputs } from './release-inputs.ts';
-import { releasePhases, verifyReleaseReport } from './release-report.ts';
+import { captureReleaseInputs } from './ts.release-inputs.ts';
+import { releasePhases, verifyReleaseReport } from './ts.release-report.ts';
 
 const CLI_ARGUMENT_OFFSET = 2;
 const EMPTY = 0;
@@ -28,7 +28,7 @@ function runAuditChecks(fixtures: string): void {
       '-v',
       'ON_ERROR_STOP=1',
       '-f',
-      path.join(testsDirectory, 'audit-access.sql'),
+      path.join(testsDirectory, 'sql.audit-access.sql'),
     ],
     {
       cwd: root,
@@ -69,7 +69,7 @@ function runReleaseTests(): void {
     const verifyIngress = name === 'phase-6';
     const program = verifyIngress ? 'sh' : 'vp';
     const args = verifyIngress
-      ? ['scripts/tests/verify-ingress-logs.sh', ...reporter]
+      ? ['scripts/tests/sh.verify-ingress-logs.sh', ...reporter]
       : ['test', '--run', ...reporter, ...files];
 
     execFileSync(program, args, {

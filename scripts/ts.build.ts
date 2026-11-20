@@ -1,7 +1,7 @@
 import { consola } from 'consola';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
-import { getWorkspaces } from './utils/workspaces.ts';
+import { getWorkspaces } from './utils/ts.workspaces.ts';
 
 const rootDirectory = path.resolve(import.meta.dirname, '..');
 

@@ -28,10 +28,10 @@ The runnable reference server demonstrates discovery, PKCE, callback validation,
 
 ## Monitor introspection availability
 
-Run the [introspection check](../deploy/check-introspection.sh) from the application's network with curl and jq installed. Use the HTTPS introspection endpoint from the pinned issuer's discovery document. Give the monitor a dedicated confidential installation with no user grants. Store its credentials in a mode-0600 netrc file with a machine entry for the issuer hostname, the client ID as the login and the secret as the password.
+Run the [introspection check](../deploy/sh.check-introspection.sh) from the application's network with curl and jq installed. Use the HTTPS introspection endpoint from the pinned issuer's discovery document. Give the monitor a dedicated confidential installation with no user grants. Store its credentials in a mode-0600 netrc file with a machine entry for the issuer hostname, the client ID as the login and the secret as the password.
 
 ```sh
-sh deploy/check-introspection.sh "$INTROSPECTION_ENDPOINT" /etc/iam/introspection.netrc
+sh deploy/sh.check-introspection.sh "$INTROSPECTION_ENDPOINT" /etc/iam/introspection.netrc
 ```
 
 The check submits an inactive token and expects HTTP 200 with `active: false`. Exit 2 signals an unreachable endpoint, rejected credentials or an unexpected reply. Exit 3 indicates a local setup error. Configure the monitoring agent to page the identity on-call on repeated failures and clear the alert on exit 0. During commissioning, interrupt the test issuer's introspection route, restore it, and confirm receipt of both notifications. This probe covers authenticated endpoint availability. Use the live-access integration test to verify authorization for an active session.

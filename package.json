@@ -5,21 +5,21 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "vpx scripts/build.ts",
+    "build": "vpx scripts/ts.build.ts",
     "fmt": "vp fmt",
     "lint": "vp lint",
     "check": "vp check",
-    "typecheck": "vpx scripts/typecheck.ts",
-    "refresh": "vpx scripts/refresh.ts",
-    "create-env": "vpx scripts/create-env.ts",
+    "typecheck": "vpx scripts/ts.typecheck.ts",
+    "refresh": "vpx scripts/ts.refresh.ts",
+    "create-env": "vpx scripts/ts.create-env.ts",
     "release": "genbumppush",
     "prepare": "vp config --no-agent",
     "test": "vp test",
-    "test:release": "vpx scripts/tests/run-release.ts",
+    "test:release": "vpx scripts/tests/ts.run-release.ts",
     "test:watch": "vp test --watch",
     "test:verbose": "vp test --reporter=verbose",
-    "docker": "vpx scripts/docker.ts",
-    "docker:portless": "sh scripts/portless-compose.sh"
+    "docker": "vpx scripts/ts.docker.ts",
+    "docker:portless": "sh scripts/sh.portless-compose.sh"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "catalog:",
