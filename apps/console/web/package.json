@@ -14,6 +14,7 @@
     "@formisch/vue": "catalog:",
     "@iconify-json/lucide": "catalog:web",
     "@nuxt/ui": "catalog:web",
+    "@tanstack/charts": "catalog:web",
     "nuxt": "catalog:web",
     "tailwindcss": "catalog:web",
     "valibot": "catalog:",

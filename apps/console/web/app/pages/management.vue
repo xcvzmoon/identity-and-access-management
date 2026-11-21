@@ -1,11 +1,22 @@
 <script setup lang="ts">
   import * as valibot from 'valibot';
-  import { organizationsSchema } from '~/utils/management';
+  import { managementSections, organizationsSchema } from '~/utils/management';
 
-  useHead({ title: 'Organizations · IAM console' });
+  definePageMeta({
+    path: '/:section(dashboard|management|members|invitations|applications|access)',
+  });
 
+  const [overview] = managementSections;
+  const route = useRoute();
+  const section = computed(
+    () => managementSections.find(({ to }) => to === route.path) ?? overview,
+  );
+
+  useHead(() => ({ title: `${section.value.label} · IAM console` }));
+
+  const UNAUTHORIZED = 401;
   const FIRST_ORGANIZATION = 0;
-  const selected = ref('');
+  const selected = useState('console-organization', () => '');
   const { data, error, refresh } = await useAsyncData(
     'management-organizations',
     async () => {
@@ -18,10 +29,39 @@
     },
     { server: false },
   );
-  const organization = computed(
-    () => data.value?.find(({ id }) => id === selected.value) ?? data.value?.at(FIRST_ORGANIZATION),
+  const organization = computed(() => {
+    if (route.query.org) {
+      return data.value?.find(({ id }) => id === route.query.org);
+    }
+
+    return (
+      data.value?.find(({ id }) => id === selected.value) ?? data.value?.at(FIRST_ORGANIZATION)
+    );
+  });
+
+  watch(
+    organization,
+    (current) => {
+      if (current) {
+        selected.value = current.id;
+      }
+    },
+    { immediate: true },
   );
-  const { data: session } = await useFetch('/api/v1/session', {
+
+  async function switchOrganization(id: string): Promise<void> {
+    selected.value = id;
+    await navigateTo({
+      path: route.path,
+      query: { org: id },
+    });
+  }
+
+  const {
+    data: session,
+    error: sessionError,
+    refresh: refreshSession,
+  } = await useFetch('/api/v1/session', {
     server: false,
     cache: 'no-store',
     transform: (response) =>
@@ -33,23 +73,64 @@
         response,
       ),
   });
-
-  function selectOrganization(event: Event): void {
-    if (event.target instanceof HTMLSelectElement) {
-      selected.value = event.target.value;
+  watchEffect(() => {
+    if (sessionError.value?.statusCode === UNAUTHORIZED) {
+      const query = new URLSearchParams({ returnTo: route.fullPath });
+      globalThis.location.replace(`/api/v1/login?${query}`);
     }
-  }
+  });
 </script>
 
 <template>
   <section class="grid gap-6">
-    <NuxtLink
-      to="/account"
-      class="text-primary"
-    >
-      Your account
-    </NuxtLink>
-    <h1 class="text-3xl font-semibold">Organizations</h1>
+    <header class="flex flex-wrap items-center justify-between gap-4 border-b border-muted pb-4">
+      <div class="min-w-0">
+        <p
+          v-if="organization && section.to !== '/dashboard'"
+          class="mb-1 flex items-center gap-2 text-sm text-muted"
+        >
+          <UIcon name="i-lucide-building-2" />
+          {{ organization.name }}
+        </p>
+        <h1
+          v-if="section.to !== '/applications' || !route.query.client"
+          class="text-xl font-semibold tracking-tight sm:text-2xl"
+        >
+          {{
+            section.to === '/dashboard'
+              ? (organization?.name ?? 'Organization overview')
+              : section.label
+          }}
+        </h1>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <USelect
+          v-if="data && data.length > 1 && organization"
+          :model-value="organization.id"
+          :items="data"
+          label-key="name"
+          value-key="id"
+          aria-label="Organization"
+          @update:model-value="switchOrganization"
+        />
+        <template v-if="section.to === '/dashboard' && organization && session">
+          <UButton
+            :to="{ path: '/members', query: { org: organization.id, action: 'invite' } }"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-user-plus"
+          >
+            Invite a member
+          </UButton>
+          <UButton
+            :to="{ path: '/applications', query: { org: organization.id, action: 'register' } }"
+            icon="i-lucide-plus"
+          >
+            Register an app
+          </UButton>
+        </template>
+      </div>
+    </header>
     <div
       v-if="error"
       role="alert"
@@ -57,7 +138,7 @@
     >
       <p>Unable to load your organizations.</p>
       <UButton
-        href="/api/v1/login?returnTo=/management"
+        :href="'/api/v1/login?returnTo=' + encodeURIComponent(route.path)"
         external
       >
         Sign in again
@@ -70,44 +151,44 @@
       </UButton>
     </div>
     <template v-else-if="organization">
-      <label
-        v-if="data && data.length > 1"
-        class="grid gap-1"
-      >
-        Organization
-        <select
-          class="rounded border border-default bg-default p-2"
-          :value="organization.id"
-          @change="selectOrganization"
-        >
-          <option
-            v-for="entry in data"
-            :key="entry.id"
-            :value="entry.id"
-          >
-            {{ entry.name }}
-          </option>
-        </select>
-      </label>
-      <h2 class="text-xl font-semibold">{{ organization.name }}</h2>
-      <a
-        v-if="session"
-        class="text-primary underline"
-        :href="session.issuer + '/passkeys'"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Verify with a passkey (opens a new tab)
-      </a>
       <OrganizationManagement
         v-if="session"
+        :issuer="session.issuer"
         :actor-id="session.user.sub"
         :actor-role="organization.role"
-        :key="organization.id"
+        :key="organization.id + section.to"
+        :section="section"
         :organization-id="organization.id"
         @renamed="refresh()"
       />
+      <div
+        v-else-if="sessionError"
+        role="alert"
+        class="grid justify-items-start gap-3"
+      >
+        <p>Unable to load your console session.</p>
+        <UButton
+          color="neutral"
+          variant="outline"
+          @click="refreshSession()"
+        >
+          Retry
+        </UButton>
+      </div>
+      <p
+        v-else
+        role="status"
+      >
+        Loading your session…
+      </p>
     </template>
+    <div
+      v-else-if="data?.length && route.query.org"
+      class="space-y-3"
+    >
+      <p>This organization is unavailable.</p>
+      <UButton to="/applications">View applications</UButton>
+    </div>
     <p v-else-if="data">You have no organizations to manage.</p>
     <p
       v-else

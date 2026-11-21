@@ -16,6 +16,7 @@
 
   type Props = {
     action: ManagementActionName;
+    clientId?: string;
     actorId: string;
     actorRole: string;
     organizationId: string;
@@ -76,12 +77,12 @@
       email: '',
       role: '',
       permissions: '',
-      clientId: '',
+      clientId: props.clientId ?? '',
       userId: '',
       redirectUri: '',
     },
   });
-  const selectedClient = ref('');
+  const selectedClient = ref(props.clientId ?? '');
   const message = ref('');
   const error = ref('');
   const credentials = ref<{ clientId: string; clientSecret: string } | null>(null);
@@ -96,7 +97,16 @@
     }
 
     if (field === 'userId') {
+      const assigned = new Set(
+        props.details.assignments
+          .filter(({ clientId }) => clientId === props.clientId)
+          .map(({ userId }) => userId),
+      );
       return props.details.members.flatMap(({ email, userId, role }) => {
+        if (props.clientId && props.action === 'revoke' && !assigned.has(userId)) {
+          return [];
+        }
+
         if (
           props.action === 'removeMember' &&
           (userId === props.actorId || (role !== 'member' && props.actorRole !== 'owner'))
@@ -133,12 +143,6 @@
     }
 
     return null;
-  }
-
-  function select(field: InputName, event: Event): void {
-    if (field === 'clientId' && event.target instanceof HTMLSelectElement) {
-      selectedClient.value = event.target.value;
-    }
   }
 
   async function save(values: valibot.InferOutput<typeof schema>): Promise<void> {
@@ -185,7 +189,7 @@
 
       message.value = 'Changes saved.';
       reset(form);
-      selectedClient.value = '';
+      selectedClient.value = props.clientId ?? '';
       emit('saved', props.action);
     } catch {
       error.value =
@@ -211,35 +215,34 @@
     >
       <label class="grid gap-1">
         {{ labels[input] }}
-        <select
-          v-if="choices(input)"
+        <UInput
+          v-if="input === 'clientId' && clientId"
           v-model="field.input"
           v-bind="field.props"
+          readonly
+        />
+        <USelect
+          v-else-if="choices(input)"
+          v-model="field.input"
+          v-bind="field.props"
+          :items="choices(input) ?? []"
+          placeholder="Select an option"
           required
-          class="rounded border border-default bg-default p-2"
-          @change="select(input, $event)"
-        >
-          <option
-            value=""
-            disabled
-          >
-            Select an option
-          </option>
-          <option
-            v-for="choice in choices(input)"
-            :key="choice.value"
-            :value="choice.value"
-          >
-            {{ choice.label }}
-          </option>
-        </select>
-        <input
+          @update:model-value="
+            (value) => {
+              if (input === 'clientId') {
+                selectedClient = value ?? '';
+              }
+            }
+          "
+        />
+        <UInput
           v-else
           v-model="field.input"
           v-bind="field.props"
           :type="input === 'email' ? 'email' : input === 'redirectUri' ? 'url' : 'text'"
           required
-          class="rounded border border-default bg-default p-2"
+          class="w-full"
         />
         <span
           v-if="field.errors"
@@ -256,18 +259,22 @@
     >
       {{ operations[action] }}
     </UButton>
-    <p
+    <UAlert
       v-if="message"
       role="status"
-    >
-      {{ message }}
-    </p>
-    <p
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      :description="message"
+    />
+    <UAlert
       v-if="error"
       role="alert"
-    >
-      {{ error }}
-    </p>
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      :description="error"
+    />
     <section
       v-if="credentials"
       class="grid gap-2 rounded border border-default p-3"

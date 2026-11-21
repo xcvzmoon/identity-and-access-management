@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import * as valibot from 'valibot';
 
-  definePageMeta({ alias: '/' });
   useHead({ title: 'Your account · IAM console' });
 
   const UNAUTHORIZED = 401;
@@ -35,42 +34,57 @@
 
 <template>
   <section
-    class="grid gap-6 border-t-2 border-primary pt-6"
+    class="grid max-w-4xl gap-6"
     aria-labelledby="account-title"
   >
     <h1
       id="account-title"
-      class="text-3xl font-semibold tracking-tight"
+      class="text-3xl font-semibold tracking-tight sm:text-4xl"
     >
       Your account
     </h1>
     <template v-if="session">
-      <dl class="grid gap-4">
-        <div v-if="session.user.name">
-          <dt class="text-sm text-muted">Name</dt>
-          <dd>{{ session.user.name }}</dd>
-        </div>
-        <div>
-          <dt class="text-sm text-muted">Email address</dt>
-          <dd class="break-words">{{ session.user.email }}</dd>
-        </div>
-      </dl>
-      <div>
-        <UButton
-          :href="`${session.issuer}/forgot-password`"
-          variant="link"
-        >
-          Reset password
-        </UButton>
-      </div>
-      <NuxtLink
-        to="/management"
-        class="text-primary underline"
-      >
-        Manage organizations
-      </NuxtLink>
       <section
-        class="grid gap-3 border-t border-default pt-6"
+        aria-label="Profile"
+        class="flex items-center gap-4 rounded-lg border border-muted bg-(--iam-surface) p-5"
+      >
+        <UAvatar
+          :alt="session.user.name || session.user.email"
+          size="xl"
+        />
+        <div class="min-w-0">
+          <h2 class="break-words text-xl font-semibold">
+            {{ session.user.name || session.user.email }}
+          </h2>
+          <p
+            v-if="session.user.name"
+            class="break-all text-sm text-muted"
+          >
+            {{ session.user.email }}
+          </p>
+        </div>
+      </section>
+      <section class="grid gap-4 rounded-lg border border-muted bg-(--iam-surface) p-5">
+        <h2 class="text-lg font-medium">Account security</h2>
+        <div class="flex flex-wrap gap-3">
+          <UButton
+            :href="session.issuer + '/passkeys'"
+            color="neutral"
+            variant="outline"
+          >
+            Manage passkeys
+          </UButton>
+          <UButton
+            :href="session.issuer + '/forgot-password'"
+            color="neutral"
+            variant="outline"
+          >
+            Reset password
+          </UButton>
+        </div>
+      </section>
+      <section
+        class="grid gap-4 rounded-lg border border-muted bg-(--iam-surface) p-5 sm:p-6"
         aria-labelledby="session-title"
       >
         <h2

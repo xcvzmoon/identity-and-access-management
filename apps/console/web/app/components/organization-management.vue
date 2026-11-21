@@ -1,12 +1,19 @@
 <script setup lang="ts">
   import type { ManagementActionName } from '~/utils/management';
   import * as valibot from 'valibot';
-  import { detailsSchema, operations } from '~/utils/management';
+  import { detailsSchema, managementSections, operations } from '~/utils/management';
 
-  type Props = { organizationId: string; actorId: string; actorRole: string };
+  type Props = {
+    section: (typeof managementSections)[number];
+    issuer: string;
+    organizationId: string;
+    actorId: string;
+    actorRole: string;
+  };
 
   const props = defineProps<Props>();
-  const selectedAction = ref<ManagementActionName>('invite');
+  const route = useRoute();
+  const selectedAction = ref<ManagementActionName>();
   const emit = defineEmits<{ renamed: [] }>();
   const { data, error, refresh } = await useAsyncData(
     `management-details-${props.organizationId}`,
@@ -22,6 +29,41 @@
         }),
       ),
     { server: false },
+  );
+
+  const installation = computed(() =>
+    data.value?.installations.find(({ clientId }) => clientId === route.query.client),
+  );
+
+  const resources = computed(() => [
+    {
+      label: 'Members',
+      total: data.value?.members.length,
+      path: '/members',
+    },
+    {
+      label: 'Invitations',
+      total: data.value?.invitations.length,
+      path: '/invitations',
+    },
+    {
+      label: 'Applications',
+      total: data.value?.installations.length,
+      path: '/applications',
+    },
+    {
+      label: 'Role assignments',
+      total: data.value?.assignments.length,
+      path: '/access',
+    },
+  ]);
+
+  watch(
+    () => route.query.action,
+    (requested) => {
+      selectedAction.value = props.section.actions.find((action) => action === requested);
+    },
+    { immediate: true },
   );
 
   async function update(action: string): Promise<void> {
@@ -47,86 +89,129 @@
     </UButton>
   </div>
   <template v-else-if="data">
-    <section class="grid gap-3">
-      <h3 class="text-lg font-semibold">Members</h3>
-      <ul>
-        <li
-          v-for="member in data.members"
-          :key="member.userId"
-        >
-          {{ member.email }} · {{ member.role }}
-        </li>
-      </ul>
-      <h3 class="text-lg font-semibold">Invitations</h3>
-      <p v-if="!data.invitations.length">No invitations.</p>
-      <ul v-else>
-        <li
-          v-for="(invitation, index) in data.invitations"
-          :key="index"
-        >
-          {{ invitation.email }} · {{ invitation.role }} · {{ invitation.status }}
-        </li>
-      </ul>
-      <h3 class="text-lg font-semibold">App installations</h3>
-      <p v-if="!data.installations.length">No installations.</p>
-      <ul
-        v-else
-        class="grid gap-3"
-      >
-        <li
-          v-for="installation in data.installations"
-          :key="installation.clientId"
-        >
-          <strong>{{ installation.name }}</strong>
-          ·
-          <code>{{ installation.clientId }}</code>
-          <ul>
-            <li
-              v-for="(permissions, role) in installation.rolePermissions"
-              :key="role"
-            >
-              {{ role }} · {{ permissions.join(', ') }}
-            </li>
-          </ul>
-        </li>
-      </ul>
-      <h3 class="text-lg font-semibold">Role assignments</h3>
-      <p v-if="!data.assignments.length">No assignments.</p>
-      <ul v-else>
-        <li
-          v-for="assignment in data.assignments"
-          :key="JSON.stringify(assignment)"
-        >
-          {{ data.members.find(({ userId }) => userId === assignment.userId)?.email }} ·
-          {{ data.installations.find(({ clientId }) => clientId === assignment.clientId)?.name }} ·
-          {{ assignment.role }}
-        </li>
-      </ul>
-    </section>
-    <label class="grid gap-1">
-      Management action
-      <select
-        v-model="selectedAction"
-        class="rounded border border-default bg-default p-2"
-      >
-        <option
-          v-for="(label, action) in operations"
-          :key="action"
-          :value="action"
-        >
-          {{ label }}
-        </option>
-      </select>
-    </label>
-    <ManagementAction
-      :key="selectedAction"
-      :action="selectedAction"
-      :actor-id="actorId"
-      :actor-role="actorRole"
+    <AccessDashboard
       :organization-id="organizationId"
+      v-if="section.to === '/dashboard'"
       :details="data"
-      @saved="update"
     />
+    <template v-else-if="section.to === '/applications' && route.query.client">
+      <ApplicationWorkspace
+        v-if="installation"
+        :key="installation.clientId"
+        :installation="installation"
+        :details="data"
+        :issuer="issuer"
+        :organization-id="organizationId"
+        :actor-id="actorId"
+        :actor-role="actorRole"
+        @saved="update"
+      />
+      <div
+        v-else
+        class="space-y-3"
+      >
+        <h1 class="text-xl font-semibold">Application unavailable</h1>
+        <p>This organization has no matching installation.</p>
+        <UButton to="/applications">View applications</UButton>
+      </div>
+    </template>
+    <template v-else>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            v-for="(action, index) in section.actions"
+            :key="action"
+            :color="index === 0 ? 'primary' : 'neutral'"
+            :variant="index === 0 ? 'solid' : 'outline'"
+            :aria-expanded="selectedAction === action"
+            @click="selectedAction = selectedAction === action ? undefined : action"
+          >
+            {{ operations[action] }}
+          </UButton>
+        </div>
+      </div>
+      <UModal
+        :open="Boolean(selectedAction)"
+        :title="selectedAction ? operations[selectedAction] : undefined"
+        @update:open="
+          (open) => {
+            if (!open) selectedAction = undefined;
+          }
+        "
+      >
+        <template #body>
+          <div
+            v-if="selectedAction"
+            class="grid gap-5"
+          >
+            <ManagementAction
+              :key="selectedAction"
+              :action="selectedAction"
+              :actor-id="actorId"
+              :actor-role="actorRole"
+              :organization-id="organizationId"
+              :details="data"
+              @saved="update"
+            />
+            <div class="border-t border-muted pt-3">
+              <UButton
+                :href="issuer + '/passkeys'"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="neutral"
+                variant="link"
+                trailing-icon="i-lucide-external-link"
+              >
+                Verify with a passkey
+              </UButton>
+            </div>
+          </div>
+        </template>
+      </UModal>
+      <section
+        v-if="section.to === '/management'"
+        class="grid gap-5 rounded-lg border border-muted bg-(--iam-surface) p-5 sm:p-6"
+      >
+        <h2 class="font-semibold">Organization details</h2>
+        <nav
+          aria-label="Organization resources"
+          class="grid grid-cols-2 divide-x divide-muted border-y border-muted sm:grid-cols-4"
+        >
+          <NuxtLink
+            v-for="resource in resources"
+            :key="resource.path"
+            :to="{ path: resource.path, query: { org: organizationId } }"
+            class="grid gap-2 p-4 transition-all hover:bg-muted"
+          >
+            <span class="font-mono text-2xl tabular-nums">{{ resource.total }}</span>
+            <span class="text-sm text-muted">{{ resource.label }}</span>
+          </NuxtLink>
+        </nav>
+        <dl class="grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
+          <div>
+            <dt class="mb-1 text-muted">Organization ID</dt>
+            <dd class="break-all font-mono">{{ organizationId }}</dd>
+          </div>
+          <div>
+            <dt class="mb-1 text-muted">Your organization role</dt>
+            <dd>
+              <UBadge
+                color="neutral"
+                variant="subtle"
+              >
+                {{ actorRole }}
+              </UBadge>
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <DirectoryTable
+        :organization-id="organizationId"
+        v-else
+        :path="section.to"
+        :details="data"
+      />
+    </template>
   </template>
   <p
     v-else

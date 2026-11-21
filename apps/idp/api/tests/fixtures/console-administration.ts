@@ -14,18 +14,28 @@ export async function registerAndAssign(
 ): Promise<void> {
   const appName = 'Console fixture app';
   const role = 'viewer';
-  const action = page.getByRole('combobox', { name: 'Management action' });
-  const installation = page.getByRole('combobox', { name: 'App installation' });
-
-  await page.goto(new URL('/management', consoleOrigin).href);
-  await action.selectOption('register');
-  await page.getByLabel('Name', { exact: true }).fill(appName);
-  await page.getByLabel('HTTPS callback URL').fill('https://console-fixture.localhost/callback');
+  await page.goto(new URL('/applications', consoleOrigin).href);
   await page.getByRole('button', { name: 'Register an app' }).click();
-  await page.getByRole('heading', { name: 'App credentials' }).waitFor();
+  const dialog = page.getByRole('dialog');
 
-  await action.selectOption('defineRole');
-  await installation.selectOption({ label: appName });
+  await dialog.getByLabel('Name', { exact: true }).fill(appName);
+  await dialog.getByLabel('HTTPS callback URL').fill('https://console-fixture.localhost/callback');
+  await dialog.getByRole('button', { name: 'Register an app' }).click();
+  await dialog.getByRole('heading', { name: 'App credentials' }).waitFor();
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await page
+    .getByRole('link', {
+      name: appName,
+      exact: true,
+    })
+    .click();
+  await page.getByRole('tab', { name: 'Permissions' }).click();
+  await page
+    .getByRole('button', {
+      name: 'Define role',
+      exact: true,
+    })
+    .click();
   await page
     .getByRole('textbox', {
       name: 'Role',
@@ -34,17 +44,51 @@ export async function registerAndAssign(
     .fill(role);
   await page.getByLabel('Permissions (comma-separated)').fill('read');
   await page.getByRole('button', { name: 'Define an installation role' }).click();
-  await page.getByText('viewer · read', { exact: true }).waitFor();
+  await page
+    .getByRole('cell', {
+      name: 'read',
+      exact: true,
+    })
+    .waitFor();
 
-  await action.selectOption('assign');
-  await installation.selectOption({ label: appName });
-  await page.getByRole('combobox', { name: 'Member' }).selectOption({ label: ownerEmail });
+  await page
+    .getByRole('tab', {
+      name: 'Access',
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole('button', {
+      name: 'Assign role',
+      exact: true,
+    })
+    .click();
+  await page.getByRole('combobox', { name: 'Member' }).click();
+  await page
+    .getByRole('option', {
+      name: ownerEmail,
+      exact: true,
+    })
+    .click();
   await page
     .getByRole('combobox', {
       name: 'Role',
       exact: true,
     })
-    .selectOption(role);
+    .click();
+  await page
+    .getByRole('option', {
+      name: role,
+      exact: true,
+    })
+    .click();
   await page.getByRole('button', { name: 'Assign an installation role' }).click();
-  await page.getByText(`${ownerEmail} · ${appName} · ${role}`, { exact: true }).waitFor();
+  await page
+    .getByRole('row')
+    .filter({ hasText: ownerEmail })
+    .getByRole('cell', {
+      name: role,
+      exact: true,
+    })
+    .waitFor();
 }

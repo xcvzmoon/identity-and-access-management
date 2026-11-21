@@ -58,3 +58,42 @@ export const operations = {
   disableInstallation: 'Disable an installation',
   rename: 'Rename organization',
 };
+
+export const managementSections = [
+  {
+    label: 'Dashboard',
+    to: '/dashboard',
+    icon: 'i-lucide-layout-grid',
+    actions: [],
+  },
+  {
+    label: 'Organizations',
+    to: '/management',
+    icon: 'i-lucide-building-2',
+    actions: ['rename'],
+  },
+  {
+    label: 'Members',
+    to: '/members',
+    icon: 'i-lucide-users',
+    actions: ['invite', 'removeMember'],
+  },
+  {
+    label: 'Invitations',
+    to: '/invitations',
+    icon: 'i-lucide-mail-plus',
+    actions: ['invite'],
+  },
+  {
+    label: 'Applications',
+    to: '/applications',
+    icon: 'i-lucide-blocks',
+    actions: ['register', 'disableInstallation'],
+  },
+  {
+    label: 'Roles & access',
+    to: '/access',
+    icon: 'i-lucide-key-round',
+    actions: ['assign', 'defineRole', 'revoke'],
+  },
+] as const;
