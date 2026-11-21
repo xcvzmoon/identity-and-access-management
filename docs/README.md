@@ -16,6 +16,7 @@
 
 ## Understand IAM
 
+- [Design, Implementation, and Evaluation of a Self-Hosted Identity and Access Management System (PDF)](../output/pdf/iam-authorization-case-study.pdf) Repository-wide case study with measured release results, implementation inventories, and deployment terms of reference.
 - [Architecture](architecture.md). Workspace ownership, public origins, sessions, and authorization boundaries.
 - [V1 scope](rewrite-scope.md). Supported workflows, client contract, and release boundaries.
 - [Glossary](glossary.md). IAM and OpenID Connect terms.
