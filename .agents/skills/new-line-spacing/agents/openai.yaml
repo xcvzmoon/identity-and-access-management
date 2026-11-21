@@ -1,0 +1,4 @@
+interface:
+  display_name: "New Line Spacing"
+  short_description: "Group code with readable blank lines"
+  default_prompt: "Review the changed code for readable blank-line grouping using $new-line-spacing."

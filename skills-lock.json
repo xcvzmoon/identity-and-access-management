@@ -95,6 +95,13 @@
       "skillPath": ".agents/skills/debugging/SKILL.md",
       "computedHash": "4b5f7f5dce7569e1f90a4fc4a9f308c84f4088b0ba756b55bd6db60fd8ee66da"
     },
+    "design-taste-frontend": {
+      "source": "Leonxlnx/taste-skill",
+      "commit": "f6b76575f949707b4e3c37cd86cb44b0b98643e8",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "b10eab0a9684cd09cf34c31ef04a3bf530a5f4404422f9c520d42372d670c7fc"
+    },
     "docker-build-strategies": {
       "source": "docker/skills",
       "commit": "a65ae5b65d22f0613375d6c3e5ea8bb287698cc0",
@@ -264,6 +271,13 @@
       "sourceType": "github",
       "skillPath": ".agents/skills/meditate/SKILL.md",
       "computedHash": "2421a4d8179fc7ffb2a0694de756387e48664c2240a7d6c5adcb2f2011f021be"
+    },
+    "new-line-spacing": {
+      "source": "xcvzmoon/moonbed",
+      "commit": "1c2b89b7063b1cc1fdb09f16baa4c16a7ccc84e7",
+      "sourceType": "github",
+      "skillPath": "skills/new-line-spacing/SKILL.md",
+      "computedHash": "75e8fe5074864b38ce069055dc25ca7731d9315e6a1e4a5edf86884d9195ebf5"
     },
     "nitro": {
       "source": "antfu/skills",
@@ -442,6 +456,13 @@
       "sourceType": "github",
       "skillPath": "skills/vue-debug-guides/SKILL.md",
       "computedHash": "ede183882859cc9abf9425590a8adc66823879dd70484d0ea197cfcf6b3fbba4"
+    },
+    "vue-nuxt-convention": {
+      "source": "xcvzmoon/moonbed",
+      "commit": "1c2b89b7063b1cc1fdb09f16baa4c16a7ccc84e7",
+      "sourceType": "github",
+      "skillPath": "skills/vue-nuxt-convention/SKILL.md",
+      "computedHash": "5ffb94c530759819de3c661db99aad6c53beafddf3c311624854c135eb907771"
     },
     "vue-pinia-best-practices": {
       "source": "vuejs-ai/skills",
