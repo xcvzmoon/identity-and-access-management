@@ -54,7 +54,9 @@
 </script>
 
 <template>
-  <AccountPanel title="Confirm application access">
+  <AccountPanel
+    :title="details ? 'Allow ' + details.name + ' to sign you in?' : 'Confirm application access'"
+  >
     <p
       v-if="loading"
       role="status"
@@ -66,20 +68,67 @@
       v-if="details"
       class="grid gap-4"
     >
-      <p>
-        Allow
-        <strong>{{ details.name }}</strong>
-        to sign you in?
-      </p>
-
-      <p v-if="details.organization && details.role">
-        You will sign in to {{ details.organization }} with the role {{ details.role }}.
-      </p>
-
-      <p v-if="scopes.length">Requested scopes: {{ scopes.join(', ') }}</p>
-
-      <p v-if="details.permissions.length">App permissions: {{ details.permissions.join(', ') }}</p>
-
+      <dl
+        v-if="(details.organization && details.role) || scopes.length || details.permissions.length"
+        class="grid gap-4 border-y border-muted py-4 text-sm"
+      >
+        <div
+          v-if="details.organization && details.role"
+          class="grid gap-1"
+        >
+          <dt class="text-muted">Organization and role</dt>
+          <dd class="flex flex-wrap items-center gap-2">
+            <UAvatar
+              icon="i-lucide-building-2"
+              size="xs"
+            />
+            {{ details.organization }}
+            <UBadge
+              color="neutral"
+              variant="subtle"
+            >
+              {{ details.role }}
+            </UBadge>
+          </dd>
+        </div>
+        <div
+          v-if="scopes.length"
+          class="grid gap-1"
+        >
+          <dt class="text-muted">Requested scopes</dt>
+          <dd class="flex flex-wrap gap-1">
+            <UBadge
+              v-for="scope in scopes"
+              :key="scope"
+              color="neutral"
+              variant="subtle"
+            >
+              {{ scope }}
+            </UBadge>
+          </dd>
+        </div>
+        <div
+          v-if="details.permissions.length"
+          class="grid gap-1"
+        >
+          <dt class="text-muted">App permissions</dt>
+          <dd>
+            <ul class="grid gap-1.5">
+              <li
+                v-for="permission in details.permissions"
+                :key="permission"
+                class="flex items-start gap-2 break-all"
+              >
+                <UIcon
+                  name="i-lucide-key-round"
+                  class="mt-0.5 shrink-0 text-muted"
+                />
+                {{ permission }}
+              </li>
+            </ul>
+          </dd>
+        </div>
+      </dl>
       <div class="flex gap-3">
         <UButton
           :disabled="pending"
@@ -90,17 +139,20 @@
         <UButton
           :disabled="pending"
           label="Deny"
+          color="neutral"
           variant="outline"
           @click="decide('deny')"
         />
       </div>
     </div>
 
-    <p
+    <UAlert
       v-if="error"
       role="alert"
-    >
-      {{ error }}
-    </p>
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      :description="error"
+    />
   </AccountPanel>
 </template>

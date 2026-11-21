@@ -46,7 +46,16 @@
 </script>
 
 <template>
-  <AccountPanel :title="purpose === 'recover' ? 'Recover your account' : 'Verify your email'">
+  <AccountPanel
+    :description="
+      sent
+        ? undefined
+        : purpose === 'recover'
+          ? 'Enter your account email to request a password reset link.'
+          : 'Enter your account email to request a new verification link.'
+    "
+    :title="purpose === 'recover' ? 'Recover your account' : 'Verify your email'"
+  >
     <p
       v-if="sent"
       role="status"
@@ -65,7 +74,9 @@
       >
         <label>
           Email address
-          <input
+          <UInput
+            class="w-full"
+            size="lg"
             v-model="field.input"
             v-bind="field.props"
             type="email"
@@ -80,17 +91,19 @@
           </span>
         </label>
       </Field>
-      <p
+      <UAlert
         v-if="error"
         role="alert"
-      >
-        {{ error }}
-      </p>
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :description="error"
+      />
       <UButton
         type="submit"
         :loading="pending"
       >
-        Send email
+        {{ purpose === 'recover' ? 'Send reset link' : 'Send verification link' }}
       </UButton>
     </Form>
     <NuxtLink to="/sign-in">Back to sign in</NuxtLink>

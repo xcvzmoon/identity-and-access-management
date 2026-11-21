@@ -68,7 +68,9 @@
       >
         <label>
           New password (15–128 characters)
-          <input
+          <UInput
+            class="w-full"
+            size="lg"
             v-model="field.input"
             v-bind="field.props"
             type="password"
@@ -85,12 +87,14 @@
           </span>
         </label>
       </Field>
-      <p
+      <UAlert
         v-if="error"
         role="alert"
-      >
-        {{ error }}
-      </p>
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :description="error"
+      />
       <UButton
         type="submit"
         :loading="pending"

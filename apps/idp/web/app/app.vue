@@ -1,7 +1,10 @@
 <template>
   <UApp>
     <NuxtRouteAnnouncer />
-    <main class="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
+
+    <main
+      class="grid min-h-dvh place-items-center bg-(--iam-surface) px-4 py-8 antialiased sm:px-8"
+    >
       <NuxtPage />
     </main>
   </UApp>

@@ -53,7 +53,10 @@
 </script>
 
 <template>
-  <AccountPanel title="Sign in">
+  <AccountPanel
+    title="Sign in"
+    description="Use the email address associated with your IAM account."
+  >
     <p
       v-if="signedIn"
       role="status"
@@ -73,7 +76,9 @@
       >
         <label>
           Email address
-          <input
+          <UInput
+            class="w-full"
+            size="lg"
             v-model="field.input"
             v-bind="field.props"
             :disabled="!formReady"
@@ -96,7 +101,9 @@
       >
         <label>
           Password
-          <input
+          <UInput
+            class="w-full"
+            size="lg"
             v-model="field.input"
             v-bind="field.props"
             :disabled="!formReady"
@@ -112,22 +119,28 @@
           </span>
         </label>
       </Field>
-      <p
+      <UAlert
         v-if="error"
         role="alert"
-      >
-        {{ error }}
-      </p>
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :description="error"
+      />
       <UButton
         type="submit"
+        block
+        size="lg"
         :disabled="!formReady"
         :loading="pending"
       >
         Sign in
       </UButton>
-      <NuxtLink to="/forgot-password">Forgot password?</NuxtLink>
-      <NuxtLink to="/verify-email">Resend verification email</NuxtLink>
-      <p>
+      <div class="flex flex-wrap justify-center gap-x-4 gap-y-1">
+        <NuxtLink to="/forgot-password">Forgot password?</NuxtLink>
+        <NuxtLink to="/verify-email">Resend verification email</NuxtLink>
+      </div>
+      <p class="border-t border-muted pt-4 text-center text-xs text-pretty text-muted">
         IAM counts password sign-ins and keeps the account, time, and sign-in route for security
         investigations for 30 days.
       </p>

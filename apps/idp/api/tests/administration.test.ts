@@ -182,7 +182,7 @@ async function recover(
     caseReference,
     verifiedOwnerLockout: true,
   };
-  await operatorPage.getByRole('button', { name: 'Open recovery' }).click();
+  await operatorPage.getByRole('tab', { name: 'Recovery' }).click();
   await operatorPage.getByLabel('Organization ID').fill(organizationId);
   await operatorPage.getByLabel('Verified case reference').fill(caseReference);
   await operatorPage.getByLabel('Owner email address').fill(replacement.email);

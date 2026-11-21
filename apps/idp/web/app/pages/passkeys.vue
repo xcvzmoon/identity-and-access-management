@@ -47,33 +47,45 @@
 </script>
 
 <template>
-  <AccountPanel title="Administrator passkeys">
-    <p>Verify a passkey to manage your organization for the next five minutes.</p>
+  <AccountPanel
+    title="Administrator passkeys"
+    description="Verify a passkey to manage your organization for the next five minutes."
+  >
     <UButton
       :disabled="pending"
       @click="runCeremony('authentication')"
     >
       Verify passkey
     </UButton>
-    <UButton
-      :disabled="pending"
-      variant="outline"
-      @click="runCeremony('registration')"
-    >
-      Enroll a passkey
-    </UButton>
-    <p
+    <section class="grid gap-3 border-t border-muted pt-5">
+      <h2 class="font-medium">Register a device</h2>
+      <p class="text-sm text-muted">
+        Add a passkey to use this device for administrator verification.
+      </p>
+      <UButton
+        :disabled="pending"
+        variant="outline"
+        @click="runCeremony('registration')"
+      >
+        Enroll a passkey
+      </UButton>
+    </section>
+    <UAlert
       v-if="error"
       role="alert"
-    >
-      {{ error }}
-    </p>
-    <p
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      :description="error"
+    />
+    <UAlert
       v-if="message"
       role="status"
-    >
-      {{ message }}
-    </p>
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      :description="message"
+    />
     <NuxtLink to="/sign-in">Sign in to IAM</NuxtLink>
   </AccountPanel>
 </template>

@@ -14,8 +14,12 @@
   const form = useForm({ schema });
   const verified = ref(false);
 
-  function switchMode(): void {
-    mode.value = mode.value === 'bootstrap' ? 'recover' : 'bootstrap';
+  function switchMode(value: string | number): void {
+    if (value !== 'bootstrap' && value !== 'recover') {
+      return;
+    }
+
+    mode.value = value;
     result.value = '';
     error.value = '';
     verified.value = false;
@@ -55,21 +59,23 @@
 
 <template>
   <AccountPanel title="Organization ownership">
-    <NuxtLink to="/passkeys">Verify with a passkey</NuxtLink>
+    <UTabs
+      :model-value="mode"
+      :items="[
+        { label: 'First owner', value: 'bootstrap', disabled: pending },
+        { label: 'Recovery', value: 'recover', disabled: pending },
+      ]"
+      :content="false"
+      @update:model-value="switchMode"
+    />
     <Form
       :of="form"
       @submit="invite"
     >
       <fieldset :disabled="pending">
-        <legend>
+        <legend class="mb-4 font-medium">
           {{ mode === 'bootstrap' ? 'Invite a first owner' : 'Recover organization ownership' }}
         </legend>
-        <button
-          type="button"
-          @click="switchMode"
-        >
-          {{ mode === 'bootstrap' ? 'Open recovery' : 'Open onboarding' }}
-        </button>
         <Field
           :of="form"
           :path="['target']"
@@ -77,7 +83,9 @@
         >
           <label>
             {{ mode === 'bootstrap' ? 'Organization name' : 'Organization ID' }}
-            <input
+            <UInput
+              class="w-full"
+              size="lg"
               v-model="field.input"
               v-bind="field.props"
               required
@@ -91,7 +99,9 @@
         >
           <label>
             {{ mode === 'bootstrap' ? 'Organization slug' : 'Verified case reference' }}
-            <input
+            <UInput
+              class="w-full"
+              size="lg"
               v-model="field.input"
               v-bind="field.props"
               required
@@ -105,7 +115,9 @@
         >
           <label>
             Owner email address
-            <input
+            <UInput
+              class="w-full"
+              size="lg"
               v-model="field.input"
               v-bind="field.props"
               type="email"
@@ -113,14 +125,12 @@
             />
           </label>
         </Field>
-        <label v-if="mode === 'recover'">
-          <input
-            v-model="verified"
-            type="checkbox"
-            required
-          />
-          I verified all owners are locked out and confirmed the replacement contact independently.
-        </label>
+        <UCheckbox
+          v-if="mode === 'recover'"
+          v-model="verified"
+          required
+          label="I verified all owners are locked out and confirmed the replacement contact independently."
+        />
         <UButton
           type="submit"
           :loading="pending"
@@ -129,17 +139,22 @@
         </UButton>
       </fieldset>
     </Form>
-    <p
+    <ULink to="/passkeys">Verify with a passkey</ULink>
+    <UAlert
       v-if="result"
       role="status"
-    >
-      {{ result }}
-    </p>
-    <p
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      :description="result"
+    />
+    <UAlert
       v-if="error"
       role="alert"
-    >
-      {{ error }}
-    </p>
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      :description="error"
+    />
   </AccountPanel>
 </template>

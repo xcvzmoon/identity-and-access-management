@@ -36,6 +36,11 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
   modules: ['@nuxt/ui'],
+  icon: {
+    clientBundle: {
+      icons: ['lucide:building-2', 'lucide:key-round', 'lucide:loader', 'lucide:shield-check'],
+    },
+  },
   colorMode: {
     preference: 'dark',
   },

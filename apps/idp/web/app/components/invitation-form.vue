@@ -100,38 +100,28 @@
 
 <template>
   <AccountPanel title="Join your organization">
-    <p
+    <UAlert
       v-if="message"
       role="status"
-    >
-      {{ message }}
-    </p>
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      :description="message"
+    />
     <Form
       :of="form"
       v-else
       @submit="join"
     >
-      <fieldset :disabled="pending">
-        <legend>Account</legend>
-        <label>
-          <input
-            v-model="mode"
-            type="radio"
-            name="account-mode"
-            value="new"
-          />
-          Create an account
-        </label>
-        <label>
-          <input
-            v-model="mode"
-            type="radio"
-            name="account-mode"
-            value="existing"
-          />
-          Use an existing account
-        </label>
-      </fieldset>
+      <URadioGroup
+        v-model="mode"
+        legend="Account"
+        :disabled="pending"
+        :items="[
+          { label: 'Create an account', value: 'new' },
+          { label: 'Use an existing account', value: 'existing' },
+        ]"
+      />
       <Field
         v-if="mode === 'new'"
         :of="form"
@@ -140,7 +130,9 @@
       >
         <label>
           Name
-          <input
+          <UInput
+            class="w-full"
+            size="lg"
             v-model="field.input"
             v-bind="field.props"
             autocomplete="name"
@@ -162,7 +154,9 @@
       >
         <label>
           Invited email address
-          <input
+          <UInput
+            class="w-full"
+            size="lg"
             v-model="field.input"
             v-bind="field.props"
             type="email"
@@ -184,7 +178,9 @@
       >
         <label>
           {{ mode === 'new' ? 'Password (15–128 characters)' : 'Password' }}
-          <input
+          <UInput
+            class="w-full"
+            size="lg"
             v-model="field.input"
             v-bind="field.props"
             type="password"
@@ -201,19 +197,21 @@
           </span>
         </label>
       </Field>
-      <p
+      <UAlert
         v-if="error"
         role="alert"
-      >
-        {{ error }}
-      </p>
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :description="error"
+      />
       <UButton
         type="submit"
         :loading="pending"
       >
         {{ mode === 'new' ? 'Create account' : 'Sign in and accept' }}
       </UButton>
-      <p>
+      <p class="border-t border-muted pt-4 text-xs text-muted">
         IAM counts password sign-ins and keeps the account, time, and sign-in route for security
         investigations for 30 days.
       </p>
