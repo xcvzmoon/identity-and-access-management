@@ -1,7 +1,7 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'emerald',
+      primary: 'zinc',
       neutral: 'zinc',
     },
     icons: {
@@ -9,7 +9,7 @@ export default defineAppConfig({
     },
     button: {
       slots: {
-        base: 'select-none cursor-pointer rounded-none',
+        base: 'select-none cursor-pointer',
       },
       variants: {
         size: {
@@ -62,9 +62,6 @@ export default defineAppConfig({
       },
     },
     input: {
-      slots: {
-        base: 'rounded-none',
-      },
       variants: {
         size: {
           xs: {
@@ -181,11 +178,6 @@ export default defineAppConfig({
     formField: {
       slots: {
         label: 'text-muted',
-      },
-    },
-    alert: {
-      slots: {
-        root: 'rounded-none',
       },
     },
   },

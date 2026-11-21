@@ -1,0 +1,11 @@
+:root {
+  --ui-primary: var(--color-zinc-950);
+  --iam-surface: var(--color-zinc-50);
+}
+
+.dark {
+  --ui-primary: var(--color-zinc-50);
+  --iam-surface: var(--color-zinc-900);
+  --ui-bg: color-mix(in srgb, var(--color-zinc-900) 65%, var(--color-zinc-800));
+  --ui-border-muted: color-mix(in srgb, var(--color-zinc-800) 93%, var(--color-zinc-500));
+}
