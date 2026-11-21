@@ -1,0 +1,53 @@
+[
+  { "group": "Console", "slug": "console-overview", "label": "Organization overview" },
+  {
+    "group": "Console",
+    "slug": "console-invitation-review",
+    "label": "Dashboard \u00b7 pending invitations"
+  },
+  { "group": "Console", "slug": "console-page-search", "label": "Page search" },
+  { "group": "Console", "slug": "console-navigation", "label": "Responsive navigation" },
+  { "group": "Console", "slug": "console-org", "label": "Organization details" },
+  { "group": "Console", "slug": "console-members", "label": "Member directory" },
+  { "group": "Console", "slug": "console-member-role", "label": "Members filtered by role" },
+  { "group": "Console", "slug": "console-invitations", "label": "Invitation history" },
+  { "group": "Console", "slug": "console-applications", "label": "Application directory" },
+  {
+    "group": "Console",
+    "slug": "console-app-list",
+    "label": "Application directory \u00b7 list view"
+  },
+  { "group": "Console", "slug": "console-access", "label": "Role assignments" },
+  { "group": "Console", "slug": "console-application", "label": "Application workspace" },
+  { "group": "Console", "slug": "console-app-access", "label": "Application member access" },
+  {
+    "group": "Console",
+    "slug": "console-app-permissions",
+    "label": "Application role permissions"
+  },
+  { "group": "Console", "slug": "console-account", "label": "Account security and sessions" },
+  { "group": "Console", "slug": "console-signed-out", "label": "Signed out" },
+  { "group": "Console", "slug": "console-rename", "label": "Rename organization" },
+  { "group": "Console", "slug": "console-invite", "label": "Invite a member" },
+  { "group": "Console", "slug": "console-removeMember", "label": "Remove a member" },
+  { "group": "Console", "slug": "console-register", "label": "Register an app" },
+  { "group": "Console", "slug": "console-disableInstallation", "label": "Disable an installation" },
+  { "group": "Console", "slug": "console-assign", "label": "Assign an installation role" },
+  { "group": "Console", "slug": "console-defineRole", "label": "Define an installation role" },
+  { "group": "Console", "slug": "console-revoke", "label": "Revoke an assignment" },
+  { "group": "IdP", "slug": "idp-sign-in", "label": "Sign in" },
+  { "group": "IdP", "slug": "idp-forgot-password", "label": "Request a password reset" },
+  { "group": "IdP", "slug": "idp-reset-password", "label": "Set a new password" },
+  { "group": "IdP", "slug": "idp-verify-email", "label": "Request email verification" },
+  { "group": "IdP", "slug": "idp-passkeys", "label": "Verify and enroll passkeys" },
+  { "group": "IdP", "slug": "idp-join", "label": "Accept invitation \u00b7 new account" },
+  {
+    "group": "IdP",
+    "slug": "idp-join-existing",
+    "label": "Accept invitation \u00b7 existing account"
+  },
+  { "group": "IdP", "slug": "idp-consent", "label": "Review application consent" },
+  { "group": "IdP", "slug": "idp-operator", "label": "Invite a first owner" },
+  { "group": "IdP", "slug": "idp-ownership-recovery", "label": "Recover organization ownership" },
+  { "group": "IdP", "slug": "idp-sign-out", "label": "Sign out of IAM" }
+]

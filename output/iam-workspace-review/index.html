@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  />
+  <title>IAM responsive feature gallery</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: var(--font-sans, system-ui);
+      color: var(--foreground, #efefef);
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    label {
+      display: grid;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted-foreground, #abaeb7);
+    }
+    select,
+    button {
+      font: inherit;
+      font-size: 14px;
+      background: var(--secondary, #252529);
+      color: var(--foreground, #eee);
+      border: 1px solid var(--border, #555);
+      border-radius: 5px;
+      padding: 8px;
+    }
+    select {
+      max-width: 100%;
+    }
+    .feature {
+      flex: 1;
+      min-width: min(195px, 100%);
+    }
+    figure {
+      margin: 0;
+      max-height: 690px;
+      overflow: auto;
+      text-align: center;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      vertical-align: top;
+    }
+    p {
+      font-size: 12px;
+      color: var(--muted-foreground, #adb1ba);
+      line-height: 1.4;
+    }
+  </style>
+  <header>
+    <label>
+      App
+      <select id="app">
+        <option>Console</option>
+        <option>IdP</option>
+      </select>
+    </label>
+    <label class="feature">
+      Feature
+      <select id="feature"></select>
+    </label>
+    <label>
+      Viewport
+      <select id="width">
+        <option value="1440">Desktop · 1440 px</option>
+        <option value="768">Tablet · 768 px</option>
+        <option value="390">Phone · 390 px</option>
+      </select>
+    </label>
+  </header>
+  <figure>
+    <img
+      id="shot"
+      alt=""
+    />
+  </figure>
+  <p id="note"></p>
+  <script>
+    const views = [
+        { group: 'Console', slug: 'console-overview', label: 'Organization overview' },
+        { group: 'Console', slug: 'console-org', label: 'Organization details' },
+        { group: 'Console', slug: 'console-members', label: 'Member directory' },
+        { group: 'Console', slug: 'console-member-role', label: 'Members filtered by role' },
+        { group: 'Console', slug: 'console-invitations', label: 'Invitation history' },
+        { group: 'Console', slug: 'console-applications', label: 'Application directory' },
+        { group: 'Console', slug: 'console-access', label: 'Role assignments' },
+        { group: 'Console', slug: 'console-application', label: 'Application workspace' },
+        { group: 'Console', slug: 'console-app-access', label: 'Application member access' },
+        {
+          group: 'Console',
+          slug: 'console-app-permissions',
+          label: 'Application role permissions',
+        },
+        { group: 'Console', slug: 'console-account', label: 'Account security and sessions' },
+        { group: 'Console', slug: 'console-signed-out', label: 'Signed out' },
+        { group: 'Console', slug: 'console-rename', label: 'Rename organization' },
+        { group: 'Console', slug: 'console-invite', label: 'Invite a member' },
+        { group: 'Console', slug: 'console-removeMember', label: 'Remove a member' },
+        { group: 'Console', slug: 'console-register', label: 'Register an app' },
+        { group: 'Console', slug: 'console-disableInstallation', label: 'Disable an installation' },
+        { group: 'Console', slug: 'console-assign', label: 'Assign an installation role' },
+        { group: 'Console', slug: 'console-defineRole', label: 'Define an installation role' },
+        { group: 'Console', slug: 'console-revoke', label: 'Revoke an assignment' },
+        { group: 'IdP', slug: 'idp-sign-in', label: 'Sign in' },
+        { group: 'IdP', slug: 'idp-forgot-password', label: 'Request a password reset' },
+        { group: 'IdP', slug: 'idp-reset-password', label: 'Set a new password' },
+        { group: 'IdP', slug: 'idp-verify-email', label: 'Request email verification' },
+        { group: 'IdP', slug: 'idp-passkeys', label: 'Verify and enroll passkeys' },
+        { group: 'IdP', slug: 'idp-join', label: 'Accept invitation \u00b7 new account' },
+        {
+          group: 'IdP',
+          slug: 'idp-join-existing',
+          label: 'Accept invitation \u00b7 existing account',
+        },
+        { group: 'IdP', slug: 'idp-consent', label: 'Review application consent' },
+        { group: 'IdP', slug: 'idp-operator', label: 'Invite a first owner' },
+        { group: 'IdP', slug: 'idp-ownership-recovery', label: 'Recover organization ownership' },
+        { group: 'IdP', slug: 'idp-sign-out', label: 'Sign out of IAM' },
+      ],
+      files = null,
+      app = document.querySelector('#app'),
+      feat = document.querySelector('#feature'),
+      size = document.querySelector('#width'),
+      shot = document.querySelector('#shot');
+    function show() {
+      const item = views.find((v) => v.slug === feat.value),
+        name = item.slug + '-' + size.value + '.png';
+      shot.src = files ? files[name] : name;
+      shot.width = Number(size.value);
+      shot.alt = item.group + ' — ' + item.label + ' at ' + size.value + ' pixels';
+      document.querySelector('#note').textContent =
+        shot.alt +
+        ' · WebKit · ' +
+        (item.group === 'Console' ? 'Local sample organization' : 'Hosted form preview');
+    }
+    function options() {
+      feat.replaceChildren(
+        ...views.filter((v) => v.group === app.value).map((v) => new Option(v.label, v.slug)),
+      );
+      show();
+    }
+    app.onchange = options;
+    feat.onchange = size.onchange = show;
+    options();
+  </script>
+</html>

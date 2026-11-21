@@ -1,0 +1,49 @@
+[
+  { "group": "Console", "label": "Dashboard", "slug": "console-dashboard" },
+  { "group": "Console", "label": "Organizations", "slug": "console-organizations" },
+  { "group": "Console", "label": "Members", "slug": "console-members" },
+  { "group": "Console", "label": "Invitations", "slug": "console-invitations" },
+  { "group": "Console", "label": "Applications", "slug": "console-applications" },
+  { "group": "Console", "label": "Roles & access", "slug": "console-roles-access" },
+  { "group": "Console", "label": "Account and session", "slug": "console-account-and-session" },
+  { "group": "Console", "label": "Signed out", "slug": "console-signed-out" },
+  { "group": "Console", "label": "Rename organization", "slug": "console-rename-organization" },
+  { "group": "Console", "label": "Invite member", "slug": "console-invite-member" },
+  { "group": "Console", "label": "Remove member", "slug": "console-remove-member" },
+  { "group": "Console", "label": "Register application", "slug": "console-register-application" },
+  { "group": "Console", "label": "Disable application", "slug": "console-disable-application" },
+  { "group": "Console", "label": "Define role", "slug": "console-define-role" },
+  { "group": "Console", "label": "Assign role", "slug": "console-assign-role" },
+  { "group": "Console", "label": "Revoke assignment", "slug": "console-revoke-assignment" },
+  { "group": "Console", "label": "Filtered members", "slug": "console-filtered-members" },
+  {
+    "group": "Console",
+    "label": "Collapsed or mobile navigation",
+    "slug": "console-collapsed-or-mobile-navigation"
+  },
+  { "group": "Console", "label": "Member pagination", "slug": "console-pagination" },
+  { "group": "Console", "label": "Organization switcher", "slug": "console-switch-org" },
+  { "group": "IdP", "label": "Sign in", "slug": "idp-sign-in" },
+  { "group": "IdP", "label": "Request password reset", "slug": "idp-request-password-reset" },
+  { "group": "IdP", "label": "Reset password", "slug": "idp-reset-password" },
+  {
+    "group": "IdP",
+    "label": "Request verification email",
+    "slug": "idp-request-verification-email"
+  },
+  { "group": "IdP", "label": "Join with new account", "slug": "idp-join-with-new-account" },
+  {
+    "group": "IdP",
+    "label": "Join with existing account",
+    "slug": "idp-join-with-existing-account"
+  },
+  { "group": "IdP", "label": "Application consent", "slug": "idp-application-consent" },
+  {
+    "group": "IdP",
+    "label": "Passkey registration and verification",
+    "slug": "idp-passkey-registration-and-verification"
+  },
+  { "group": "IdP", "label": "Invite first owner", "slug": "idp-invite-first-owner" },
+  { "group": "IdP", "label": "Recover ownership", "slug": "idp-recover-ownership" },
+  { "group": "IdP", "label": "Sign out", "slug": "idp-sign-out" }
+]
