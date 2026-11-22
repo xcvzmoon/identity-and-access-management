@@ -106,7 +106,7 @@
         v-for="metric in metrics"
         :key="metric.path"
         :to="{ path: metric.path, query: { org: organizationId } }"
-        class="group grid min-w-0 content-start gap-3 rounded-lg border border-muted bg-(--iam-surface) p-4 transition-all hover:border-accented sm:p-5"
+        class="group grid min-w-0 content-start gap-3 rounded-lg border border-muted bg-muted p-4 transition-all hover:border-accented sm:p-5"
       >
         <span
           class="flex min-h-10 items-start justify-between gap-2 text-sm font-medium text-muted sm:min-h-5"
@@ -128,7 +128,7 @@
 
     <div class="grid items-stretch gap-4 sm:gap-5 lg:grid-cols-2">
       <section
-        class="grid min-w-0 content-between gap-5 rounded-lg border border-muted bg-(--iam-surface) p-5 sm:p-6"
+        class="grid min-w-0 content-between gap-5 rounded-lg border border-muted bg-muted p-5 sm:p-6"
       >
         <header>
           <h2 class="text-lg font-semibold tracking-tight">Member coverage</h2>
@@ -186,7 +186,7 @@
         </div>
       </section>
       <section
-        class="grid min-w-0 content-start gap-4 rounded-lg border border-muted bg-(--iam-surface) p-5 sm:p-6"
+        class="grid min-w-0 content-start gap-4 rounded-lg border border-muted bg-muted p-5 sm:p-6"
       >
         <header class="flex items-start justify-between gap-3">
           <div>
@@ -241,7 +241,7 @@
       </section>
     </div>
 
-    <section class="min-w-0 rounded-lg border border-muted bg-(--iam-surface)">
+    <section class="min-w-0 rounded-lg border border-muted bg-muted">
       <div
         class="flex flex-wrap items-center justify-between gap-3 border-b border-muted px-4 py-3 sm:px-5"
       >

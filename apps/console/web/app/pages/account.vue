@@ -46,7 +46,7 @@
     <template v-if="session">
       <section
         aria-label="Profile"
-        class="flex items-center gap-4 rounded-lg border border-muted bg-(--iam-surface) p-5"
+        class="flex items-center gap-4 rounded-lg border border-muted bg-muted p-5"
       >
         <UAvatar
           :alt="session.user.name || session.user.email"
@@ -64,7 +64,7 @@
           </p>
         </div>
       </section>
-      <section class="grid gap-4 rounded-lg border border-muted bg-(--iam-surface) p-5">
+      <section class="grid gap-4 rounded-lg border border-muted bg-muted p-5">
         <h2 class="text-lg font-medium">Account security</h2>
         <div class="flex flex-wrap gap-3">
           <UButton
@@ -84,7 +84,7 @@
         </div>
       </section>
       <section
-        class="grid gap-4 rounded-lg border border-muted bg-(--iam-surface) p-5 sm:p-6"
+        class="grid gap-4 rounded-lg border border-muted bg-muted p-5 sm:p-6"
         aria-labelledby="session-title"
       >
         <h2

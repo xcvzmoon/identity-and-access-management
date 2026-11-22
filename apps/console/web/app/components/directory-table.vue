@@ -167,7 +167,7 @@
 </script>
 
 <template>
-  <section class="min-w-0 overflow-hidden rounded-lg border border-muted bg-(--iam-surface)">
+  <section class="min-w-0 overflow-hidden rounded-lg border border-muted bg-muted">
     <header
       class="flex flex-wrap items-center justify-between gap-3 border-b border-muted p-4 sm:px-5"
     >

@@ -170,7 +170,7 @@
       </UModal>
       <section
         v-if="section.to === '/management'"
-        class="grid gap-5 rounded-lg border border-muted bg-(--iam-surface) p-5 sm:p-6"
+        class="grid gap-5 rounded-lg border border-muted bg-muted p-5 sm:p-6"
       >
         <h2 class="font-semibold">Organization details</h2>
         <nav

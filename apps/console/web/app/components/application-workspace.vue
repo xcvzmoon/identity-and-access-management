@@ -124,9 +124,7 @@
     >
       <template #overview>
         <div class="grid items-start gap-6 py-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(15rem,1fr)]">
-          <section
-            class="min-w-0 overflow-hidden rounded-lg border border-muted bg-(--iam-surface)"
-          >
+          <section class="min-w-0 overflow-hidden rounded-lg border border-muted bg-muted">
             <header
               class="flex flex-wrap items-center justify-between gap-3 border-b border-muted p-4"
             >
@@ -177,7 +175,7 @@
               </UButton>
             </div>
           </section>
-          <section class="grid gap-4 rounded-lg border border-muted bg-(--iam-surface) p-5">
+          <section class="grid gap-4 rounded-lg border border-muted bg-muted p-5">
             <h2 class="text-lg font-semibold">Installation roles</h2>
             <dl class="grid gap-4 text-sm">
               <div
@@ -230,7 +228,7 @@
               </UButton>
             </div>
           </div>
-          <div class="overflow-hidden rounded-lg border border-muted bg-(--iam-surface)">
+          <div class="overflow-hidden rounded-lg border border-muted bg-muted">
             <UTable
               :columns="[
                 { accessorKey: 'member', header: 'Member' },
@@ -249,7 +247,7 @@
             <h2 class="font-semibold">Role permissions</h2>
             <UButton @click="action = 'defineRole'">Define role</UButton>
           </div>
-          <div class="overflow-hidden rounded-lg border border-muted bg-(--iam-surface)">
+          <div class="overflow-hidden rounded-lg border border-muted bg-muted">
             <UTable
               :data="permissions"
               empty="No roles defined for this application."
