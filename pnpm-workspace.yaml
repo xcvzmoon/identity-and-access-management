@@ -2,6 +2,7 @@ packages:
   - apps/console/*
   - apps/idp/*
   - examples/reference-app
+  - apps/*
 
 catalogMode: strict
 
